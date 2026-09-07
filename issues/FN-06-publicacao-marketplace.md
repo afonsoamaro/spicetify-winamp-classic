@@ -12,7 +12,7 @@ Deixar o tema instalável pelo Marketplace do Spicetify e documentado para quem 
 
 ## Requirements
 - `preview.png` tirado do Spotify com o tema completo, proporção 16:9, mostrando barra de reprodução com espectro e uma playlist.
-- `README.md` final: o que é, screenshot, instalação pelo Marketplace, instalação manual (clone, symlink, `spicetify config`, `spicetify apply`), como desenvolver (`pnpm check`, `pnpm build`, `spicetify watch -le`), licença, nota de que nenhum asset do Winamp original é usado.
+- `README.md` final: o que é, screenshot, instalação pelo Marketplace, instalação manual (clone, symlink, `spicetify config`, `spicetify apply`), como desenvolver (`pnpm check`, `pnpm build`, `spicetify watch -s`), licença, nota de que nenhum asset do Winamp original é usado.
 - `manifest.json` revisado: `include` apontando para `https://cdn.jsdelivr.net/gh/afonsoamaro/spicetify-winamp-classic@main/theme.js`, `tags`, `authors`.
 - Tópico `spicetify-themes` no repo GitHub.
 - Teste de ponta a ponta: remover o tema local, `spicetify config current_theme marketplace`, instalar pelo Marketplace e conferir que CSS, cores e extensão carregam.

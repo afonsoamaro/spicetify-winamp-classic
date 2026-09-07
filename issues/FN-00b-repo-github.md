@@ -10,7 +10,7 @@ Versionar o projeto e publicá-lo no GitHub como repositório público, porque o
 - Branch dedicada para cada issue, merge `--no-ff` na `main` com subject só.
 - `LICENSE` MIT em nome do dono do repo.
 - `README.md` inicial: o que é, status "em construção", como instalar manualmente, como contribuir. O README final com preview fica na FN-06.
-- `.github/workflows/ci.yml` copiado do molde do `omni-status`, sem o passo `dir:validate`, rodando `pnpm check` em `pull_request` e em `push` para `main`.
+- `.github/workflows/ci.yml` copiado do molde do `omni-status`, sem o passo `dir:validate`, rodando `pnpm check` (lint, typecheck, test, build) em `pull_request` e em `push` para `main`.
 - `.github/dependabot.yml` com ecossistemas `npm` e `github-actions`, semanal.
 - `gitleaks git . -v` e `gitleaks dir . -v` limpos antes do primeiro push.
 - Repo público `afonsoamaro/spicetify-winamp-classic` via `gh repo create`, com o tópico `spicetify-themes` e descrição.
