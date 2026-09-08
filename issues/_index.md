@@ -6,7 +6,7 @@ Fonte: `SPECS.md`. Tema para o Spicetify que recria o visual do Winamp 2.x com C
 | Issue | Nome | Status | Dependências |
 |-------|------|--------|--------------|
 | FN-00 | Setup base e quádrupla de qualidade | ✅ done (07/09) | nenhuma |
-| FN-00b | Repositório git e GitHub | todo | FN-00 |
+| FN-00b | Repositório git e GitHub | planned | FN-00 |
 
 ## Prototype Issues (visual, só CSS)
 | Issue | Nome | Status | Dependências |
