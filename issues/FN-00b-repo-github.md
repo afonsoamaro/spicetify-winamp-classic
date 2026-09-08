@@ -51,8 +51,9 @@ Pesquisa feita em 2026-09-08. Tags das actions consultadas via `gh api releases/
 - Padrão de título das issues no `omni-status`: o `#` da primeira linha do arquivo, tipo `[FN-00] Setup base ...`. Corpo é o markdown inteiro do arquivo.
 
 ## Architecture Decisions
-- **Majors das actions atualizadas em relação ao molde**, porque a regra da pasta pede versão consultada na hora e o molde é de agosto: `actions/checkout@v7` (v7.0.1), `pnpm/action-setup@v6` (v6.1.0, suporta pnpm 12 e lê `packageManager`, sem input `version`), `actions/setup-node@v7` (v7.0.0). A forma do molde fica igual.
-- **Não trocar para `pnpm/setup@v2`** por enquanto. Ele substitui `pnpm/action-setup` para pnpm 11+ e dispensa o `setup-node`, mas muda a forma do molde. Quando o `omni-status` migrar, este repo acompanha.
+- **`actions/checkout@v7`** (v7.0.1, consultada na hora), por major porque a action é do próprio GitHub.
+- **`pnpm/setup` fixado por SHA, como o molde.** Na execução (2026-09-08) o `omni-status` já tinha migrado de `pnpm/action-setup` para `pnpm/setup` v2.1.0, porque a `action-setup` roda em Node 20, descontinuado no Actions em 2026-06-02. Este repo acompanha: sem `setup-node`, sem passo de install separado, `cache: true` e `require-lockfile: true`. O Node do CI vem de `devEngines.runtime` no `package.json`, que entra nesta issue.
+- **SHA conferido na API do GitHub, não copiado do molde.** O SHA que o `omni-status` fixou (`c8e77b7`) não é encontrado pela API de commits do `pnpm/setup`, embora o CI de lá esteja verde com ele: deve ser um objeto não alcançável por nenhuma ref, e não o commit da tag v2.1.0 que o comentário promete. A tag `v2.1.0` é anotada e aponta para `703c526` (2026-08-28), que é o SHA usado aqui.
 - **Repo público desde a criação**, com `gh repo create --public --source=. --remote=origin --push`. O Marketplace só lista repo público com tópico `spicetify-themes`.
 - **Tracking do `_index.md`**: uma issue fixada `[INDEX] Issues index` com a tabela do `_index.md` no corpo e links para as issues criadas. O `omni-status` não fez milestone nem tracking, então não há molde; issue fixada é o mais simples de manter.
 - **Sem script versionado para publicar issues.** É um loop de `gh issue create` na execução. Só vira script se aparecer uma segunda leva de issues.
@@ -67,6 +68,11 @@ Pesquisa feita em 2026-09-08. Tags das actions consultadas via `gh api releases/
 | `.github/workflows/ci.yml` | molde do `omni-status` com majors atuais e sem `dir:validate` |
 | `.github/dependabot.yml` | cópia do `omni-status` |
 
+## Files to Modify (adicionado na execução)
+| File | Changes |
+|------|---------|
+| `package.json` | bloco `devEngines.runtime` node `^24` com `onFail: error`, lido pelo `pnpm/setup` no CI |
+
 ### README.md
 - Título `# Winamp Classic for Spicetify` e uma frase: recria o visual do Winamp 2.x no Spotify, com CSS, uma fonte pixel e uma extensão pequena para espectro, marquee e barra de título.
 - `## Status`: em construção. Paleta e tooling prontos, CSS e extensão em andamento. Link para `issues/_index.md`.
@@ -79,7 +85,7 @@ Pesquisa feita em 2026-09-08. Tags das actions consultadas via `gh api releases/
 
 ### .github/workflows/ci.yml
 - `name: CI`, `on: pull_request` e `push` em `main`.
-- Passos: `actions/checkout@v7`, `pnpm/action-setup@v6` sem `version` (comentário do molde explicando que lê `packageManager`), `actions/setup-node@v7` com `node-version-file: .nvmrc` e `cache: pnpm`, `pnpm install --frozen-lockfile`, `pnpm check`.
+- Passos: `actions/checkout@v7`, `pnpm/setup@<sha> # v2.1.0` com `cache: true` e `require-lockfile: true`, `pnpm check`.
 
 ## Files to Modify
 | File | Changes |
