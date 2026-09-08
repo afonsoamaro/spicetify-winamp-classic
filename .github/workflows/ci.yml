@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Installs pnpm and Node in one step and runs the install itself, so no
+      # separate actions/setup-node is needed.
+      #
+      # The pnpm version comes from `packageManager` and the Node version from
+      # `devEngines.runtime`, both in package.json, so the workflow never needs
+      # editing when either changes. `.nvmrc` stays for local `nvm use`; this
+      # action does not read it.
+      #
+      # pnpm/action-setup runs on Node 20, which GitHub Actions dropped on
+      # 2026-06-02, hence pnpm/setup. Pinned by SHA rather than by tag: a tag
+      # can be moved by whoever owns the action, and this one is third-party
+      # and young. actions/checkout stays on a major because GitHub owns both
+      # the action and the runner it executes on.
+      - uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        with:
+          cache: true
+          require-lockfile: true
+
+      # Lint, type-check, tests and build in one gate, same command used locally.
+      - run: pnpm check
