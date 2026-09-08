@@ -1,0 +1,31 @@
+{
+  "issue": "FN-00",
+  "app": "spicetify-winamp-classic",
+  "branch": "feat/fn-00-setup-base",
+  "attribution": "approximate",
+  "attribution_note": "Sessão roda com cwd em ~, fora do repo, então o transcript marca gitBranch=HEAD. Métricas coletadas isolando o transcript desta sessão; incluem brainstorm, spec, break e plan-it além da implementação da FN-00.",
+  "verdict": "pass",
+  "score": 94,
+  "dimensions": { "scope": 22, "tests": 19, "security": 14, "reuse": 15, "architecture": 10, "guidelines": 10, "discipline": 4 },
+  "vetoes": [],
+  "findings": [
+    { "dim": "scope", "severity": "medium", "file": ".stylelintrc.json:5", "what": "regex do border-radius deixava passar 0.5rem e 0 4px", "fixed": true },
+    { "dim": "security", "severity": "low", "file": "pnpm-workspace.yaml:2", "what": "quarentena de release do pnpm desligada para @types/node 26.5.0 sem registro na issue", "fixed": true },
+    { "dim": "discipline", "severity": "low", "file": "package.json:21", "what": "@types/node, pnpm-workspace.yaml e opções extras do tsconfig fora do plano", "fixed": true },
+    { "dim": "architecture", "severity": "low", "file": "scripts/build.js:16", "what": "strip de import só cobre import em uma linha e não trata export default", "fixed": true },
+    { "dim": "scope", "severity": "low", "file": "issues/FN-00-setup-base.md:27", "what": "critério do spicetify watch confirmado só por evidência indireta", "fixed": false },
+    { "dim": "guidelines", "severity": "low", "file": "manifest.json:4", "what": "preview.png e README.md referenciados antes de existirem (FN-00b e FN-06)", "fixed": false }
+  ],
+  "checks": { "lint": "pass", "typecheck": "pass", "test": "pass", "build": "pass" },
+  "rounds": 1,
+  "cost": {
+    "implementation_usd": 11,
+    "verification_usd": 2.35,
+    "total_usd": 13.35,
+    "tokens": { "input": 3964, "output": 245679, "cache_read": 21365064, "cache_creation": 865843, "thinking": 70288 }
+  },
+  "time": { "wall_clock_min": 4924, "active_min": 191 },
+  "interactions": { "user_messages": 15, "assistant_turns": 164, "tool_calls": 77 },
+  "models": ["claude-fable-5-1"],
+  "verified_at": "2026-09-07T22:45:55Z"
+}

@@ -1,0 +1,9 @@
+// @ts-check
+// Entry point of the theme extension. After `pnpm build` this becomes the
+// tail of theme.js, which Spicetify injects when inject_theme_js is on.
+
+function main() {
+  console.log('[winamp-classic] loaded');
+}
+
+main();
