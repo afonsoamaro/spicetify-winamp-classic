@@ -63,7 +63,7 @@ Campos obrigatórios do Marketplace: `name` "Winamp Classic", `description`, `pr
 Symlink de `~/code/afonsoamaro/spicetify-winamp-classic` para `~/.config/spicetify/Themes/WinampClassic`.
 `spicetify config current_theme WinampClassic color_scheme Classic` e `spicetify apply`.
 O `theme.js` na raiz do tema é carregado pelo próprio Spicetify por causa do `inject_theme_js`. Não precisa registrar como extensão.
-Durante o desenvolvimento, `spicetify watch -le` reaplica CSS e JS ao salvar.
+Durante o desenvolvimento, `spicetify watch -s` reaplica CSS e JS ao salvar.
 
 ### Carregamento pelo Marketplace
 
@@ -72,13 +72,16 @@ O `user.css` não pode depender de `url()` relativo, porque o Marketplace reescr
 
 ## Paleta (color.ini)
 
-Um único esquema, `[Classic]`. Valores iniciais baseados no skin base do Winamp 2.x e no `pledit.txt` padrão. Ajuste fino é visual, dentro do Spotify.
+Um único esquema, `[Classic]`, com os 18 campos do `color.ini` padrão do Spicetify. Valores iniciais baseados no skin base do Winamp 2.x e no `pledit.txt` padrão. Ajuste fino é visual, dentro do Spotify.
 
 | Campo | Valor | Uso |
 |---|---|---|
 | text | #00ff00 | verde LED dos displays e da playlist |
 | subtext | #00b800 | verde apagado para texto secundário |
 | main | #000000 | área de conteúdo, equivalente à janela de playlist |
+| main-elevated | #1a1a22 | fundos de objetos acima do conteúdo |
+| highlight | #0000c6 | hover em objetos do conteúdo |
+| highlight-elevated | #0000c6 | hover em objetos elevados |
 | sidebar | #2b2b38 | painel cinza-azulado |
 | player | #2b2b38 | barra de reprodução |
 | card | #1a1a22 | cards |
@@ -171,7 +174,7 @@ Como o Spicetify carrega um único arquivo, os módulos de `src/` e a entrada de
 
 1. Symlink do repo em `~/.config/spicetify/Themes/WinampClassic`.
 2. `spicetify config current_theme WinampClassic color_scheme Classic` e `spicetify apply`.
-3. `spicetify watch -le` durante a edição.
+3. `spicetify watch -s` durante a edição.
 4. Conferência visual com screenshot do Spotify em: Home, uma playlist, álbum, busca, Your Library, fila, menu de contexto, modal.
 
 ## Qualidade
@@ -179,7 +182,8 @@ Como o Spicetify carrega um único arquivo, os módulos de `src/` e a entrada de
 - Lint: eslint no `theme.js`, `src/`, `scripts/` e `test/`. stylelint no `user.css` com regra que proíbe `border-radius` diferente de 0.
 - Type check: `tsc --noEmit` com `checkJs`, `allowJs`, e o `globals.d.ts` do Spicetify copiado de `~/.spicetify/globals.d.ts` para `types/`.
 - Testes: vitest nos módulos de `src/`, cobrindo decaimento de barra, queda de pico, cor por linha, texto do display com e sem overflow, passo do marquee com wrap e formatação de tempo incluindo horas.
-- `pnpm check` roda os três. Precisa passar antes de qualquer commit.
+- Build: `pnpm build` gera o `theme.js` a partir de `src/`. Entra no gate porque lint e typecheck verdes não provam que o artefato constrói.
+- `pnpm check` roda os quatro: lint, typecheck, test e build. Precisa passar antes de qualquer commit.
 
 ## Publicação
 
@@ -198,9 +202,9 @@ O `CLAUDE.md` de `~/code/afonsoamaro` foi escrito para apps web e mobile. Este p
 
 ### Aplica
 
-- Ordem FN-00 (tríade verde no repo vazio) → FN-00b (git, GitHub, issues) → FN-01+. As issues nascem do `/break` sobre este SPECS.md e vivem em `issues/` com `_index.md`.
+- Ordem FN-00 (quádrupla verde no repo vazio) → FN-00b (git, GitHub, issues) → FN-01+. As issues nascem do `/break` sobre este SPECS.md e vivem em `issues/` com `_index.md`.
 - Branch dedicada antes de qualquer commit, merge `--no-ff` com subject só.
-- pnpm com `packageManager` fixado, `.nvmrc` na LTS atual, e `pnpm check` rodando `lint`, `typecheck` e `test`. Versões consultadas na hora do scaffold, nunca de cabeça.
+- pnpm com `packageManager` fixado, `.nvmrc` na LTS atual, e `pnpm check` rodando `lint`, `typecheck`, `test` e `build`, a quádrupla do CLAUDE.md global. Versões consultadas na hora do scaffold, nunca de cabeça.
 - CI com o molde do `omni-status` (`.github/workflows/ci.yml`) e `dependabot.yml` com npm e github-actions.
 - Repo público desde o início, porque o Marketplace exige. Isso puxa as três obrigações de abrir repo: `/deploy-check` com gitleaks no histórico, licença MIT e README para quem chega frio. Como não há segredo nem `.env` neste projeto, o deploy-check se resume ao gitleaks.
 - Tokens de tema: toda cor vive no `color.ini` ou nas variáveis `--wa-*` do `:root`. Cor literal em regra CSS é bug.
