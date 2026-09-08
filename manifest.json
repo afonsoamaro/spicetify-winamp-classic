@@ -1,0 +1,15 @@
+{
+  "name": "Winamp Classic",
+  "description": "The classic Winamp 2.x look for Spotify: bevelled gray panels, green LED displays, a pixel font and a spectrum analyzer.",
+  "preview": "preview.png",
+  "usercss": "user.css",
+  "schemes": "color.ini",
+  "readme": "README.md",
+  "include": [
+    "https://cdn.jsdelivr.net/gh/afonsoamaro/spicetify-winamp-classic@main/theme.js"
+  ],
+  "authors": [
+    { "name": "afonsoamaro", "url": "https://github.com/afonsoamaro" }
+  ],
+  "tags": ["retro", "winamp"]
+}

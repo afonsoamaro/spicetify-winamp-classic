@@ -1,0 +1,53 @@
+/*
+ * Winamp Classic for Spicetify
+ * Recreates the Winamp 2.x base skin with CSS only: bevelled gray panels,
+ * green LED displays on black, a pixel font and square everything.
+ * No bitmap from the original skin is used.
+ *
+ * Colors come from color.ini as --spice-* variables. The few values that
+ * are not Spicetify colors live in :root below as --wa-* variables.
+ * Every other rule must use var() instead of a literal color.
+ */
+
+/* stylelint-disable color-no-hex */
+:root {
+  --wa-bevel-light: #5a5a6e;
+  --wa-bevel-dark: #14141c;
+  --wa-titlebar-start: #1c1c2a;
+  --wa-titlebar-end: #3a3a52;
+  --wa-white: #fff;
+  --wa-font-pixel: "Silkscreen", "Courier New", monospace;
+}
+/* stylelint-enable color-no-hex */
+
+/* === Font === */
+
+/* PP-01: Silkscreen embedded as a data URI. */
+
+/* === Bevel utilities === */
+
+/* PP-01: raised and sunken box-shadow helpers, global border-radius reset. */
+
+/* === Now playing bar === */
+
+/* PP-02: gray panel, black LED display, square transport buttons, sliders. */
+
+/* === Track lists === */
+
+/* PP-03: green on black playlist window, selected row in blue. */
+
+/* === Sidebar === */
+
+/* PP-04 */
+
+/* === Top bar === */
+
+/* PP-04 */
+
+/* === Scrollbars === */
+
+/* PP-04 */
+
+/* === Cards, buttons, inputs, modals, menus, covers === */
+
+/* PP-05 */

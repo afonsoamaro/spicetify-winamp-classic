@@ -74,6 +74,10 @@ Pesquisa feita em 2026-09-07. Versões consultadas no registry na hora, e o `tsc
 | `user.css` | cabeçalho, bloco `:root` com as variáveis `--wa-*`, e um comentário por área: fonte, barra de reprodução, lista de faixas, sidebar, top bar, scrollbars, cards e controles |
 | `manifest.json` | campos obrigatórios e `include` jsdelivr |
 | `theme.js` | artefato gerado pelo `pnpm build`, versionado |
+| `pnpm-lock.yaml` | lockfile |
+| `pnpm-workspace.yaml` | criado pelo pnpm 12: exceção de idade mínima de publicação para `@types/node` 26.5.0, publicado no mesmo dia. O critério de versão mais recente pesa mais que a quarentena aqui, porque o pacote é só de tipos e roda em dev |
+
+Entregue além da tabela original, todos necessários: `@types/node` (o `scripts/build.js` usa `node:fs` e não tipa sem ele), `types: ["node","react"]`, `noUncheckedIndexedAccess` e `skipLibCheck` no tsconfig, e `vitest.config.js` no `include`.
 
 ### scripts/build.js
 - Ordem: `['time.js','marquee.js','spectrum.js','dom.js','index.js']`, ignorando os que ainda não existem, para o script já servir às FN seguintes.
