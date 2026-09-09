@@ -1,32 +1,32 @@
-# Winamp Classic: índice de issues
+# Winamp Classic: issue index
 
-Fonte: `SPECS.md`. Tema para o Spicetify que recria o visual do Winamp 2.x com CSS, uma fonte pixel embutida e uma extensão pequena para espectro, marquee e barra de título. Publicável no Marketplace.
+Source: `SPECS.md`. Spicetify theme that recreates the Winamp 2.x look with CSS, an embedded pixel font and a small extension for the spectrum analyzer, marquee and title bar. Publishable on the Marketplace.
 
-## Setup (fazer primeiro)
-| Issue | Nome | Status | Dependências |
+## Setup (do this first)
+| Issue | Name | Status | Dependencies |
 |-------|------|--------|--------------|
-| FN-00 | Setup base e quádrupla de qualidade | ✅ done (07/09) | nenhuma |
-| FN-00b | Repositório git e GitHub | planned | FN-00 |
+| FN-00 | Base setup and quality gate | ✅ done (Sep 7) | none |
+| FN-00b | Git repository and GitHub | planned | FN-00 |
 
-## Prototype Issues (visual, só CSS)
-| Issue | Nome | Status | Dependências |
+## Prototype Issues (visual, CSS only)
+| Issue | Name | Status | Dependencies |
 |-------|------|--------|--------------|
-| PP-01 | Base, fonte pixel e utilitários de bevel | todo | FN-00 |
-| PP-02 | Barra de reprodução como painel principal | todo | PP-01 |
-| PP-03 | Lista de faixas como janela de playlist | todo | PP-01 |
-| PP-04 | Sidebar, top bar, navegação e scrollbars | todo | PP-01 |
-| PP-05 | Cards, botões, inputs, modais, menus e capas | todo | PP-01 |
+| PP-01 | Base, pixel font and bevel utilities | todo | FN-00 |
+| PP-02 | Now playing bar as the main panel | todo | PP-01 |
+| PP-03 | Track list as the playlist window | todo | PP-01 |
+| PP-04 | Sidebar, top bar, navigation and scrollbars | todo | PP-01 |
+| PP-05 | Cards, buttons, inputs, modals, menus and cover art | todo | PP-01 |
 
-## Functional Issues (extensão e publicação)
-| Issue | Nome | Status | Dependências |
+## Functional Issues (extension and release)
+| Issue | Name | Status | Dependencies |
 |-------|------|--------|--------------|
-| FN-01 | Esqueleto da extensão e script de build | todo | FN-00, PP-02 |
-| FN-02 | Formatação de tempo e marquee do display | todo | FN-01 |
-| FN-03 | Espectro sintético no display | todo | FN-01 |
-| FN-04 | Espectro sincronizado com getAudioData (spike, opcional) | todo | FN-03 |
-| FN-05 | Barra de título WINAMP | todo | FN-01, PP-02 |
-| FN-06 | Publicação no Marketplace | todo | FN-00b, PP-01 a PP-05, FN-02, FN-03, FN-05 |
+| FN-01 | Extension skeleton and build script | todo | FN-00, PP-02 |
+| FN-02 | Time formatting and display marquee | todo | FN-01 |
+| FN-03 | Synthetic spectrum analyzer in the display | todo | FN-01 |
+| FN-04 | Spectrum analyzer synced with getAudioData (spike, optional) | todo | FN-03 |
+| FN-05 | WINAMP title bar | todo | FN-01, PP-02 |
+| FN-06 | Marketplace release | todo | FN-00b, PP-01 to PP-05, FN-02, FN-03, FN-05 |
 
-## Caminho crítico
+## Critical path
 FN-00 → FN-00b → PP-01 → PP-02 → FN-01 → FN-02 → FN-03 → FN-05 → FN-06.
-PP-03, PP-04 e PP-05 são independentes entre si depois da PP-01. FN-04 pode ser fechada como não aplicável.
+PP-03, PP-04 and PP-05 are independent of each other once PP-01 is done. FN-04 can be closed as not applicable.

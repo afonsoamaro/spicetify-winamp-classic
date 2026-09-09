@@ -1,33 +1,33 @@
-# [PP-04] Prototype: sidebar, top bar, navegação e scrollbars
+# [PP-04] Prototype: sidebar, top bar, navigation and scrollbars
 
 ## Type
 Prototype (visual only)
 
 ## Description
-O chrome do app (sidebar Your Library, top bar com busca e navegação, cabeçalhos de seção, scrollbars) vira painel cinza bevelado com faixas de título no gradiente clássico.
+The app chrome (the Your Library sidebar, the top bar with search and navigation, section headers, scrollbars) becomes a beveled gray panel with title bars in the classic gradient.
 
 ## Visual Elements
-- Sidebar e top bar com fundo `var(--spice-sidebar)` e bevel saliente na borda.
-- Itens de navegação em verde, item ativo em `var(--spice-tab-active)` com bevel rebaixado.
-- Títulos de seção (Your Library, Home, nome da playlist no cabeçalho) como faixa de 14px com gradiente de `--wa-titlebar-start` a `--wa-titlebar-end` e texto branco pixel.
-- Campo de busca como display preto rebaixado com texto verde pixel.
-- Botões de voltar e avançar quadrados com bevel.
-- Scrollbars com trilha escura rebaixada e thumb `var(--spice-button)` com bevel saliente, largura 12px, sem arredondamento.
-- Divisórias entre painéis com linha clara e linha escura, como o Winamp separa janelas.
+- Sidebar and top bar with a `var(--spice-sidebar)` background and a raised bevel on the edge.
+- Navigation items in green, the active item in `var(--spice-tab-active)` with a sunken bevel.
+- Section titles (Your Library, Home, the playlist name in the header) as a 14px strip with a gradient from `--wa-titlebar-start` to `--wa-titlebar-end` and white pixel text.
+- Search field as a sunken black display with green pixel text.
+- Square back and forward buttons with a bevel.
+- Scrollbars with a dark sunken track and a `var(--spice-button)` thumb with a raised bevel, 12px wide, no rounding.
+- Dividers between panels with a light line and a dark line, the way Winamp separates windows.
 
 ## Layout Notes
-- Blocos comentados `/* === Sidebar === */`, `/* === Top bar === */`, `/* === Scrollbars === */`.
-- Não mudar larguras nem esconder elementos. Só cor, relevo e fonte.
+- Commented blocks `/* === Sidebar === */`, `/* === Top bar === */`, `/* === Scrollbars === */`.
+- Don't change widths and don't hide elements. Color, bevel and font only.
 
 ## Mock Data
-- Biblioteca com playlists, álbuns e artistas. Busca com resultados.
+- A library with playlists, albums and artists. A search with results.
 
 ## Acceptance Criteria
-- [ ] Sidebar, top bar e cabeçalhos com painel cinza e faixas de título.
-- [ ] Scrollbars retangulares com bevel em todas as áreas roláveis.
-- [ ] Campo de busca como display preto.
-- [ ] Redimensionar a sidebar continua funcionando.
-- [ ] Screenshot em `docs/screenshots/sidebar.png`.
+- [ ] Sidebar, top bar and headers with a gray panel and title bars.
+- [ ] Rectangular beveled scrollbars in every scrollable area.
+- [ ] Search field as a black display.
+- [ ] Resizing the sidebar still works.
+- [ ] Screenshot at `docs/screenshots/sidebar.png`.
 
 ## Dependencies
 - PP-01
