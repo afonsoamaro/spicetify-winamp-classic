@@ -1,87 +1,87 @@
-# [FN-00] Setup base e quádrupla de qualidade
+# [FN-00] Base setup and quality gate
 
 ## Type
-Functional (infra, fazer primeiro)
+Functional (infra, do first)
 
 ## Description
-Deixar o repositório vazio com a quádrupla verde (lint, typecheck, teste, build) e o tema carregando no Spotify local antes de qualquer CSS ou JS de verdade.
+Get the empty repo to a green quality gate (lint, typecheck, test, build) with the theme loading in the local Spotify, before any real CSS or JS.
 
 ## Requirements
-- `package.json` com `packageManager` pnpm fixado, `.nvmrc` na LTS atual do Node e scripts `lint`, `typecheck`, `test`, `build` e `check` (`check` roda os quatro).
-- eslint com config flat para `theme.js`, `src/`, `scripts/` e `test/`.
-- stylelint no `user.css` com regra que proíbe `border-radius` diferente de 0.
-- `tsconfig.json` com `allowJs`, `checkJs`, `noEmit`, incluindo `types/globals.d.ts` copiado de `~/.spicetify/globals.d.ts`.
-- vitest com ao menos um teste real em `test/` cobrindo o script de build.
-- `scripts/build.js` gerando um `theme.js` mínimo a partir de `src/` (só o esqueleto, a lógica vem nas FN seguintes).
-- `color.ini` com a seção `[Classic]` e os 18 campos do `color.ini` padrão do Spicetify, com os valores da spec.
-- `user.css` só com o bloco `:root` das variáveis `--wa-*` e um comentário por área futura.
-- `manifest.json` com os campos obrigatórios do Marketplace e `include` apontando para o jsdelivr do `theme.js` em `main`.
-- Symlink do repo em `~/.config/spicetify/Themes/WinampClassic`, `spicetify config current_theme WinampClassic color_scheme Classic` e `spicetify apply` com o Spotify abrindo na paleta nova.
-- `.gitignore` com `node_modules`.
+- `package.json` with `packageManager` pinned to pnpm, `.nvmrc` on the current Node LTS and `lint`, `typecheck`, `test`, `build` and `check` scripts (`check` runs the four).
+- eslint with a flat config covering `theme.js`, `src/`, `scripts/` and `test/`.
+- stylelint on `user.css` with a rule that forbids any `border-radius` other than 0.
+- `tsconfig.json` with `allowJs`, `checkJs`, `noEmit`, including `types/globals.d.ts` copied from `~/.spicetify/globals.d.ts`.
+- vitest with at least one real test in `test/` covering the build script.
+- `scripts/build.js` generating a minimal `theme.js` from `src/` (skeleton only, the logic comes in the following FNs).
+- `color.ini` with the `[Classic]` section and the 18 fields of Spicetify's default `color.ini`, using the values from the spec.
+- `user.css` with nothing but the `:root` block of `--wa-*` variables and one comment per future area.
+- `manifest.json` with the fields the Marketplace requires and `include` pointing at the jsdelivr URL for `theme.js` on `main`.
+- Symlink of the repo at `~/.config/spicetify/Themes/WinampClassic`, `spicetify config current_theme WinampClassic color_scheme Classic` and `spicetify apply`, with Spotify opening in the new palette.
+- `.gitignore` with `node_modules`.
 
 ## Acceptance Criteria
-- [ ] Toda dependência chave fixada na versão estável mais recente consultada no registry na hora (`npm view <pkg> version`), nunca de cabeça: Node, pnpm, eslint, stylelint, typescript, vitest. Ficar numa linha anterior exige motivo anotado nesta issue.
-- [ ] `pnpm check` verde com 0 erros de lint, 0 erros de tipo, o teste do build passando e o build gerando `theme.js`.
-- [ ] `pnpm build` gera `theme.js` sem erro.
-- [ ] Spotify abre com o tema `WinampClassic` aplicado e as cores do `color.ini` visíveis.
-- [ ] `spicetify watch -s` recarrega ao salvar `user.css` e `theme.js`.
+- [ ] Every key dependency pinned to the latest stable version looked up in the registry at the time (`npm view <pkg> version`), never from memory: Node, pnpm, eslint, stylelint, typescript, vitest. Staying on an earlier line needs a reason recorded in this issue.
+- [ ] `pnpm check` green with 0 lint errors, 0 type errors, the build test passing and the build producing `theme.js`.
+- [ ] `pnpm build` generates `theme.js` without errors.
+- [ ] Spotify opens with the `WinampClassic` theme applied and the `color.ini` colors visible.
+- [ ] `spicetify watch -s` reloads when `user.css` and `theme.js` are saved.
 
 ## Dependencies
-- nenhuma
+- none
 
 ---
 
 # Implementation Plan
 
-Pesquisa feita em 2026-09-07. Versões consultadas no registry na hora, e o `tsc` 7 sondado num diretório temporário com `checkJs` e o `globals.d.ts` do Spicetify.
+Research done on 2026-09-07. Versions looked up in the registry at the time, and `tsc` 7 probed in a temporary directory with `checkJs` and Spicetify's `globals.d.ts`.
 
 ## Prerequisites
-- Node 24 ativo via nvm (local está em 24.19.0, LTS atual é 24.20.0; `.nvmrc` fixa a major `24` como no `omni-status`).
-- corepack ativo para respeitar o `packageManager`.
-- Spotify fechado na hora do `spicetify apply`, porque o comando reinicia o client.
+- Node 24 active via nvm (local is on 24.19.0, current LTS is 24.20.0; `.nvmrc` pins the `24` major, same as `omni-status`).
+- corepack enabled so `packageManager` is respected.
+- Spotify closed when `spicetify apply` runs, because the command restarts the client.
 
 ## Reusable Code Found
-- `~/code/afonsoamaro/omni-status/.gitignore`: base do `.gitignore`, sem as entradas de Next e `.env`.
-- `~/code/afonsoamaro/omni-status/eslint.config.mjs`: molde do flat config. Aqui sem `typescript-eslint` e sem prettier, porque o código é JS puro checado pelo `tsc`.
-- `~/code/afonsoamaro/omni-status/vitest.config.ts` e `tsconfig.base.json`: referência de opções, adaptadas para `allowJs` e `checkJs`.
-- `~/.spicetify/globals.d.ts` (2409 linhas): tipos do Spicetify, copiado para `types/globals.d.ts`. Referencia o namespace `React`, então `@types/react` entra como devDependency só para tipos.
-- `~/.spicetify/Themes/SpicetifyDefault/color.ini`: lista canônica dos 18 campos e a descrição de cada um, usada como comentário no nosso `color.ini`.
-- `~/.config/spicetify/config-xpui.ini`: já tem `inject_theme_js 1`, `inject_css 1`, `replace_colors 1`. Só `current_theme` e `color_scheme` mudam.
+- `~/code/afonsoamaro/omni-status/.gitignore`: base for the `.gitignore`, minus the Next and `.env` entries.
+- `~/code/afonsoamaro/omni-status/eslint.config.mjs`: template for the flat config. Here without `typescript-eslint` and without prettier, because the code is plain JS checked by `tsc`.
+- `~/code/afonsoamaro/omni-status/vitest.config.ts` and `tsconfig.base.json`: reference for the options, adapted for `allowJs` and `checkJs`.
+- `~/.spicetify/globals.d.ts` (2409 lines): Spicetify's types, copied to `types/globals.d.ts`. It references the `React` namespace, so `@types/react` comes in as a devDependency for types only.
+- `~/.spicetify/Themes/SpicetifyDefault/color.ini`: canonical list of the 18 fields and what each one does, used as comments in our `color.ini`.
+- `~/.config/spicetify/config-xpui.ini`: already has `inject_theme_js 1`, `inject_css 1`, `replace_colors 1`. Only `current_theme` and `color_scheme` change.
 
 ## Architecture Decisions
-- JS puro com `// @ts-check` e JSDoc em vez de TypeScript compilado. Motivo: o Spicetify carrega um único `theme.js` sem bundler, e `tsc --noEmit` com `checkJs` dá o mesmo gate de tipos sem etapa de transpilação. Sondado com TypeScript 7.0.2: pega erro de tipo em JS e fica limpo com `@types/react` instalado.
-- Sem prettier neste projeto. O `user.css` é formatado pelo stylelint e o JS é pequeno. Evita um terceiro formatador brigando com o stylelint.
-- Versões fixadas (registry em 2026-09-07): pnpm 12.3.4, eslint 10.10.0, @eslint/js 10.0.1, globals 17.12.0, stylelint 17.15.0, stylelint-config-standard 40.0.0 (peer stylelint ^17), typescript 7.0.2, vitest 5.0.0 (engine node ^24 ok), @types/react 19.2.18. Sem `jiti` porque o config do eslint é `.mjs`, não `.ts`.
-- `include` do `manifest.json` aponta para jsdelivr, não raw do GitHub: o raw serve `text/plain` com `nosniff` e o navegador recusa como script. O Comfy usa GitHub Pages pelo mesmo motivo.
-- Flag do watch é `-s` (tema ativo: `color.ini`, `user.css`, `theme.js`), não `-le`. Corrigido na spec.
-- Cor de hover: a spec original não tinha `main-elevated`, `highlight` e `highlight-elevated`. Entram com #1a1a22, #0000c6 e #0000c6.
+- Plain JS with `// @ts-check` and JSDoc instead of compiled TypeScript. Reason: Spicetify loads a single `theme.js` with no bundler, and `tsc --noEmit` with `checkJs` gives the same type gate without a transpile step. Probed with TypeScript 7.0.2: it catches type errors in JS and comes out clean once `@types/react` is installed.
+- No prettier in this project. The `user.css` is formatted by stylelint and the JS is small. Keeps a third formatter from fighting stylelint.
+- Pinned versions (registry on 2026-09-07): pnpm 12.3.4, eslint 10.10.0, @eslint/js 10.0.1, globals 17.12.0, stylelint 17.15.0, stylelint-config-standard 40.0.0 (peer stylelint ^17), typescript 7.0.2, vitest 5.0.0 (engine node ^24 ok), @types/react 19.2.18. No `jiti`, because the eslint config is `.mjs`, not `.ts`.
+- The `include` in `manifest.json` points at jsdelivr, not GitHub raw: raw serves `text/plain` with `nosniff` and the browser refuses it as a script. Comfy uses GitHub Pages for the same reason.
+- The watch flag is `-s` (active theme: `color.ini`, `user.css`, `theme.js`), not `-le`. Fixed in the spec.
+- Hover color: the original spec had no `main-elevated`, `highlight` or `highlight-elevated`. They come in as #1a1a22, #0000c6 and #0000c6.
 
 ## Files to Create
 | File | Purpose |
 |------|---------|
 | `.nvmrc` | `24` |
-| `package.json` | `name` `spicetify-winamp-classic`, `private: true`, `type: module`, `packageManager: pnpm@12.3.4`, `engines.node >=24`, scripts e devDependencies acima |
+| `package.json` | `name` `spicetify-winamp-classic`, `private: true`, `type: module`, `packageManager: pnpm@12.3.4`, `engines.node >=24`, plus the scripts and devDependencies above |
 | `.gitignore` | `node_modules/`, `coverage/`, `.DS_Store`, `*.log` |
-| `eslint.config.mjs` | flat config: `js.configs.recommended`, `globals.browser` para `src/`, `globals.node` para `scripts/` e `test/`, global `Spicetify: 'readonly'`, `ignores: ['theme.js']` porque é artefato gerado |
-| `.stylelintrc.json` | `extends: stylelint-config-standard`, `rules`: `declaration-property-value-disallowed-list` com `border-radius` proibindo qualquer valor que não comece com `0`; `color-no-hex: true` e `color-named: never` para forçar `var()`; o bloco `:root` usa `/* stylelint-disable color-no-hex */` |
+| `eslint.config.mjs` | flat config: `js.configs.recommended`, `globals.browser` for `src/`, `globals.node` for `scripts/` and `test/`, global `Spicetify: 'readonly'`, `ignores: ['theme.js']` because it is a generated artifact |
+| `.stylelintrc.json` | `extends: stylelint-config-standard`, `rules`: `declaration-property-value-disallowed-list` with `border-radius` rejecting any value that does not start with `0`; `color-no-hex: true` and `color-named: never` to force `var()`; the `:root` block uses `/* stylelint-disable color-no-hex */` |
 | `tsconfig.json` | `allowJs`, `checkJs`, `noEmit`, `strict`, `target ES2023`, `module ESNext`, `moduleResolution bundler`, `lib ["ES2023","DOM"]`, `types ["react"]`, `include ["src/**/*.js","scripts/**/*.js","test/**/*.js","types/**/*.d.ts"]` |
 | `vitest.config.js` | `test.include ['test/**/*.test.js']` |
-| `types/globals.d.ts` | cópia de `~/.spicetify/globals.d.ts`, com comentário de origem e versão 2.44.0 na primeira linha |
-| `src/index.js` | entrada de DOM mínima: `// @ts-check`, função `main()` que loga `[winamp-classic] loaded` e o esqueleto de `waitForSpicetify` fica para a FN-01 |
-| `scripts/build.js` | lê `src/*.js` numa ordem fixa declarada num array no topo (`index.js` por último), remove linhas `import`/`export` com regex de início de linha, embrulha em `(function () { 'use strict'; ... })();` e escreve `theme.js` com cabeçalho `// generated by scripts/build.js, do not edit` |
-| `test/build.test.js` | teste que importa `build` de `scripts/build.js` e valida a saída. Já cobre o build e é reaproveitado na FN-01 |
-| `color.ini` | `[Classic]` com os 18 campos, valores da spec, comentário de cabeçalho copiado do padrão |
-| `user.css` | cabeçalho, bloco `:root` com as variáveis `--wa-*`, e um comentário por área: fonte, barra de reprodução, lista de faixas, sidebar, top bar, scrollbars, cards e controles |
-| `manifest.json` | campos obrigatórios e `include` jsdelivr |
-| `theme.js` | artefato gerado pelo `pnpm build`, versionado |
+| `types/globals.d.ts` | copy of `~/.spicetify/globals.d.ts`, with a first line commenting its origin and version 2.44.0 |
+| `src/index.js` | minimal DOM entry point: `// @ts-check`, a `main()` that logs `[winamp-classic] loaded`, and the `waitForSpicetify` skeleton left for FN-01 |
+| `scripts/build.js` | reads `src/*.js` in a fixed order declared in an array at the top (`index.js` last), strips `import`/`export` lines with a start-of-line regex, wraps the result in `(function () { 'use strict'; ... })();` and writes `theme.js` with a `// generated by scripts/build.js, do not edit` header |
+| `test/build.test.js` | test that imports `build` from `scripts/build.js` and checks the output. Covers the build already and gets reused in FN-01 |
+| `color.ini` | `[Classic]` with the 18 fields, values from the spec, header comment copied from the default |
+| `user.css` | header, `:root` block with the `--wa-*` variables, and one comment per area: font, now playing bar, track list, sidebar, top bar, scrollbars, cards and controls |
+| `manifest.json` | required fields and the jsdelivr `include` |
+| `theme.js` | artifact generated by `pnpm build`, versioned |
 | `pnpm-lock.yaml` | lockfile |
-| `pnpm-workspace.yaml` | criado pelo pnpm 12: exceção de idade mínima de publicação para `@types/node` 26.5.0, publicado no mesmo dia. O critério de versão mais recente pesa mais que a quarentena aqui, porque o pacote é só de tipos e roda em dev |
+| `pnpm-workspace.yaml` | created by pnpm 12: minimum publish age exception for `@types/node` 26.5.0, published the same day. The latest-version criterion outweighs the release quarantine here, because the package is types only and runs in dev |
 
-Entregue além da tabela original, todos necessários: `@types/node` (o `scripts/build.js` usa `node:fs` e não tipa sem ele), `types: ["node","react"]`, `noUncheckedIndexedAccess` e `skipLibCheck` no tsconfig, e `vitest.config.js` no `include`.
+Delivered beyond the original table, all of them necessary: `@types/node` (`scripts/build.js` uses `node:fs` and does not typecheck without it), `types: ["node","react"]`, `noUncheckedIndexedAccess` and `skipLibCheck` in the tsconfig, and `vitest.config.js` in `include`.
 
 ### scripts/build.js
-- Ordem: `['time.js','marquee.js','spectrum.js','dom.js','index.js']`, ignorando os que ainda não existem, para o script já servir às FN seguintes.
-- Exportar `build({ srcDir, outFile })` como função e só executar quando for o módulo principal (`import.meta.url === pathToFileURL(process.argv[1]).href`), para o teste importar sem efeito colateral.
+- Order: `['time.js','marquee.js','spectrum.js','dom.js','index.js']`, skipping the ones that do not exist yet, so the script already serves the following FNs.
+- Export `build({ srcDir, outFile })` as a function and only run it when it is the main module (`import.meta.url === pathToFileURL(process.argv[1]).href`), so the test can import it without side effects.
 
 ### package.json scripts
 - `lint`: `eslint . && stylelint "**/*.css"`
@@ -96,23 +96,23 @@ Entregue além da tabela original, todos necessários: `@types/node` (o `scripts
 | `~/.config/spicetify/config-xpui.ini` | via CLI: `spicetify config current_theme WinampClassic color_scheme Classic` |
 
 ## Data Requirements
-- Nenhum.
+- None.
 
 ## Testing Strategy
-- `test/build.test.js`: chama `build` com um `srcDir` temporário contendo dois módulos com `export`, confere que a saída tem a IIFE, não tem `export` nem `import`, e respeita a ordem.
-- Verificação manual no Spotify: após `spicetify apply`, o fundo do conteúdo fica preto e o texto verde. Console do Spotify (`spicetify enable-devtools`, Cmd+Option+I) mostra `[winamp-classic] loaded`.
+- `test/build.test.js`: calls `build` with a temporary `srcDir` holding two modules that use `export`, checks that the output has the IIFE, has no `export` or `import`, and respects the order.
+- Manual check in Spotify: after `spicetify apply`, the content background turns black and the text green. The Spotify console (`spicetify enable-devtools`, Cmd+Option+I) shows `[winamp-classic] loaded`.
 
 ## Implementation Order
 1. `nvm use 24`, `corepack enable`, `.nvmrc`, `package.json`, `pnpm install`.
-2. Configs de eslint, stylelint, tsconfig, vitest e `types/globals.d.ts`. Rodar `pnpm lint` e `pnpm typecheck` no vazio.
+2. eslint, stylelint, tsconfig and vitest configs plus `types/globals.d.ts`. Run `pnpm lint` and `pnpm typecheck` on the empty repo.
 3. `scripts/build.js`, `src/index.js`, `test/build.test.js`, `pnpm test`, `pnpm build`.
 4. `color.ini`, `user.css`, `manifest.json`.
-5. Symlink em `~/.config/spicetify/Themes/WinampClassic`, `spicetify config`, `spicetify apply`, conferir no Spotify.
-6. `pnpm check` completo e reportar os quatro status com contagem.
+5. Symlink at `~/.config/spicetify/Themes/WinampClassic`, `spicetify config`, `spicetify apply`, check in Spotify.
+6. Full `pnpm check`, then report the four statuses with counts.
 
 ## Unknowns
-- Symlink na pasta `Themes`: não confirmado que o Spicetify segue symlink de diretório. Se `spicetify apply` reclamar do tema, o fallback é copiar os arquivos com um script `pnpm sync` que faz `rsync` do repo para a pasta, e o watch passa a rodar sobre a cópia.
-- `spicetify apply` reinicia o Spotify. Executar com o usuário ciente.
+- Symlink inside the `Themes` folder: not confirmed that Spicetify follows a directory symlink. If `spicetify apply` complains about the theme, the fallback is copying the files with a `pnpm sync` script that `rsync`s the repo into the folder, and the watch then runs over the copy.
+- `spicetify apply` restarts Spotify. Run it with the user aware.
 
 ## Security Considerations
-- Nenhuma. Não há segredo, rede nem dado de usuário nesta issue.
+- None. No secrets, no network and no user data in this issue.
