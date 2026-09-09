@@ -5,6 +5,10 @@ on:
   push:
     branches: [main]
 
+# The gate only reads the tree; nothing here needs write access.
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest

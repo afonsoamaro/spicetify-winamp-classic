@@ -36,14 +36,14 @@ Get the empty repo to a green quality gate (lint, typecheck, test, build) with t
 Research done on 2026-09-07. Versions looked up in the registry at the time, and `tsc` 7 probed in a temporary directory with `checkJs` and Spicetify's `globals.d.ts`.
 
 ## Prerequisites
-- Node 24 active via nvm (local is on 24.19.0, current LTS is 24.20.0; `.nvmrc` pins the `24` major, same as `omni-status`).
+- Node 24 active via nvm (local is on 24.19.0, current LTS is 24.20.0; `.nvmrc` pins the `24` major).
 - corepack enabled so `packageManager` is respected.
 - Spotify closed when `spicetify apply` runs, because the command restarts the client.
 
 ## Reusable Code Found
-- `~/code/afonsoamaro/omni-status/.gitignore`: base for the `.gitignore`, minus the Next and `.env` entries.
-- `~/code/afonsoamaro/omni-status/eslint.config.mjs`: template for the flat config. Here without `typescript-eslint` and without prettier, because the code is plain JS checked by `tsc`.
-- `~/code/afonsoamaro/omni-status/vitest.config.ts` and `tsconfig.base.json`: reference for the options, adapted for `allowJs` and `checkJs`.
+- My standard `.gitignore`, minus the framework and `.env` entries this project has no use for.
+- My standard eslint flat config as a starting shape. Here without `typescript-eslint` and without prettier, because the code is plain JS checked by `tsc`.
+- My standard vitest and tsconfig options, adapted here for `allowJs` and `checkJs`.
 - `~/.spicetify/globals.d.ts` (2409 lines): Spicetify's types, copied to `types/globals.d.ts`. It references the `React` namespace, so `@types/react` comes in as a devDependency for types only.
 - `~/.spicetify/Themes/SpicetifyDefault/color.ini`: canonical list of the 18 fields and what each one does, used as comments in our `color.ini`.
 - `~/.config/spicetify/config-xpui.ini`: already has `inject_theme_js 1`, `inject_css 1`, `replace_colors 1`. Only `current_theme` and `color_scheme` change.

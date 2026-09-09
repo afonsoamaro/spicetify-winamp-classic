@@ -3,7 +3,7 @@
   "app": "spicetify-winamp-classic",
   "branch": "feat/fn-00-setup-base",
   "attribution": "approximate",
-  "attribution_note": "Sessão roda com cwd em ~, fora do repo, então o transcript marca gitBranch=HEAD. Métricas coletadas isolando o transcript desta sessão; incluem brainstorm, spec, break e plan-it além da implementação da FN-00.",
+  "attribution_note": "The session ran outside the repo, so its log does not carry the branch. The slice is the whole session, which covers design, spec and planning on top of the FN-00 implementation.",
   "verdict": "pass",
   "score": 94,
   "dimensions": { "scope": 22, "tests": 19, "security": 14, "reuse": 15, "architecture": 10, "guidelines": 10, "discipline": 4 },
