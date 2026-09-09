@@ -20,7 +20,7 @@ The Spicetify config already has `inject_css 1`, `inject_theme_js 1` and `replac
 
 ## Repository structure
 
-Local: `~/code/afonsoamaro/spicetify-winamp-classic`. GitHub: `afonsoamaro/spicetify-winamp-classic`, public, topic `spicetify-themes`.
+GitHub: `afonsoamaro/spicetify-winamp-classic`, public, topic `spicetify-themes`.
 
 ```
 spicetify-winamp-classic/
@@ -60,7 +60,7 @@ Required Marketplace fields: `name` "Winamp Classic", `description`, `preview` "
 
 ### Local loading
 
-Symlink from `~/code/afonsoamaro/spicetify-winamp-classic` to `~/.config/spicetify/Themes/WinampClassic`.
+Symlink from the clone to `~/.config/spicetify/Themes/WinampClassic`.
 `spicetify config current_theme WinampClassic color_scheme Classic` and `spicetify apply`.
 Spicetify loads the `theme.js` at the theme root by itself, thanks to `inject_theme_js`. No need to register it as an extension.
 During development, `spicetify watch -s` reapplies CSS and JS on save.
@@ -196,25 +196,25 @@ No commit, push or remote repo creation without explicit confirmation.
 - `getAudioData` may not answer. Mitigation: synthetic mode is the default.
 - A small pixel font can end up illegible on high-density screens. Mitigation: 11px minimum size, and use restricted to displays and lists.
 
-## Conventions of the afonsoamaro folder
+## Conventions
 
-The `CLAUDE.md` in `~/code/afonsoamaro` was written for web and mobile apps. This project is a CSS and JS theme with no server, so some of the rules do not apply. Here is what holds and what stays out, with the reason.
+The standing rules I apply across my projects were written for web and mobile apps. This is a CSS and JS theme with no server, so some of them do not apply. Here is what holds and what stays out, with the reason.
 
 ### Applies
 
-- Order FN-00 (the four checks green on an empty repo) → FN-00b (git, GitHub, issues) → FN-01+. The issues come out of `/break` over this SPECS.md and live in `issues/` with `_index.md`.
+- Order FN-00 (the four checks green on an empty repo) → FN-00b (git, GitHub, issues) → FN-01+. The issues are derived from this SPECS.md and live in `issues/` with `_index.md`.
 - Dedicated branch before any commit, `--no-ff` merge carrying only the subject.
-- pnpm with a pinned `packageManager`, `.nvmrc` on the current LTS, and `pnpm check` running `lint`, `typecheck`, `test` and `build`, the four checks from the global CLAUDE.md. Versions looked up at scaffold time, never from memory.
-- CI from the `omni-status` template (`.github/workflows/ci.yml`) and `dependabot.yml` with npm and github-actions.
-- Public repo from day one, because the Marketplace requires it. That pulls in the three obligations for opening a repo: `/deploy-check` with gitleaks over the history, MIT license, and a README for someone arriving cold. Since this project has no secret and no `.env`, the deploy-check comes down to gitleaks.
+- pnpm with a pinned `packageManager`, `.nvmrc` on the current LTS, and `pnpm check` running `lint`, `typecheck`, `test` and `build`. Versions looked up at scaffold time, never from memory.
+- CI runs that same `pnpm check`, plus `dependabot.yml` with the npm and github-actions ecosystems.
+- Public repo from day one, because the Marketplace requires it. That pulls in the three obligations for opening a repo: gitleaks over the whole history, an MIT license, and a README for someone arriving cold. Since this project has no secret and no `.env`, the security pass comes down to gitleaks.
 - Theme tokens: every color lives in `color.ini` or in the `--wa-*` variables on `:root`. A literal color in a CSS rule is a bug.
 - Planning lives in the repo.
 
 ### Does not apply
 
-- Ports, Postgres, Redis, compose and `PORTS.md`: there is no service.
-- Clerk, `ownerId`, the IDOR and exposure checklist: there is no backend and no user data.
+- Ports, Postgres, Redis and compose: there is no service.
+- Auth, `ownerId`, the IDOR and exposure checklist: there is no backend and no user data.
 - i18n in three languages: the only interface string is "WINAMP" in the title bar, which is visual branding, not translatable text.
 - OpenTelemetry: there is no runtime of our own to instrument. The extension logs to the Spotify console with the `[winamp-classic]` prefix.
-- Screen prototype between `/specs` and `/break`: the target look already exists (Winamp 2.x). Checking happens straight in Spotify.
-- Standard stack (Next, Nest, Prisma): Spicetify loads static files. Build tooling stops at the Node concatenation script.
+- A screen prototype before implementation: the target look already exists (Winamp 2.x). Checking happens straight in Spotify.
+- The standard web stack: Spicetify loads static files. Build tooling stops at the Node concatenation script.

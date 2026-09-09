@@ -10,7 +10,7 @@ Put the project under version control and publish it on GitHub as a public repos
 - A dedicated branch per issue, `--no-ff` merge into `main` with a subject only.
 - MIT `LICENSE` in the name of the repo owner.
 - Initial `README.md`: what it is, "under construction" status, how to install manually, how to contribute. The final README with a preview lands in FN-06.
-- `.github/workflows/ci.yml` copied from the `omni-status` template, without the `dir:validate` step, running `pnpm check` (lint, typecheck, test, build) on `pull_request` and on `push` to `main`.
+- `.github/workflows/ci.yml` running `pnpm check` (lint, typecheck, test, build) on `pull_request` and on `push` to `main`.
 - `.github/dependabot.yml` with the `npm` and `github-actions` ecosystems, weekly.
 - `gitleaks git . -v` and `gitleaks dir . -v` clean before the first push.
 - Public repo `afonsoamaro/spicetify-winamp-classic` via `gh repo create`, with the `spicetify-themes` topic and a description.
@@ -43,19 +43,19 @@ Research done on 2026-09-08. Action tags looked up via `gh api releases/latest`;
 - `gitleaks git . -v` and `gitleaks dir . -v` already run on the current `main`: 4 commits, no leaks. Repeat before the push.
 
 ## Reusable Code Found
-- `~/code/afonsoamaro/omni-status/LICENSE`: MIT text with `Copyright (c) 2026 Afonso Amaro`. Copy as is.
-- `~/code/afonsoamaro/omni-status/.github/workflows/ci.yml`: the CI template. Keep its shape (checkout, pnpm, setup-node with `node-version-file` and pnpm cache, install with a frozen lockfile, `pnpm check`). Drop the `dir:validate` step, which is specific to that app.
-- `~/code/afonsoamaro/omni-status/.github/dependabot.yml`: copy as is, `npm` and `github-actions` ecosystems, weekly, 5 PR limit.
-- `~/code/afonsoamaro/omni-status/README.md`: reference structure. Sections that apply here: title plus one sentence, Status, Getting started, Quality gate, License. The architecture, ports and telemetry sections do not.
-- `omni-status` labels on GitHub: `setup` fbca04 "Infra/scaffold, do first", `prototype` c5def5 "Prototype issue (PP)", `functional` 0e8a16 "Functional issue (FN)". Recreate them with the same names and colors.
-- Issue title pattern from `omni-status`: the `#` line at the top of the file, like `[FN-00] Setup base ...`. The body is the file's entire markdown.
+- Standard MIT text with `Copyright (c) 2026 Afonso Amaro`, same as my other repos.
+- My standard CI shape: checkout, a pnpm setup action that installs dependencies from a frozen lockfile, then `pnpm check` as the single gate. Anything app-specific in that shape stays out.
+- My standard `dependabot.yml`: `npm` and `github-actions` ecosystems, weekly, 5 PR limit.
+- My standard README structure. Sections that apply here: title plus one sentence, Status, Getting started, Quality gate, License. The architecture, ports and telemetry sections do not.
+- My standard issue labels: `setup` fbca04 "Infra/scaffold, do first", `prototype` c5def5 "Prototype issue (PP)", `functional` 0e8a16 "Functional issue (FN)". Recreate them with the same names and colors.
+- Issue title pattern: the `#` line at the top of the file, like `[FN-00] Setup base ...`. The body is the file's entire markdown.
 
 ## Architecture Decisions
 - **`actions/checkout@v7`** (v7.0.1, looked up at the time), pinned by major because the action is GitHub's own.
-- **`pnpm/setup` pinned by SHA, like the template.** By execution time (2026-09-08) `omni-status` had already migrated from `pnpm/action-setup` to `pnpm/setup` v2.1.0, because `action-setup` runs on Node 20, discontinued in Actions on 2026-06-02. This repo follows: no `setup-node`, no separate install step, `cache: true` and `require-lockfile: true`. The CI's Node comes from `devEngines.runtime` in `package.json`, which lands in this issue.
-- **SHA checked against the GitHub API instead of copied from the template.** The SHA `omni-status` pinned (`c8e77b7`) is not found by the `pnpm/setup` commits API, even though the CI over there is green with it: it is probably an object unreachable from any ref, and not the commit behind the v2.1.0 tag that the comment promises. The `v2.1.0` tag is annotated and points at `703c526` (2026-08-28), which is the SHA used here.
+- **`pnpm/setup` pinned by SHA.** By execution time (2026-09-08) my standard CI shape had already moved from `pnpm/action-setup` to `pnpm/setup` v2.1.0, because `action-setup` runs on Node 20, discontinued in Actions on 2026-06-02. This repo follows: no `setup-node`, no separate install step, `cache: true` and `require-lockfile: true`. The CI's Node comes from `devEngines.runtime` in `package.json`, which lands in this issue.
+- **SHA resolved against the GitHub API instead of copied.** The `v2.1.0` tag is annotated and points at `703c526` (2026-08-28), which is the SHA used here. Copying a pin without resolving it is how a workflow ends up trusting a SHA no ref reaches.
 - **Public repo from creation**, with `gh repo create --public --source=. --remote=origin --push`. The Marketplace only lists a public repo carrying the `spicetify-themes` topic.
-- **Tracking for `_index.md`**: a pinned `[INDEX] Issues index` issue with the `_index.md` table in the body and links to the issues created. `omni-status` used neither a milestone nor a tracking issue, so there is no template; a pinned issue is the cheapest thing to keep up to date.
+- **Tracking for `_index.md`**: a pinned `[INDEX] Issues index` issue with the `_index.md` table in the body and links to the issues created. A pinned issue is the cheapest thing to keep up to date.
 - **No versioned script to publish the issues.** It is a `gh issue create` loop at execution time. It only becomes a script if a second batch of issues shows up.
 - **Branches kept on the remote**: push `main` and the three working branches, following the `--no-ff` merge rule that preserves the remote branch.
 - **README in English**, like the rest of this repo's public artifacts.
@@ -63,10 +63,10 @@ Research done on 2026-09-08. Action tags looked up via `gh api releases/latest`;
 ## Files to Create
 | File | Purpose |
 |------|---------|
-| `LICENSE` | MIT, copy from `omni-status` |
+| `LICENSE` | MIT |
 | `README.md` | initial, in English, for someone arriving cold |
-| `.github/workflows/ci.yml` | `omni-status` template with current majors and without `dir:validate` |
-| `.github/dependabot.yml` | copy from `omni-status` |
+| `.github/workflows/ci.yml` | standard CI shape with current action versions |
+| `.github/dependabot.yml` | npm and github-actions, weekly |
 
 ## Files to Modify (added during execution)
 | File | Changes |
