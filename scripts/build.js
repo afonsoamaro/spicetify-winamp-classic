@@ -8,7 +8,7 @@
 import { existsSync } from 'node:fs';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { isMain, repoRoot } from './lib/main.js';
 
 // Fixed order so a module only depends on the ones listed before it.
 // Files that do not exist yet are skipped; unknown files are an error.
@@ -56,8 +56,7 @@ export async function build({ srcDir, outFile }) {
   return output;
 }
 
-const isMain = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
-if (isMain) {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+if (isMain(import.meta.url)) {
+  const root = repoRoot(import.meta.url);
   await build({ srcDir: path.join(root, 'src'), outFile: path.join(root, 'theme.js') });
 }

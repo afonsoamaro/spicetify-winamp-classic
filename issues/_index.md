@@ -11,7 +11,7 @@ Source: `SPECS.md`. Spicetify theme that recreates the Winamp 2.x look with CSS,
 ## Prototype Issues (visual, CSS only)
 | Issue | Name | Status | Dependencies |
 |-------|------|--------|--------------|
-| PP-01 | Base, pixel font and bevel utilities | todo | FN-00 |
+| PP-01 | Base, pixel font and bevel utilities | ✅ done (Sep 10) | FN-00 |
 | PP-02 | Now playing bar as the main panel | todo | PP-01 |
 | PP-03 | Track list as the playlist window | todo | PP-01 |
 | PP-04 | Sidebar, top bar, navigation and scrollbars | todo | PP-01 |

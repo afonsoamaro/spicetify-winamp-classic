@@ -21,7 +21,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build": "node scripts/build.js",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "embed:font": "node scripts/embed-font.js"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
