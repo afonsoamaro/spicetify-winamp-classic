@@ -30,6 +30,8 @@ spicetify watch -s  # re-applies color.ini, user.css and theme.js on save
 
 `theme.js` is generated from the modules in `src/` by `scripts/build.js` and is committed, because Spicetify loads a single file. Run `pnpm build` after changing anything in `src/`.
 
+The `@font-face` block in `user.css` is generated the same way, by `scripts/embed-font.js` from the woff2 files in `assets/`. Run `pnpm embed:font` after changing them, and do not hand-edit between the markers.
+
 ## Quality gate
 
 `pnpm check` runs lint, type-check, tests and the build. CI runs the same command on every pull request and on every push to `main`.
@@ -42,4 +44,6 @@ Work is split into small issues in [`issues/`](issues/). One branch per issue, `
 
 MIT, see [LICENSE](LICENSE).
 
-No asset from the original Winamp skin is used. The look is recreated with CSS and canvas. The pixel font is [Silkscreen](https://fonts.google.com/specimen/Silkscreen), licensed under the SIL Open Font License.
+No asset from the original Winamp skin is used. The look is recreated with CSS and canvas.
+
+The pixel font is [Silkscreen](https://fonts.google.com/specimen/Silkscreen) by Jason Kottke, embedded as a data URI and licensed under the SIL Open Font License 1.1. Its license text ships with the theme in [`assets/Silkscreen-OFL.txt`](assets/Silkscreen-OFL.txt).
