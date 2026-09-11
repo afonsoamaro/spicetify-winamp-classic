@@ -32,3 +32,92 @@ Spotify's now playing bar becomes the Winamp 2.x main window: gray with bevels, 
 
 ## Dependencies
 - PP-01
+
+---
+
+# Implementation Plan
+
+Research done on 2026-09-10 against Spotify 1.2.99.317 with the theme applied, reading the unpacked bundle at `/Applications/Spotify.app/Contents/Resources/Apps/xpui/`.
+
+## Prerequisites
+- PP-01 done: the pixel font is embedded, `--wa-raised` and `--wa-sunken` exist, and every corner is already square.
+- Spotify 1.2.99.317. After a Spotify update the theme has to be reapplied with `spicetify backup apply`, because an update rewrites the app files and the old backup no longer matches.
+
+## Reusable Code Found
+- `user.css:23-24`: `--wa-raised` and `--wa-sunken`, the bevel shadow lists from PP-01. Every panel and button here consumes them; do not write new inset shadows.
+- `user.css:19`: `--wa-font-pixel`, already loaded and ready. This issue is the first consumer.
+- `user.css:13-18`: `--wa-bevel-light`, `--wa-bevel-dark`, `--wa-titlebar-start`, `--wa-titlebar-end`, `--wa-white`. Any new value belongs in this block, never inline in a rule.
+- `user.css:60-65`: the global radius reset already covers this area. Do not repeat `border-radius` anywhere.
+- `color.ini`: `player`, `button`, `text`, `subtext`, `misc`, `selected-row` reach the CSS as `var(--spice-*)`. No literal color in a rule; stylelint fails the build on one.
+
+## Selectors, verified in the 1.2.99.317 bundle
+Spicetify's preprocessing leaves readable class names in the now playing bar markup, so these are literal in the DOM, not hashes:
+
+- `.main-nowPlayingBar-nowPlayingBar`: the whole bar.
+- `.main-nowPlayingBar-left`, `.main-nowPlayingBar-center`, `.main-nowPlayingBar-right`: the three columns.
+- `.main-nowPlayingBar-extraControls` and `.main-nowPlayingBar-volumeBar`: the right-hand buttons and the volume slider.
+
+The rest is addressed by `data-testid`, which is stable across releases and easier to read than a hash:
+
+- `now-playing-bar`, `now-playing-widget`, `player-controls`.
+- `context-item-info-title` and `context-item-info-subtitles`: track title and artist.
+- `control-button-playpause`, `control-button-skip-back`, `control-button-skip-forward`, `control-button-shuffle`, `control-button-repeat`.
+- `playback-progressbar` wrapping `playback-position`, `progress-bar` and `playback-duration`.
+- `progress-bar-background` and `progress-bar-handle`: the slider track and knob.
+- `volume-bar`.
+
+**The progress bar and the volume bar share the `progress-bar` testid.** Every rule has to be scoped through its ancestor, `[data-testid="playback-progressbar"]` or `.main-nowPlayingBar-volumeBar`, or the volume slider inherits the seek bar's styling.
+
+## Architecture Decisions
+- **Readable classes for structure, `data-testid` for parts.** Both survive obfuscation. A hashed class like `.cThC7cU_cw1SCx50` would break on the next Spotify release.
+- **The display is the track info block, not the whole left column.** Winamp's main window has no album art, so mapping the cover onto the display would be wrong twice over. The cover keeps its place with a sunken border, and the text next to it becomes the black LED panel.
+- **Room for the canvas is reserved with padding, not an element.** The spectrum analyzer belongs to FN-03, which injects its own canvas. This issue leaves `padding-right` on the display so the canvas has somewhere to land and the text never runs under it.
+- **The knob is always visible.** Spotify reveals `progress-bar-handle` on hover only. Winamp's slider always shows it, so opacity is forced to 1 in both sliders.
+- **The bar keeps its height.** Changing it shifts the whole app layout, and the issue asks for the opposite. The title bar strip that adds 14px is FN-05's job, not this one.
+- **No `pointer-events`, no `position` changes on interactive parts.** Seek and volume are drag targets; touching their layout is the fastest way to break them silently. Only color, shadow, font and size change.
+- **One commented block, `/* === Now playing bar === */`.** If a selector dies in a Spotify release, only this block degrades.
+
+## Files to Create
+None.
+
+## Files to Modify
+| File | Changes |
+|------|---------|
+| `user.css` | fills the now playing bar block; adds the display and knob variables to `:root` |
+
+### user.css, `:root`
+- `--wa-display-bg` at `#000`, the LED panel background. It is a literal, so it goes inside the existing `stylelint-disable color-no-hex` pair with the others.
+- `--wa-knob-w` at `7px` and `--wa-knob-h` at `14px`, the slider knob size, so both sliders stay in sync from one place.
+
+### user.css, `/* === Now playing bar === */`
+- The bar itself: `var(--spice-player)` background, `box-shadow: var(--wa-raised)`, and a top border in `--wa-bevel-light` so it reads as a separate panel from the content above.
+- The display: `[data-testid="now-playing-widget"]` gets `--wa-display-bg`, `var(--wa-sunken)`, and `padding-right` reserving the canvas strip. Title and artist get `--wa-font-pixel` at 11px, title in `var(--spice-text)` and artist in `var(--spice-subtext)`, both with `text-transform: uppercase` and `white-space: nowrap`.
+- The cover: 2px sunken border, no rounding, unchanged size.
+- Transport buttons: `var(--spice-button)` background, `var(--wa-raised)`, square, black icon through `color`. `:active` swaps to `var(--wa-sunken)` so the press reads as a physical button. The play button does not get a different shape from the others, because Winamp's do not.
+- Position and duration: pixel font, `var(--spice-text)`, position larger than duration, mirroring Winamp's big elapsed counter.
+- Seek bar: `progress-bar-background` sunken and dark; the filled part in `var(--spice-text)`; `progress-bar-handle` becomes a `--wa-knob-w` by `--wa-knob-h` raised rectangle, always visible.
+- Volume: the track gets the green, yellow and red gradient from left to right, and the same knob. Scoped through `.main-nowPlayingBar-volumeBar` so the seek bar is untouched.
+- Right-hand buttons: same treatment as the transport buttons, smaller.
+
+## Data Requirements
+None.
+
+## Testing Strategy
+- **No unit test applies.** This issue is CSS only; the project's test tooling covers the Node scripts, and there is nothing importable here. `pnpm check` still has to be green, and stylelint is the automated gate: no `border-radius` other than 0, no literal color outside `:root`.
+- Visual check in Spotify with a track playing, comparing against the Winamp 2.x main window: gray bevelled panel, black display with green pixel text, square buttons, rectangular knobs, gradient volume.
+- Interaction check, which matters more than the look: click every transport button, drag the seek bar to the middle of a track, drag the volume, and hover each button. Nothing may stop responding.
+- Check with a long title and a short one. The text must clip, not wrap and not push the layout, because the marquee that solves overflow is FN-02.
+- Screenshot saved to `docs/screenshots/player.png`, which the issue asks for.
+
+## Implementation Order
+1. Variables in `:root`.
+2. The bar panel and the display, then look at it in Spotify before going further: this is the part that either reads as Winamp or does not.
+3. Transport buttons and their states.
+4. Seek bar and time labels.
+5. Volume.
+6. Right-hand buttons and the cover border.
+7. `pnpm check`, interaction pass, screenshot.
+
+## Unknowns
+- Spotify renders a second progress bar in the fullscreen and miniplayer views, reusing the same testids. If those look wrong, the fix is scoping the rules under `.main-nowPlayingBar-nowPlayingBar` rather than writing new ones.
+- The gradient volume track may need `background-image` on the parent rather than the fill element, depending on how Spotify composes the filled portion. Decide while looking at the DOM, and keep whichever keeps dragging intact.
