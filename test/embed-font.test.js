@@ -28,7 +28,7 @@ describe('fontFaceBlock', () => {
     expect(block).toContain(`base64,${Buffer.from(bytes).toString('base64')}")`);
     expect(block).toContain('font-family: Silkscreen;');
     expect(block).toContain(`unicode-range: ${LATIN_RANGE};`);
-    expect(block).toContain('font-display: block;');
+    expect(block).toContain('font-display: swap;');
   });
 
   it('keeps the fonts in the order given', () => {

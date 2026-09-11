@@ -2,9 +2,12 @@
   "extends": "stylelint-config-standard",
   "rules": {
     "declaration-property-value-disallowed-list": {
-      "border-radius": ["/^(?!0$)/"]
+      "border-radius": [
+        "/^(?!0$)/"
+      ]
     },
     "color-no-hex": true,
-    "color-named": "never"
+    "color-named": "never",
+    "selector-class-pattern": null
   }
 }

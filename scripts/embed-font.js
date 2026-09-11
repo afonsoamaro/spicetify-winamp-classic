@@ -25,8 +25,10 @@ export const FONTS = [
 
 /**
  * Builds the @font-face rules for the given fonts.
- * `font-display: block` because the file is inline: there is no network wait
- * to swap away from, and swap would flash the fallback on every reload.
+ * `font-display: swap`, not block. Block was the first choice, on the theory
+ * that an inline font has no network wait to swap away from. In Spotify it
+ * left every styled label blank instead: the block period starts and the
+ * swap never becomes visible. Swap renders the fallback and replaces it.
  * @param {{ weight: number, bytes: Uint8Array }[]} fonts
  * @returns {string}
  */
@@ -39,7 +41,7 @@ export function fontFaceBlock(fonts) {
         '  font-family: Silkscreen;',
         '  font-style: normal;',
         `  font-weight: ${weight};`,
-        '  font-display: block;',
+        '  font-display: swap;',
         `  src: url("data:font/woff2;base64,${base64}") format("woff2");`,
         `  unicode-range: ${LATIN_RANGE};`,
         '}',
