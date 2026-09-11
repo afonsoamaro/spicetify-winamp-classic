@@ -13,7 +13,7 @@
     { "dim": "reuse", "severity": "low", "file": "scripts/embed-font.js:85", "what": "the main guard and repo root resolution were copied verbatim from the build script", "fixed": true },
     { "dim": "discipline", "severity": "low", "file": "package.json:19", "what": "the diff reordered every script key alphabetically instead of inserting the new one", "fixed": true },
     { "dim": "discipline", "severity": "low", "file": "README.md:47", "what": "the README gained two paragraphs where the plan asked for one line, defensible because the OFL requires attribution", "fixed": false },
-    { "dim": "scope", "severity": "medium", "file": "user.css:61", "what": "the radius reset and the font load were not confirmed inside Spotify, because the screen was locked and Spotify exposes no remote debugging port", "fixed": false }
+    { "dim": "scope", "severity": "medium", "file": "user.css:61", "what": "the radius reset was not confirmed inside Spotify at verification time, because the screen was locked; confirmed afterwards on Spotify 1.2.99.317", "fixed": true }
   ],
   "checks": { "lint": "pass", "typecheck": "pass", "test": "pass", "build": "pass" },
   "rounds": 1,
