@@ -245,6 +245,15 @@
    shows its knob, and on the volume groove the knob is the only level
    indicator, so display is forced rather than opacity. */
 [data-testid="playback-progressbar"] .progress-bar__slider,
+.main-nowPlayingBar-volumeBar .progress-bar__slider {
+  display: flex;
+  width: var(--wa-knob-w);
+  height: var(--wa-knob-h);
+  margin-left: calc(var(--wa-knob-w) / -2);
+  background-color: var(--spice-button);
+  box-shadow: var(--wa-raised);
+}
+
 /* The volume groove shows the whole gradient at all times and the knob alone
    says where the level is, which is how Winamp reads it. */
 .main-nowPlayingBar-volumeBar .x-progressBar-progressBarBg {
@@ -256,29 +265,29 @@
   );
 }
 
-/* Written without :hover on purpose. Spotify turns the slider "active" from
-   the whole volume widget, so pointing at the speaker button alone is enough,
-   and it signals that state through a hashed class as well as through hover.
-   Matching the element in every state is shorter than chasing both. */
+/* Both of these are written without :hover on purpose. Spotify turns a slider
+   "active" from its whole widget, so pointing at the speaker button alone is
+   enough, and it signals that state through a hashed class as well as through
+   hover. Matching the element in every state is shorter than chasing both.
+
+   The elapsed part of the seek bar keeps its green instead of the gray
+   Spotify switches to, and the volume groove keeps its gradient rather than
+   filling in behind the knob. */
 .main-nowPlayingBar-right .main-nowPlayingBar-volumeBar .progress-bar .x-progressBar-fillColor {
   background-color: transparent;
 }
 
-/* Spotify reveals a white middle layer to preview where a click would land. On
-   the volume groove that reads as a chunk of the gradient turning white, and
-   Winamp's groove never changes. The extra ancestor outranks Spotify's own
-   rules without needing !important. */
-.main-nowPlayingBar-right .main-nowPlayingBar-volumeBar .progress-bar .x-progressBar-progressFillColor {
-  visibility: hidden;
+.main-nowPlayingBar-nowPlayingBar [data-testid="playback-progressbar"] .progress-bar .x-progressBar-fillColor {
+  background-color: var(--spice-text);
 }
 
-.main-nowPlayingBar-volumeBar .progress-bar__slider {
-  display: flex;
-  width: var(--wa-knob-w);
-  height: var(--wa-knob-h);
-  margin-left: calc(var(--wa-knob-w) / -2);
-  background-color: var(--spice-button);
-  box-shadow: var(--wa-raised);
+/* Spotify reveals a white middle layer to preview where a click would land.
+   Winamp's sliders never change under the pointer, and on the volume groove it
+   reads as a chunk of the gradient turning white. The extra ancestor outranks
+   Spotify's own rules without needing !important. */
+.main-nowPlayingBar-right .main-nowPlayingBar-volumeBar .progress-bar .x-progressBar-progressFillColor,
+.main-nowPlayingBar-nowPlayingBar [data-testid="playback-progressbar"] .progress-bar .x-progressBar-progressFillColor {
+  visibility: hidden;
 }
 
 /* === Track lists === */
