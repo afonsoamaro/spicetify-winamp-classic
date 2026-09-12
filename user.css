@@ -31,6 +31,11 @@
   --wa-display-bg: #000;
   --wa-knob-w: 7px;
   --wa-knob-h: 14px;
+  --wa-groove-h: 10px;
+
+  /* Width reserved on the display for the spectrum analyser canvas that FN-03
+     mounts there, so its size and this padding come from one place. */
+  --wa-spectrum-w: 84px;
 
   /* The middle of the volume gradient. Its ends are theme colours already,
      so only the yellow needs defining here. */
@@ -97,18 +102,18 @@
    becomes the LED panel; the cover keeps its own place to the left of it.
    The padding on the right reserves the strip where FN-03 mounts its canvas,
    so the text never runs underneath it. */
-.main-nowPlayingBar-left [data-testid="now-playing-widget"] {
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-left [data-testid="now-playing-widget"] {
   background-color: var(--wa-display-bg);
   box-shadow: var(--wa-sunken);
-  padding: 4px 84px 4px 4px;
+  padding: 4px var(--wa-spectrum-w) 4px 4px;
 }
 
 /* The title and artist carry readable class names of their own, so they are
    addressed directly rather than through the widget's testid. */
-.main-nowPlayingWidget-trackInfo .main-trackInfo-name,
-.main-nowPlayingWidget-trackInfo .main-trackInfo-name a,
-.main-nowPlayingWidget-trackInfo .main-trackInfo-artists,
-.main-nowPlayingWidget-trackInfo .main-trackInfo-artists a {
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-trackInfo .main-trackInfo-name,
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-trackInfo .main-trackInfo-name a,
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-trackInfo .main-trackInfo-artists,
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-trackInfo .main-trackInfo-artists a {
   font-family: var(--wa-font-pixel);
   font-size: 11px;
   text-transform: uppercase;
@@ -116,19 +121,19 @@
   letter-spacing: 0;
 }
 
-.main-nowPlayingWidget-trackInfo .main-trackInfo-name,
-.main-nowPlayingWidget-trackInfo .main-trackInfo-name a {
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-trackInfo .main-trackInfo-name,
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-trackInfo .main-trackInfo-name a {
   color: var(--spice-text);
 }
 
-.main-nowPlayingWidget-trackInfo .main-trackInfo-artists,
-.main-nowPlayingWidget-trackInfo .main-trackInfo-artists a {
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-trackInfo .main-trackInfo-artists,
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-trackInfo .main-trackInfo-artists a {
   color: var(--spice-subtext);
 }
 
 /* The cover sits recessed into the panel, like a part screwed into the case. */
-.main-nowPlayingBar-left [data-testid="cover-art-image"],
-.main-nowPlayingBar-left .cover-art {
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-left [data-testid="cover-art-image"],
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-left .cover-art {
   border: 2px solid var(--wa-bevel-dark);
   box-shadow: var(--wa-sunken);
 }
@@ -136,8 +141,8 @@
 /* Transport buttons. Winamp gives play no special shape, so neither do we.
    Only color, shadow and size change: touching layout or pointer-events here
    is how a drag target silently stops working. */
-[data-testid="player-controls"] button,
-.main-nowPlayingBar-right button {
+.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button,
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-right button {
   background-color: var(--spice-button);
   box-shadow: var(--wa-raised);
   color: var(--spice-shadow);
@@ -146,7 +151,7 @@
 /* Spotify draws play larger than its neighbours; here the whole transport is
    one size. Its green is left alone on purpose: the owner preferred it to the
    uniform gray Winamp has, and it is the one Spotify colour the theme keeps. */
-[data-testid="player-controls"] button {
+.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button {
   width: 26px;
   height: 26px;
 }
@@ -154,21 +159,21 @@
 /* Sized on the column, not on the controls group: the volume speaker and the
    miniplayer and fullscreen buttons live outside extraControls and came out
    at three different widths. One key size for the whole right-hand strip. */
-.main-nowPlayingBar-right button {
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-right button {
   flex: 0 0 auto;
   width: 22px;
   height: 22px;
   padding: 0;
 }
 
-[data-testid="player-controls"] button:hover,
-.main-nowPlayingBar-right button:hover {
+.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button:hover,
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-right button:hover {
   background-color: var(--wa-bevel-light);
   transform: none;
 }
 
-[data-testid="player-controls"] button:active,
-.main-nowPlayingBar-right button:active {
+.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button:active,
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-right button:active {
   box-shadow: var(--wa-sunken);
 }
 
@@ -176,8 +181,8 @@
    with colour alone, which the black icon above overrides. Winamp shows a
    toggled key as pressed in, so the bevel carries the state and the icon
    turns green with it. */
-[data-testid="player-controls"] button[aria-checked="true"],
-.main-nowPlayingBar-right button[aria-checked="true"] {
+.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button[aria-checked="true"],
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-right button[aria-checked="true"] {
   box-shadow: var(--wa-sunken);
   color: var(--spice-text);
 }
@@ -186,28 +191,28 @@
    reads as a cut-off button rather than a deliberate one. Winamp's case has a
    margin on every side, so the column gets one and its controls are centred
    on the same line. */
-.main-nowPlayingBar-right {
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-right {
   padding-right: 10px;
 }
 
-.main-nowPlayingBar-extraControls {
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-extraControls {
   align-items: center;
   gap: 4px;
 }
 
 /* Winamp's elapsed counter is the big number on the panel; the duration is
    the small one beside it. */
-[data-testid="playback-position"],
-[data-testid="playback-duration"] {
+.main-nowPlayingBar-nowPlayingBar [data-testid="playback-position"],
+.main-nowPlayingBar-nowPlayingBar [data-testid="playback-duration"] {
   font-family: var(--wa-font-pixel);
   color: var(--spice-text);
 }
 
-[data-testid="playback-position"] {
+.main-nowPlayingBar-nowPlayingBar [data-testid="playback-position"] {
   font-size: 14px;
 }
 
-[data-testid="playback-duration"] {
+.main-nowPlayingBar-nowPlayingBar [data-testid="playback-duration"] {
   font-size: 11px;
   color: var(--spice-subtext);
 }
@@ -220,32 +225,32 @@
    that, so it is set on the same element, one step more specific. Without it
    the layers stay 4px inside a 10px groove and the bar looks like it shrinks
    when the pointer arrives. */
-[data-testid="playback-progressbar"] .progress-bar,
-.main-nowPlayingBar-volumeBar .progress-bar {
-  --progress-bar-height: 10px;
+.main-nowPlayingBar-nowPlayingBar [data-testid="playback-progressbar"] .progress-bar,
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-volumeBar .progress-bar {
+  --progress-bar-height: var(--wa-groove-h);
 }
 
 /* Both grooves are a sunken channel of the same height; only what fills them
    differs. */
-[data-testid="playback-progressbar"] .x-progressBar-progressBarBg,
-.main-nowPlayingBar-volumeBar .x-progressBar-progressBarBg {
+.main-nowPlayingBar-nowPlayingBar [data-testid="playback-progressbar"] .x-progressBar-progressBarBg,
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-volumeBar .x-progressBar-progressBarBg {
   box-shadow: var(--wa-sunken);
-  height: 10px;
+  height: var(--wa-groove-h);
 }
 
-[data-testid="playback-progressbar"] .x-progressBar-progressBarBg {
+.main-nowPlayingBar-nowPlayingBar [data-testid="playback-progressbar"] .x-progressBar-progressBarBg {
   background-color: var(--wa-display-bg);
 }
 
-[data-testid="playback-progressbar"] .x-progressBar-fillColor {
+.main-nowPlayingBar-nowPlayingBar [data-testid="playback-progressbar"] .x-progressBar-fillColor {
   background-color: var(--spice-text);
 }
 
 /* Spotify hides the handle until the bar is hovered. Winamp's slider always
    shows its knob, and on the volume groove the knob is the only level
    indicator, so display is forced rather than opacity. */
-[data-testid="playback-progressbar"] .progress-bar__slider,
-.main-nowPlayingBar-volumeBar .progress-bar__slider {
+.main-nowPlayingBar-nowPlayingBar [data-testid="playback-progressbar"] .progress-bar__slider,
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-volumeBar .progress-bar__slider {
   display: flex;
   width: var(--wa-knob-w);
   height: var(--wa-knob-h);
@@ -256,7 +261,7 @@
 
 /* The volume groove shows the whole gradient at all times and the knob alone
    says where the level is, which is how Winamp reads it. */
-.main-nowPlayingBar-volumeBar .x-progressBar-progressBarBg {
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-volumeBar .x-progressBar-progressBarBg {
   background-image: linear-gradient(
     to right,
     var(--spice-text),
@@ -272,8 +277,9 @@
 
    The elapsed part of the seek bar keeps its green instead of the gray
    Spotify switches to, and the volume groove keeps its gradient rather than
-   filling in behind the knob. */
-.main-nowPlayingBar-right .main-nowPlayingBar-volumeBar .progress-bar .x-progressBar-fillColor {
+   filling in behind the knob. Scoping the block to the bar already outranks
+   Spotify's own rules, so none of this needs !important. */
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-volumeBar .progress-bar .x-progressBar-fillColor {
   background-color: transparent;
 }
 
@@ -283,9 +289,8 @@
 
 /* Spotify reveals a white middle layer to preview where a click would land.
    Winamp's sliders never change under the pointer, and on the volume groove it
-   reads as a chunk of the gradient turning white. The extra ancestor outranks
-   Spotify's own rules without needing !important. */
-.main-nowPlayingBar-right .main-nowPlayingBar-volumeBar .progress-bar .x-progressBar-progressFillColor,
+   reads as a chunk of the gradient turning white. */
+.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-volumeBar .progress-bar .x-progressBar-progressFillColor,
 .main-nowPlayingBar-nowPlayingBar [data-testid="playback-progressbar"] .progress-bar .x-progressBar-progressFillColor {
   visibility: hidden;
 }
