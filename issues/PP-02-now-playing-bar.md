@@ -24,11 +24,11 @@ Spotify's now playing bar becomes the Winamp 2.x main window: gray with bevels, 
 - Any track playing. Check with a long title and a short one.
 
 ## Acceptance Criteria
-- [ ] The bar renders with a gray panel, a black display and green pixel text.
-- [ ] Buttons, progress and volume have bevels and no rounding.
-- [ ] Hover, pressed and active states on the buttons are visible.
-- [ ] No control lost its click or its drag.
-- [ ] Screenshot of the bar saved to `docs/screenshots/player.png`.
+- [x] The bar renders with a gray panel, a black display and green pixel text.
+- [x] Buttons, progress and volume have bevels and no rounding.
+- [x] Hover, pressed and active states on the buttons are visible.
+- [x] No control lost its click or its drag.
+- [x] Screenshot of the bar saved to `docs/screenshots/player.png`.
 
 ## Dependencies
 - PP-01
