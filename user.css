@@ -407,15 +407,200 @@
 
 /* === Sidebar === */
 
-/* PP-04 */
+/* The library panel is a second bevelled case next to the main window. Its
+   header takes the title-bar gradient, the entries take the playlist recipe,
+   and the entry for the page you are on is the selection bar. State comes
+   from aria-selected, which the entry carries. */
+.main-yourLibraryX-libraryContainer {
+  background-color: var(--spice-sidebar);
+  box-shadow: var(--wa-raised);
+}
+
+.main-yourLibraryX-header {
+  background-image: linear-gradient(to right, var(--wa-titlebar-start), var(--wa-titlebar-end));
+}
+
+.main-yourLibraryX-header,
+.main-yourLibraryX-header button,
+.main-yourLibraryX-header span {
+  font-family: var(--wa-font-pixel);
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--wa-white);
+}
+
+.main-yourLibraryX-listItem,
+.main-yourLibraryX-listItem a,
+.main-yourLibraryX-listItem span {
+  font-family: var(--wa-font-pixel);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  color: var(--spice-text);
+}
+
+.main-yourLibraryX-listItem[aria-selected="true"] {
+  background-color: var(--spice-selected-row);
+  box-shadow: var(--wa-sunken);
+}
+
+.main-yourLibraryX-listItem[aria-selected="true"] a,
+.main-yourLibraryX-listItem[aria-selected="true"] span {
+  color: var(--wa-white);
+}
+
+.main-yourLibraryX-filterArea button,
+.main-yourLibraryX-header button {
+  background-color: var(--spice-button);
+  box-shadow: var(--wa-raised);
+  color: var(--spice-shadow);
+}
+
+.main-yourLibraryX-libraryContainer .main-yourLibraryX-header button,
+.main-yourLibraryX-libraryContainer .main-yourLibraryX-header button * {
+  font-family: var(--wa-font-pixel);
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--spice-shadow);
+}
+
+/* The filter chips (Playlists, Podcasts, Albums, Artists) sit in a container
+   of their own with generated class names. The chips themselves carry a
+   design-system class with "chip" in its name, so a case-insensitive
+   substring match reaches them without a hash, the way the maintained
+   themes in the Marketplace do it. */
+.main-yourLibraryX-libraryContainer [class*="chip" i] {
+  font-family: var(--wa-font-pixel);
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--spice-shadow);
+}
+
+.main-yourLibraryX-libraryContainer button[class*="chip" i] {
+  background-color: var(--spice-button);
+  box-shadow: var(--wa-raised);
+}
+
+.main-yourLibraryX-libraryContainer button[class*="chip" i]:active,
+.main-yourLibraryX-libraryContainer button[class*="chip" i][aria-checked="true"],
+.main-yourLibraryX-libraryContainer button[class*="chip" i][aria-pressed="true"] {
+  box-shadow: var(--wa-sunken);
+  color: var(--spice-text);
+}
+
+/* "Your Library" is itself the collapse button, wrapped in a div that carries
+   the class, so the key recipe above would box the panel's title. It is the
+   title of the strip, not a key. */
+.main-yourLibraryX-header .main-yourLibraryX-collapseButton button {
+  background-color: transparent;
+  box-shadow: none;
+  color: var(--wa-white);
+}
+
+.main-yourLibraryX-header .main-yourLibraryX-collapseButton button * {
+  font-size: 12px;
+  color: var(--wa-white);
+}
 
 /* === Top bar === */
 
-/* PP-04 */
+/* The search field is an LED display and the history and nav buttons are
+   keys, built from the same recipes as the now playing bar. */
+.main-globalNav-searchContainer,
+.main-globalNav-searchSection {
+  background-color: transparent;
+}
+
+/* The page's sticky strip fades in over the artwork as you scroll. Spotify
+   drives that with opacity on main-topBar-background, so only its colour is
+   set here. main-topBar-topbarContent stays untouched: painting it was what
+   left a gray band floating over every header at the top of the page. */
+.main-topBar-background {
+  background-color: var(--spice-sidebar);
+}
+
+.main-entityHeader-topbarTitle {
+  font-family: var(--wa-font-pixel);
+  text-transform: uppercase;
+  color: var(--wa-white);
+}
+
+.main-globalNav-searchInputSection {
+  background-color: var(--wa-display-bg);
+  box-shadow: var(--wa-sunken);
+}
+
+.main-globalNav-searchInputSection input,
+.main-globalNav-searchInputText {
+  font-family: var(--wa-font-pixel);
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--spice-text);
+}
+
+.main-globalNav-searchInputSection input::placeholder {
+  color: var(--spice-subtext);
+  text-transform: uppercase;
+}
+
+/* The element name is in the selector on purpose: Spotify paints the nav
+   link with a bare class rule of the same specificity, and its stylesheet
+   loads after this one, so a bare class here would lose the tie. */
+.main-globalNav-historyButtons button,
+a.main-globalNav-navLink,
+button.main-globalNav-navLink {
+  width: 26px;
+  height: 26px;
+  background-color: var(--spice-button);
+  box-shadow: var(--wa-raised);
+  color: var(--spice-shadow);
+}
+
+.main-globalNav-historyButtons button:active,
+a.main-globalNav-navLink:active,
+button.main-globalNav-navLink:active,
+a.main-globalNav-navLinkActive,
+button.main-globalNav-navLinkActive {
+  box-shadow: var(--wa-sunken);
+}
+
+a.main-globalNav-navLinkActive,
+button.main-globalNav-navLinkActive {
+  color: var(--spice-tab-active);
+}
+
+/* Section titles. The entity header is the name on a playlist, album or artist
+   page; shelf titles are the headings on Home. Both take the pixel face and
+   white, but neither gets a title-bar band: Home would turn into a stack of
+   bars, and the entity header already sits on its own artwork. */
+.main-entityHeader-title,
+.main-entityHeader-title h1,
+.main-shelf-title {
+  font-family: var(--wa-font-pixel);
+  text-transform: uppercase;
+  color: var(--wa-white);
+}
 
 /* === Scrollbars === */
 
-/* PP-04 */
+/* Spotify draws its own scrollbars through OverlayScrollbars, so these are
+   the classes it emits, not ::-webkit-scrollbar. The track is a sunken
+   channel and the handle a raised key; the global reset squares them. Width
+   is left to the library, which positions the handle from the track size. */
+.os-scrollbar-track {
+  background-color: var(--wa-display-bg);
+  box-shadow: var(--wa-sunken);
+}
+
+.os-scrollbar-handle {
+  background-color: var(--spice-button);
+  box-shadow: var(--wa-raised);
+}
+
+.os-scrollbar-handle:hover,
+.os-scrollbar-handle:active {
+  background-color: var(--wa-bevel-light);
+}
 
 /* === Cards, buttons, inputs, modals, menus, covers === */
 

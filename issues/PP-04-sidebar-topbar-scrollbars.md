@@ -23,11 +23,11 @@ The app chrome (the Your Library sidebar, the top bar with search and navigation
 - A library with playlists, albums and artists. A search with results.
 
 ## Acceptance Criteria
-- [ ] Sidebar, top bar and headers with a gray panel and title bars.
-- [ ] Rectangular beveled scrollbars in every scrollable area.
-- [ ] Search field as a black display.
-- [ ] Resizing the sidebar still works.
-- [ ] Screenshot at `docs/screenshots/sidebar.png`.
+- [x] Sidebar, top bar and headers with a gray panel and title bars.
+- [x] Rectangular beveled scrollbars in every scrollable area. Confirmed on the content column; the library list and the queue use the same OverlayScrollbars classes.
+- [x] Search field as a black display.
+- [x] Resizing the sidebar still works. No rule touches width, display or position on the panel.
+- [x] Screenshot at `docs/screenshots/sidebar.png`.
 
 ## Dependencies
 - PP-01
@@ -112,3 +112,13 @@ None.
 ## Unknowns
 - Whether the library entry's `aria-selected` reflects the page you are on or a click selection. Confirm on screen; if it is click selection, the current page's entry may need `.main-globalNav-navLinkActive`'s equivalent, found by reading the bundle at execution time.
 - Whether OverlayScrollbars repaints its handle from a colour it computes rather than from CSS. If the handle ignores `background-color`, the fix is scoping a rule to `.os-theme-*` or matching whatever class the library puts on the handle, read from the bundle then.
+
+## Found during execution
+
+- **The page's sticky strip is not the top bar.** `main-topBar-background` and `main-topBar-topbarContent` belong to the strip Spotify fades in over a page's header as you scroll, not to the global navigation. Painting them opaque left a gray band floating over every playlist's artwork. They are left alone; the global navigation is reached through `main-globalNav-*`.
+- **"Your Library" is itself the collapse button.** It sits in a div that carries `main-yourLibraryX-collapseButton`, with the button inside, so the key recipe for header buttons boxed the panel's title in gray. It is excluded and set as the strip's title: white pixel text, no fill.
+- **The filter chips live outside every readable container.** They are not in `main-yourLibraryX-header` nor in `main-yourLibraryX-filterArea`, which is the search and sort row below them, and their own container is generated. The maintained themes reach them with `[class*="chip" i]`, a case-insensitive substring match on the design-system class, and so does this block. No hash needed.
+- **Ties go to Spotify, again.** The home link is painted by a bare class rule of the same specificity as the theme's, and Spotify's stylesheet loads later, so the theme's colour lost. The element name is in the selector to break the tie, the same lesson as the now playing bar.
+- **The sticky strip needed its colour, not its content painted.** After the first fix removed the gray band, scrolling a playlist showed Spotify's default colour on the strip instead of the theme's gray. `main-topBar-background` is what Spotify fades in with opacity, so it takes `--spice-sidebar` and nothing else; `main-topBar-topbarContent` stays untouched. The title on that strip takes the pixel face.
+- **Scrollbars confirmed as OverlayScrollbars.** The dark track and gray handle show on the content column's right edge once there is something to scroll. `::-webkit-scrollbar` was never written.
+- **No generated class in this block.** Every state is reached through `aria-selected`, `.main-globalNav-navLinkActive` or a readable class checked against the bundle.
