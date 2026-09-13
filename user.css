@@ -178,28 +178,35 @@
 }
 
 /* Shuffle and repeat are the only controls with an on state, and the only
-   mark of it in the DOM is a generated class on the button, one per control.
-   Their per-button data-testid and aria-checked never render in this build,
-   Spicetify's class map has no readable name for either class, and reading
-   the bundle shows the component composing the raw hash directly.
+   mark of it in the DOM is a generated class, one per control. Their
+   per-button data-testid and aria-checked never render in this build, and
+   Spicetify's class map has no readable name for either class, so the hashes
+   are read from the bundle of Spotify 1.2.99.317. A future release will
+   rename them and the keys will stop lighting up, which is a quiet loss of an
+   indicator rather than a broken bar. Re-read them from the bundle then.
 
-   So the hashes are used, and they are read from Spotify 1.2.99.317. A future
-   Spotify release will rename them and the state will stop showing, which is
-   a quiet loss of an indicator rather than a broken bar. Re-read them from
-   the bundle when that happens.
+   Repeat carries its class on the button, so the bevel lands where it should.
+   Shuffle is not solved: it marks itself elsewhere in the tree and none of
+   the three classes read from the bundle reach it, so a shuffle that is on
+   still looks idle. The :has() list covers the shapes that do work: the bevel has to land on the key itself, not on
+   whatever holds the class. The ancestors are repeated because the rule that
+   paints an idle key is more specific than a bare class and was winning.
 
-   The selector repeats the ancestors of the rule that paints the idle key,
-   because that one is more specific than a bare class pair and was winning.
-   It does not name the element: repeat carries the class on its button and
-   shuffle does not, and matching on the class alone covers both.
-
-   Winamp shows a toggled key as pressed in, so the bevel carries the state.
-   The icon and the dot under it both take currentColor, so the green lights
-   them together. */
-.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] .S4N_g0WWfksBnMSa,
-.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] .oh6rATYB9cGtHuBW {
+   Winamp shows a toggled key as pressed in, so the bevel carries the state
+   and the icon lights with it. */
+.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button.S4N_g0WWfksBnMSa,
+.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button.oh6rATYB9cGtHuBW,
+.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button:has(.S4N_g0WWfksBnMSa),
+.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button:has(.oh6rATYB9cGtHuBW) {
   box-shadow: var(--wa-sunken);
   color: var(--spice-text);
+}
+
+/* Spotify also marks the state with a dot under the icon. The pressed key
+   already says it, and Winamp has no such dot. */
+.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] .S4N_g0WWfksBnMSa::before,
+.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] .oh6rATYB9cGtHuBW::before {
+  display: none;
 }
 
 /* The right-hand group sits flush against the window edge by default, which
