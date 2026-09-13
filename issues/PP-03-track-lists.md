@@ -66,6 +66,8 @@ Present but generated, so version-bound:
 
 Gone in 1.2.99, do not use even though other themes and the class map still list them: `main-trackList-active`, `main-trackList-selected`, `main-trackList-rowTitle`, `main-trackList-rowSubTitle`, `main-trackList-playingIcon`, `main-trackList-rowDuration`.
 
+That list is worth dwelling on. The two most actively maintained themes in the official collection, one of them patched days ago for this very Spotify line, still style `main-trackList-selected` and `main-trackList-playingIcon`. Those rules resolve to nothing here. Spicetify rewrites Spotify's generated class names into readable ones only where its map still matches the build, so a stale entry does not fail loudly, it just stops applying. Reading a popular theme is a good way to find which elements are worth styling; it is not a way to find out what they are called today.
+
 ## Architecture Decisions
 - **ARIA before generated classes.** `[aria-selected="true"]` survives a Spotify release; a hash does not. The hash goes in only where no attribute exists, which here is the playing row, and it is commented as version-bound with the instruction to re-read it from the bundle.
 - **Scope under `.main-trackList-trackList`.** Track lists appear in playlists, albums, the queue, search and artist pages, and that class is on all of them. It also keeps the rules off the now playing bar and the side panel, and it wins the ties that Spotify's later stylesheets would otherwise take.
