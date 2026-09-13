@@ -474,16 +474,39 @@
   font-size: 11px;
   text-transform: uppercase;
   color: var(--spice-shadow);
-}
-
-.main-yourLibraryX-libraryContainer button[class*="chip" i] {
   background-color: var(--spice-button);
   box-shadow: var(--wa-raised);
 }
 
-.main-yourLibraryX-libraryContainer button[class*="chip" i]:active,
-.main-yourLibraryX-libraryContainer button[class*="chip" i][aria-checked="true"],
-.main-yourLibraryX-libraryContainer button[class*="chip" i][aria-pressed="true"] {
+/* Hover on every key in the panel lightens the gray and lights the label
+   green. The gray alone was too close to the resting shade to read as a
+   change, and Spotify's own hover paints the keys with the theme's highlight,
+   which is the blue selection bar, unreadable under black text. */
+.main-yourLibraryX-libraryContainer .main-yourLibraryX-header button:hover,
+.main-yourLibraryX-libraryContainer .main-yourLibraryX-filterArea button:hover,
+.main-yourLibraryX-libraryContainer [class*="chip" i]:hover {
+  background-color: var(--wa-bevel-light);
+  color: var(--spice-text);
+}
+
+/* Only the colour reaches the label inside: painting the descendants' own
+   background boxed the text of any key whose label is a nested element. */
+.main-yourLibraryX-libraryContainer .main-yourLibraryX-header button:hover *,
+.main-yourLibraryX-libraryContainer [class*="chip" i]:hover,
+.main-yourLibraryX-libraryContainer [class*="chip" i]:hover * {
+  color: var(--spice-text);
+}
+
+/* The panel title is not a key and does not react to the pointer. */
+.main-yourLibraryX-libraryContainer .main-yourLibraryX-header .main-yourLibraryX-collapseButton button:hover,
+.main-yourLibraryX-libraryContainer .main-yourLibraryX-header .main-yourLibraryX-collapseButton button:hover * {
+  background-color: transparent;
+  color: var(--wa-white);
+}
+
+.main-yourLibraryX-libraryContainer [class*="chip" i]:active,
+.main-yourLibraryX-libraryContainer [class*="chip" i][aria-checked="true"],
+.main-yourLibraryX-libraryContainer [class*="chip" i][aria-pressed="true"] {
   box-shadow: var(--wa-sunken);
   color: var(--spice-text);
 }
