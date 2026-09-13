@@ -112,4 +112,5 @@ None.
 
 ## Unknowns
 - Whether `aria-selected` actually reaches the DOM. The bundle passes it into the row component, but PP-02 showed that props do not always survive to the element. Confirm on screen before relying on it, and fall back to the generated class if it does not.
+- **Whether the missing names are really dead is an inference, not a measurement.** The reasoning is that a name absent from the bundle cannot match anything, but Spicetify could be injecting readable names at runtime rather than only rewriting files, in which case the maintained themes work and this plan is solving a problem that does not exist. Settle it during execution: style the selected row twice, once through `aria-selected` and once through `main-trackList-selected`, in two different colours, and see which one paints. Carry the answer over to the shuffle state left open in PP-02, which rests on the same assumption.
 - The `1. Artist - Title` line is written as a stretch: if it needs the grid rearranged, it waits for its own issue rather than risking the row's behaviour here.
