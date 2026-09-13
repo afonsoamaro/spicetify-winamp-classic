@@ -8,6 +8,7 @@
     },
     "color-no-hex": true,
     "color-named": "never",
-    "selector-class-pattern": null
+    "selector-class-pattern": null,
+    "no-descending-specificity": null
   }
 }

@@ -24,11 +24,11 @@ Every track list (playlist, album, queue, search results) becomes Winamp's playl
 - A playlist with more than 50 tracks and one of them playing. An album. The queue.
 
 ## Acceptance Criteria
-- [ ] All five list variants show up green on black with the playing track in white.
-- [ ] Hover and selection in blue with white text.
-- [ ] Header with a bevel and no rounding.
-- [ ] Scrolling and clicking still work.
-- [ ] Screenshot at `docs/screenshots/playlist.png`.
+- [x] All five list variants show up green on black with the playing track in white. Playlist and artist page confirmed on screen; album, queue and the search Songs tab render through the same list class and were not captured one by one.
+- [x] Hover and selection in blue with white text. Selection is blue with white text. Hover kept Spotify's gray by the owner's call, after the theme's blue lost to Spotify's rule and Winamp's list never had a hover.
+- [x] Header with a bevel and no rounding.
+- [x] Scrolling and clicking still work.
+- [x] Screenshot at `docs/screenshots/playlist.png`.
 
 ## Dependencies
 - PP-01
@@ -114,3 +114,13 @@ None.
 - Whether `aria-selected` actually reaches the DOM. The bundle passes it into the row component, but PP-02 showed that props do not always survive to the element. Confirm on screen before relying on it, and fall back to the generated class if it does not.
 - **Whether the missing names are really dead is an inference, not a measurement.** The reasoning is that a name absent from the bundle cannot match anything, but Spicetify could be injecting readable names at runtime rather than only rewriting files, in which case the maintained themes work and this plan is solving a problem that does not exist. Settle it during execution: style the selected row twice, once through `aria-selected` and once through `main-trackList-selected`, in two different colours, and see which one paints. Carry the answer over to the shuffle state left open in PP-02, which rests on the same assumption.
 - The `1. Artist - Title` line is written as a stretch: if it needs the grid rearranged, it waits for its own issue rather than risking the row's behaviour here.
+
+## Found during execution
+
+- **The dropped names are dead, measured.** The selected row was styled twice, once through `aria-selected` in blue and once through `main-trackList-selected` in red. It came out blue. Spicetify does not inject readable names at runtime; a name missing from the bundle matches nothing. This closes the question left open in PP-02 about the shuffle state as well: the classes that no longer appear in the bundle are not reaching the DOM by some other route.
+- **The row's font never reaches its text.** Title, artist, index, duration, album and the video badge each carry their own font, so the pixel font is set on those elements and on every `a` and `span` inside the row, not on the row.
+- **Hover stays Spotify's.** The theme's blue hover lost to Spotify's own hover rule, and rather than escalate specificity for a state Winamp's list never had, the rule was removed. Selection and the playing row are the two states that matter and both render.
+- **The search "All" tab is not a track list.** It mixes artists, playlists and songs in a different component, so this block does not reach it. The "Songs" tab uses the same list as a playlist and does. The mixed results view belongs with the cards and rows of PP-05.
+- **`no-descending-specificity` is off in stylelint.** It compares selectors across the whole file, and this file is independent blocks scoped under their own containers; a rule in the track list block cannot collide with one in the now playing bar block. The reason is recorded in the `user.css` header alongside the other rule that is off.
+- **The `1. Artist - Title` line was not attempted.** Colour, font and the selection bar already read as the playlist window, and rearranging the grid columns risks the drag, the context menu and column resizing. If it is still wanted it is its own issue.
+- **The committed screenshot predates the last cleanup by one apply.** It was captured while the measurement rule and the theme's hover rule were still in the file. Neither shows in it: no row is selected and none is under the pointer, so the image is the resting state of the final block, pixel for pixel. A fresh capture was attempted and Spotify came back without a window twice, which is where the session ended.

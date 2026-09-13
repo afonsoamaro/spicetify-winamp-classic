@@ -8,9 +8,12 @@
  * are not Spicetify colors live in :root below as --wa-* variables.
  * Every other rule must use var() instead of a literal color.
  *
- * stylelint's selector-class-pattern is off in .stylelintrc.json: the class
- * names here belong to Spotify and are camelCase, and renaming them is not
- * an option.
+ * Two stylelint rules are off in .stylelintrc.json. selector-class-pattern
+ * wants kebab-case, and the class names here belong to Spotify and are
+ * camelCase. no-descending-specificity compares selectors across the whole
+ * file, and this file is a set of independent blocks, one per area, each
+ * scoped under its own container: a rule in the track list block can never
+ * collide with one in the now playing bar block, whatever their specificity.
  */
 
 /* stylelint-disable color-no-hex */
@@ -319,7 +322,88 @@
 
 /* === Track lists === */
 
-/* PP-03: green on black playlist window, selected row in blue. */
+/* Every rule is scoped under .main-trackList-trackList, which is on the list
+   in playlists, albums, the queue, search and artist pages alike. That keeps
+   them off the now playing bar and wins the ties that Spotify's stylesheets,
+   loaded after this one, would otherwise take. */
+.main-trackList-trackList {
+  background-color: var(--spice-main);
+}
+
+.main-trackList-trackList .main-trackList-trackListRow {
+  color: var(--spice-text);
+}
+
+/* The row's own font never reaches the text: the title, the artist line, the
+   index and the duration each carry their own, so the pixel font is set on
+   them instead of on the row. */
+.main-trackList-trackList .main-trackList-trackListRow a,
+.main-trackList-trackList .main-trackList-trackListRow span,
+.main-trackList-trackList .main-trackList-rowMainContentTitle,
+.main-trackList-trackList .main-trackList-rowMainContentSubTitle,
+.main-trackList-trackList .main-trackList-rowMarker,
+.main-trackList-trackList .main-trackList-duration {
+  font-family: var(--wa-font-pixel);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.main-trackList-trackList .main-trackList-rowMainContentTitle {
+  color: var(--spice-text);
+}
+
+.main-trackList-trackList .main-trackList-rowMainContentSubTitle,
+.main-trackList-trackList .main-trackList-rowMarker,
+.main-trackList-trackList .main-trackList-duration {
+  color: var(--spice-subtext);
+}
+
+/* The selection bar covers the whole row, index and duration included, and
+   turns every cell white, as Winamp's playlist does. It is keyed on
+   aria-selected, which the row carries and which will outlive any generated
+   class name. Hover is left to Spotify: its gray reads fine, Winamp's list
+   had no hover at all, and the theme's own hover rule lost to Spotify's. */
+.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] {
+  background-color: var(--spice-selected-row);
+}
+
+.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] a,
+.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] span,
+.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] .main-trackList-rowMainContentTitle,
+.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] .main-trackList-rowMainContentSubTitle,
+.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] .main-trackList-rowMarker,
+.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] .main-trackList-duration {
+  color: var(--wa-white);
+}
+
+/* The playing row is white, which is how Winamp marks the current track. The
+   class is generated and read from Spotify 1.2.99.317: there is no attribute
+   for this state, so a future release renames it and the white goes quietly.
+   Re-read it from the bundle when that happens. */
+.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMainContentTitle,
+.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMainContentSubTitle,
+.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMarker,
+.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-duration {
+  color: var(--wa-white);
+}
+
+/* The column header is the playlist window's title strip: a raised gray band
+   over the black list, with white pixel text. */
+.main-trackList-trackList .main-trackList-trackListHeader {
+  background-color: var(--spice-player);
+  box-shadow: var(--wa-raised);
+  border-bottom: 0;
+}
+
+.main-trackList-trackList .main-trackList-trackListHeader,
+.main-trackList-trackList .main-trackList-trackListHeader button,
+.main-trackList-trackList .main-trackList-trackListHeader span {
+  font-family: var(--wa-font-pixel);
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--wa-white);
+}
 
 /* === Sidebar === */
 
