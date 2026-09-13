@@ -177,12 +177,27 @@
   box-shadow: var(--wa-sunken);
 }
 
-/* Shuffle and repeat report themselves as switches and Spotify signals "on"
-   with colour alone, which the black icon above overrides. Winamp shows a
-   toggled key as pressed in, so the bevel carries the state and the icon
-   turns green with it. */
-.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button[aria-checked="true"],
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-right button[aria-checked="true"] {
+/* Shuffle and repeat are the only controls with an on state, and the only
+   mark of it in the DOM is a generated class on the button, one per control.
+   Their per-button data-testid and aria-checked never render in this build,
+   Spicetify's class map has no readable name for either class, and reading
+   the bundle shows the component composing the raw hash directly.
+
+   So the hashes are used, and they are read from Spotify 1.2.99.317. A future
+   Spotify release will rename them and the state will stop showing, which is
+   a quiet loss of an indicator rather than a broken bar. Re-read them from
+   the bundle when that happens.
+
+   The selector repeats the ancestors of the rule that paints the idle key,
+   because that one is more specific than a bare class pair and was winning.
+   It does not name the element: repeat carries the class on its button and
+   shuffle does not, and matching on the class alone covers both.
+
+   Winamp shows a toggled key as pressed in, so the bevel carries the state.
+   The icon and the dot under it both take currentColor, so the green lights
+   them together. */
+.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] .S4N_g0WWfksBnMSa,
+.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] .oh6rATYB9cGtHuBW {
   box-shadow: var(--wa-sunken);
   color: var(--spice-text);
 }
