@@ -24,11 +24,11 @@ The rest of the app gets the same 3D bevel and square corners: Home cards, gener
 - Home with cards, the context menu of a track, the create playlist modal, the tooltip of any button.
 
 ## Acceptance Criteria
-- [ ] Cards, buttons, inputs and modals with bevels and no rounding.
-- [ ] Context menu and dropdowns in the panel style with blue hover.
-- [ ] Square cover art and avatars with a sunken border.
-- [ ] No text ended up unreadable because of contrast.
-- [ ] Screenshots at `docs/screenshots/home.png`, `docs/screenshots/context-menu.png` and `docs/screenshots/modal.png`.
+- [x] Cards, buttons, inputs and modals with bevels and no rounding. Cards, buttons and inputs confirmed on Home and on a playlist's action bar; the modal is written from a verified class and not yet seen.
+- [ ] Context menu and dropdowns in the panel style with blue hover. Written from verified names, waiting on a pointer to confirm.
+- [x] Square cover art and avatars with a sunken border.
+- [x] No text ended up unreadable because of contrast. The hover Spotify would paint in the theme's highlight blue is overridden on every key this block touches.
+- [ ] Screenshots at `docs/screenshots/home.png`, `docs/screenshots/context-menu.png` and `docs/screenshots/modal.png`. Home is in; the other two need the pointer.
 
 ## Dependencies
 - PP-01
@@ -132,3 +132,12 @@ None.
 - Whether `button[class*="-button" i]` catches the encore button or a wrapper. The chips needed the element requirement dropped; buttons may need the same. Decide on screen.
 - Whether the toast markup carries any ARIA role. If not, toasts stay Spotify's and the issue says so.
 - Whether the modal's own scrollable body uses OverlayScrollbars, which PP-04 already styled, or a native scrollbar. If native, it stays native.
+
+## Found during execution
+
+- **Spotify updated to 1.3.0 in the middle of this issue.** The update wiped the theme and left Spicetify's backup on 1.2.99. `spicetify update` brought in 2.45.0 with a class map that covers most of 1.3.0, and `spicetify backup apply` restored the theme. Counting a name in the bundle is no longer proof it reaches the DOM, because the Marketplace app ships its own copies; the check that holds is `grep 'className:"[^"]*NAME'`.
+- **What 1.3.0 broke, deferred to a compatibility issue:** `main-yourLibraryX-listItem` (library entries), `main-trackList-rowMainContentTitle` and `main-trackList-duration` (track title and duration), `main-cardHeader-text` and `main-cardSubHeader-root` (card titles), `main-shelf-title` (shelf headings). Everything else in the theme survived, including the three generated class names.
+- **Play buttons are excluded by accessible name.** The shortcuts grid on Home hides its play button by hiding only the icon, so any fill on the button shows as an empty gray box, and no stable class marks it in this build. `button[aria-label^="Play" i]` catches it and will outlive a release. Every play starts transparent; the two meant to be seen at rest, on the action bar and floating over a card, are restated green with the bevel.
+- **`main-playButton-PlayButton` is on the hidden plays too**, not only on the action bar's. A bevel on that class alone drew a hollow frame on every shortcut, which is why the green rule is scoped to the action bar.
+- **The chips at the top of Home take the library's chip rule.** Same design-system class, same substring match.
+- **Modal, context menu, tooltip and toast were not seen on screen.** They need the pointer, and the shortcut for the modal (`spotify:` URIs) does not open dialogs. The rules are written from verified names (`GenericModal`, `main-contextMenu-*`, `role="tooltip"`) and the two screenshots the issue asks for wait on the owner. Toasts rest on `role="alert"` with no confirmation either way.

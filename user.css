@@ -627,4 +627,205 @@ button.main-globalNav-navLinkActive {
 
 /* === Cards, buttons, inputs, modals, menus, covers === */
 
-/* PP-05 */
+/* Everything the earlier blocks did not claim. The key recipe is the one the
+   transport, library and nav keys already use, and the hover is the one the
+   owner settled on in PP-04: the fill lightens and the label lights green.
+   Spotify's own hover would otherwise paint the theme's highlight blue under
+   black text.
+
+   Design-system buttons and inputs carry a build number in their class name
+   (e-10810-button, e-10810-form-input) that changes with each release, so
+   they are matched by substring, the way the chips are, and only inside the
+   containers this block owns. */
+
+/* Cards */
+.main-card-card {
+  background-color: var(--spice-card);
+  box-shadow: var(--wa-raised);
+}
+
+.main-card-card:hover {
+  background-color: var(--wa-bevel-light);
+}
+
+.main-cardImage-imageWrapper {
+  border: 2px solid var(--wa-bevel-dark);
+  box-shadow: var(--wa-sunken);
+}
+
+.main-cardHeader-text,
+.main-cardSubHeader-root {
+  font-family: var(--wa-font-pixel);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.main-cardHeader-text {
+  color: var(--spice-text);
+}
+
+.main-cardSubHeader-root {
+  color: var(--spice-subtext);
+}
+
+/* The filter chips at the top of Home, same technique as the library's. */
+.main-view-container [class*="chip" i] {
+  font-family: var(--wa-font-pixel);
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--spice-shadow);
+  background-color: var(--spice-button);
+  box-shadow: var(--wa-raised);
+}
+
+.main-view-container [class*="chip" i]:hover {
+  background-color: var(--wa-bevel-light);
+  color: var(--spice-text);
+}
+
+/* Buttons. Play buttons are excluded by their accessible name: the shortcuts on Home
+   keep theirs hidden until hover by hiding only the icon, so any fill on the
+   button shows up as an empty gray box, and no stable class marks them in
+   this build. The aria-label is the one thing about them that will not
+   change with a release. */
+.main-view-container button[class*="-button" i]:not(.main-playButton-PlayButton, [aria-label^="Play" i]),
+.GenericModal button[class*="-button" i],
+.main-contextMenu-menu button[class*="-button" i],
+.main-actionBar-ActionBar button:not(.main-playButton-PlayButton, [aria-label^="Play" i]) {
+  background-color: var(--spice-button);
+  box-shadow: var(--wa-raised);
+  color: var(--spice-shadow);
+}
+
+.main-view-container button[class*="--secondary" i],
+.main-view-container button[class*="--tertiary" i],
+.GenericModal button[class*="--secondary" i],
+.GenericModal button[class*="--tertiary" i] {
+  background-color: transparent;
+  color: var(--spice-text);
+}
+
+.main-view-container button[class*="-button" i]:not(.main-playButton-PlayButton, [aria-label^="Play" i]):hover,
+.GenericModal button[class*="-button" i]:hover,
+.main-contextMenu-menu button[class*="-button" i]:hover,
+.main-actionBar-ActionBar button:not(.main-playButton-PlayButton, [aria-label^="Play" i]):hover {
+  background-color: var(--wa-bevel-light);
+  color: var(--spice-text);
+}
+
+.main-view-container button[class*="-button" i]:active,
+.GenericModal button[class*="-button" i]:active,
+.main-actionBar-ActionBar button:active {
+  box-shadow: var(--wa-sunken);
+}
+
+/* The shortcuts grid on Home hides its play button by hiding only the icon,
+   so any fill on it shows up as an empty gray box; it goes back to
+   transparent, as does any other play button the generic rule may reach. */
+.main-view-container button[aria-label^="Play" i] {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+/* The two play buttons that are meant to be seen at rest, on the action bar
+   and floating over a card, are the green key outside the now playing bar.
+   These come after the transparent rule and outrank it. */
+.main-view-container .main-actionBar-ActionBar button.main-playButton-PlayButton,
+.main-view-container .main-card-PlayButtonContainer button {
+  background-color: var(--spice-button-active);
+  box-shadow: var(--wa-raised);
+  color: var(--spice-shadow);
+}
+
+/* Inputs are LED displays, like the search field. */
+.main-view-container [class*="-form-input" i],
+.GenericModal [class*="-form-input" i],
+.GenericModal input,
+.GenericModal textarea,
+.main-view-container .x-filterBox-filterInput {
+  background-color: var(--wa-display-bg);
+  box-shadow: var(--wa-sunken);
+  font-family: var(--wa-font-pixel);
+  font-size: 12px;
+  color: var(--spice-text);
+}
+
+.GenericModal input::placeholder,
+.GenericModal textarea::placeholder,
+.main-view-container [class*="-form-input" i]::placeholder {
+  color: var(--spice-subtext);
+}
+
+/* Modals are a case of their own over a darkened room. */
+.GenericModal__overlay {
+  background-color: color-mix(in srgb, var(--wa-display-bg) 70%, transparent);
+}
+
+.GenericModal {
+  background-color: var(--spice-player);
+  box-shadow: var(--wa-raised);
+}
+
+.GenericModal h1,
+.GenericModal h2,
+.main-playlistEditDetailsModal-title {
+  background-image: linear-gradient(to right, var(--wa-titlebar-start), var(--wa-titlebar-end));
+  font-family: var(--wa-font-pixel);
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--wa-white);
+}
+
+/* Context menus and dropdowns are small panels; an item under the pointer is
+   the same blue bar as a selected track. */
+.main-contextMenu-menu,
+.main-dropDown-dropDown {
+  background-color: var(--spice-sidebar);
+  box-shadow: var(--wa-raised);
+}
+
+.main-contextMenu-menuItemButton,
+.main-contextMenu-menuItemButton span {
+  font-family: var(--wa-font-pixel);
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--spice-text);
+}
+
+.main-contextMenu-menuItemButton:hover,
+.main-contextMenu-menuItemButton:hover span,
+.main-contextMenu-menuItemButton:focus,
+.main-contextMenu-menuItemButton:focus span {
+  background-color: var(--spice-selected-row);
+  color: var(--wa-white);
+}
+
+/* Tooltips carry no readable class, only their role. */
+[role="tooltip"] {
+  background-color: var(--wa-display-bg);
+  box-shadow: var(--wa-raised);
+  font-family: var(--wa-font-pixel);
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--spice-text);
+}
+
+/* Images and the profile avatar sit recessed into the panel. The global
+   reset already squared the avatar. */
+.main-image-image,
+.main-entityHeader-image,
+.main-avatar-image {
+  border: 2px solid var(--wa-bevel-dark);
+  box-shadow: var(--wa-sunken);
+}
+
+/* Toasts, best effort: nothing readable names them, so their ARIA role is
+   the only handle. Recorded in the issue either way. */
+[role="alert"],
+[role="status"] {
+  background-color: var(--spice-notification);
+  box-shadow: var(--wa-raised);
+  font-family: var(--wa-font-pixel);
+  color: var(--wa-white);
+}
