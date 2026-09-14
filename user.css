@@ -336,26 +336,39 @@
 
 /* The row's own font never reaches the text: the title, the artist line, the
    index and the duration each carry their own, so the pixel font is set on
-   them instead of on the row. */
+   them instead of on the row.
+
+   Spotify 1.3.0 dropped the readable names for the title and the duration.
+   The title link carries a testid and the duration sits in the row's last
+   section, both readable; the old names stay so a release that brings them
+   back lights up without an edit. */
 .main-trackList-trackList .main-trackList-trackListRow a,
 .main-trackList-trackList .main-trackList-trackListRow span,
 .main-trackList-trackList .main-trackList-rowMainContentTitle,
+.main-trackList-trackList .main-trackList-rowMainContent [data-testid="internal-track-link"],
+.main-trackList-trackList .main-trackList-rowMainContent > :first-child,
 .main-trackList-trackList .main-trackList-rowMainContentSubTitle,
 .main-trackList-trackList .main-trackList-rowMarker,
-.main-trackList-trackList .main-trackList-duration {
+.main-trackList-trackList .main-trackList-duration,
+.main-trackList-trackList .main-trackList-rowSectionEnd,
+.main-trackList-trackList .main-trackList-rowSectionEnd * {
   font-family: var(--wa-font-pixel);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0;
 }
 
-.main-trackList-trackList .main-trackList-rowMainContentTitle {
+.main-trackList-trackList .main-trackList-rowMainContentTitle,
+.main-trackList-trackList .main-trackList-rowMainContent [data-testid="internal-track-link"],
+.main-trackList-trackList .main-trackList-rowMainContent > :first-child {
   color: var(--spice-text);
 }
 
 .main-trackList-trackList .main-trackList-rowMainContentSubTitle,
 .main-trackList-trackList .main-trackList-rowMarker,
-.main-trackList-trackList .main-trackList-duration {
+.main-trackList-trackList .main-trackList-duration,
+.main-trackList-trackList .main-trackList-rowSectionEnd,
+.main-trackList-trackList .main-trackList-rowSectionEnd * {
   color: var(--spice-subtext);
 }
 
@@ -382,9 +395,12 @@
    for this state, so a future release renames it and the white goes quietly.
    Re-read it from the bundle when that happens. */
 .main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMainContentTitle,
+.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMainContent [data-testid="internal-track-link"],
+.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMainContent > :first-child,
 .main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMainContentSubTitle,
 .main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMarker,
-.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-duration {
+.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-duration,
+.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowSectionEnd * {
   color: var(--wa-white);
 }
 
@@ -429,9 +445,15 @@
   color: var(--wa-white);
 }
 
+/* Spotify 1.3.0 dropped the readable name of the entry itself; the container
+   around it kept its name and the entry still carries aria-selected. */
 .main-yourLibraryX-listItem,
 .main-yourLibraryX-listItem a,
-.main-yourLibraryX-listItem span {
+.main-yourLibraryX-listItem span,
+.main-yourLibraryX-libraryItemContainer,
+.main-yourLibraryX-libraryItemContainer a,
+.main-yourLibraryX-libraryItemContainer span,
+.main-yourLibraryX-libraryItemContainer p {
   font-family: var(--wa-font-pixel);
   font-size: 12px;
   text-transform: uppercase;
@@ -439,13 +461,17 @@
   color: var(--spice-text);
 }
 
-.main-yourLibraryX-listItem[aria-selected="true"] {
+.main-yourLibraryX-listItem[aria-selected="true"],
+.main-yourLibraryX-libraryItemContainer[aria-selected="true"],
+.main-yourLibraryX-libraryItemContainer [aria-selected="true"] {
   background-color: var(--spice-selected-row);
   box-shadow: var(--wa-sunken);
 }
 
 .main-yourLibraryX-listItem[aria-selected="true"] a,
-.main-yourLibraryX-listItem[aria-selected="true"] span {
+.main-yourLibraryX-listItem[aria-selected="true"] span,
+.main-yourLibraryX-libraryItemContainer[aria-selected="true"] *,
+.main-yourLibraryX-libraryItemContainer [aria-selected="true"] * {
   color: var(--wa-white);
 }
 
@@ -598,7 +624,8 @@ button.main-globalNav-navLinkActive {
    bars, and the entity header already sits on its own artwork. */
 .main-entityHeader-title,
 .main-entityHeader-title h1,
-.main-shelf-title {
+.main-shelf-title,
+.main-view-container h2 {
   font-family: var(--wa-font-pixel);
   text-transform: uppercase;
   color: var(--wa-white);
@@ -653,19 +680,41 @@ button.main-globalNav-navLinkActive {
   box-shadow: var(--wa-sunken);
 }
 
+/* Spotify 1.3.0 moved the shelf card to the Encore design system: the card is
+   [data-encore-id="card"] (css-map still names it main-card-cardContainer),
+   the title is [data-encore-id="cardTitle"] and the line under it is
+   [data-encore-id="cardSubtitle"]. main-card-card and main-card-cardMetadata
+   are gone from the DOM. Encore paints the text through
+   .encore-internal-color-text-subdued and .encore-text-* rules that load after
+   this sheet, so the card container is in the selector to win the tie. The
+   pre-1.3.0 names stay so an older release lights up without an edit. */
 .main-cardHeader-text,
-.main-cardSubHeader-root {
+.main-cardSubHeader-root,
+.main-card-card .main-card-cardTitle,
+.main-card-card .main-card-cardMetadata,
+.main-card-card .main-card-cardMetadata *,
+.main-card-cardContainer [data-encore-id="cardTitle"],
+.main-card-cardContainer [data-encore-id="cardTitle"] *,
+.main-card-cardContainer [data-encore-id="cardSubtitle"],
+.main-card-cardContainer [data-encore-id="cardSubtitle"] * {
   font-family: var(--wa-font-pixel);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0;
 }
 
-.main-cardHeader-text {
+.main-cardHeader-text,
+.main-card-card .main-card-cardTitle,
+.main-card-cardContainer [data-encore-id="cardTitle"],
+.main-card-cardContainer [data-encore-id="cardTitle"] * {
   color: var(--spice-text);
 }
 
-.main-cardSubHeader-root {
+.main-cardSubHeader-root,
+.main-card-card .main-card-cardMetadata,
+.main-card-card .main-card-cardMetadata *,
+.main-card-cardContainer [data-encore-id="cardSubtitle"],
+.main-card-cardContainer [data-encore-id="cardSubtitle"] * {
   color: var(--spice-subtext);
 }
 
