@@ -31,3 +31,64 @@ Everything else survived, including the three generated class names for the play
 
 ## Dependencies
 - PP-05
+
+---
+
+# Implementation Plan
+
+Research done on 2026-09-14 against Spotify 1.3.0.277 with Spicetify 2.45.0, reading the class map objects and `className` strings in the bundle, not counting occurrences.
+
+## Prerequisites
+- Spicetify 2.45.0 installed and `spicetify backup apply` run against 1.3.0, which is the state the theme is in now.
+
+## Reusable Code Found
+- The blocks in `user.css` that hold the broken selectors: sidebar (library entries), track lists (title and duration), cards (title and subtitle), top bar (shelf titles). Each fix is a selector swap inside an existing rule; no new rule shapes.
+- The lesson from every earlier issue, now the rule: ARIA and readable containers before structure, structure before generated names.
+
+## What each broken name resolves to in 1.3.0
+| Broken | Still readable nearby | Replacement |
+|---|---|---|
+| `main-yourLibraryX-listItem` | `main-yourLibraryX-libraryItemContainer` wraps each entry; the entry keeps `aria-selected` | `.main-yourLibraryX-libraryItemContainer` for font and colour; `[aria-selected="true"]` on or inside it for the current entry |
+| `main-trackList-rowMainContentTitle` | `main-trackList-rowMainContent` wraps title and artist; the title link carries `data-testid="internal-track-link"` | `.main-trackList-rowMainContent [data-testid="internal-track-link"]`, with `.main-trackList-rowMainContent > :first-child` as the structural fallback if the testid does not render |
+| `main-trackList-duration` | `main-trackList-rowSectionEnd` is the last column and holds the duration | `.main-trackList-rowSectionEnd` and its descendants |
+| `main-cardHeader-text` | `main-card-cardMetadata` wraps title and subtitle; the map now gives the title an empty class | `.main-card-cardMetadata > :first-child` |
+| `main-cardSubHeader-root` | same | `.main-card-cardMetadata > :not(:first-child)` |
+| `main-shelf-title` | nothing readable is left on the shelf; the title is the only `h2` in the content column | `.main-view-container h2` |
+
+The generated names behind two of them, for the record and for the upstream proposal: `rowTitle` is `k_CUvHNLoYcwpmUhV5jN` and `rowDuration` is `buwCyhSufWYlHJ5_Wffd` in this build. Neither is used in the theme.
+
+## Architecture Decisions
+- **No generated name enters the theme.** Every replacement is a readable container, an ARIA attribute or a child position. The two hashes above go to Spicetify's class map as `main-trackList-rowTitle` and `main-trackList-rowDuration`, which is where they belong.
+- **Child-position selectors are accepted where the container is readable.** `:first-child` under `main-card-cardMetadata` is tied to the order title-then-subtitle, which is the component's contract, not a styling accident.
+- **The old names stay in the selector lists.** A release that brings them back should light up without an edit. The rules become `.old, .new { ... }`.
+- **The README gains the post-update ritual**, which is a real user-facing need now that two updates in a week wiped the theme.
+
+## Files to Create
+None.
+
+## Files to Modify
+| File | Changes |
+|------|---------|
+| `user.css` | selector swaps in four blocks, old names kept alongside |
+| `README.md` | a short section on what to do after Spotify updates |
+
+## Data Requirements
+None.
+
+## Testing Strategy
+- `pnpm check` green.
+- On screen, on 1.3.0: library entries in green pixel with the current one on the blue bar, track titles in green pixel, durations in green, card titles and subtitles in pixel, shelf headings in white pixel.
+- `docs/screenshots/playlist.png`, `sidebar.png` and `home.png` refreshed, since all three show the regression today.
+
+## Implementation Order
+1. Track list: title and duration.
+2. Library entries.
+3. Cards.
+4. Shelf titles.
+5. README section.
+6. `pnpm check`, screen check, screenshots.
+7. Open the class map proposal upstream with the two names.
+
+## Unknowns
+- Whether `internal-track-link` renders as a DOM attribute. PP-02 showed per-button testids do not on the now playing bar; links may differ. The structural fallback is in the same rule so nothing depends on the answer.
+- Whether `aria-selected` sits on the container or on the hashed entry inside it. Both forms are in the selector.
