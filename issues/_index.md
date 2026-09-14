@@ -15,7 +15,7 @@ Source: `SPECS.md`. Spicetify theme that recreates the Winamp 2.x look with CSS,
 | PP-02 | Now playing bar as the main panel | ✅ done (Sep 12) | PP-01 |
 | PP-03 | Track list as the playlist window | ✅ done (Sep 13) | PP-01 |
 | PP-04 | Sidebar, top bar, navigation and scrollbars | ✅ done (Sep 13) | PP-01 |
-| PP-05 | Cards, buttons, inputs, modals, menus and cover art | planned | PP-01 |
+| PP-05 | Cards, buttons, inputs, modals, menus and cover art | ✅ done (Sep 14), menu and modal screenshots pending | PP-01 |
 
 ## Functional Issues (extension and release)
 | Issue | Name | Status | Dependencies |
@@ -26,6 +26,7 @@ Source: `SPECS.md`. Spicetify theme that recreates the Winamp 2.x look with CSS,
 | FN-04 | Spectrum analyzer synced with getAudioData (spike, optional) | todo | FN-03 |
 | FN-05 | WINAMP title bar | todo | FN-01, PP-02 |
 | FN-06 | Marketplace release | todo | FN-00b, PP-01 to PP-05, FN-02, FN-03, FN-05 |
+| FN-07 | Spotify 1.3.0 compatibility | todo | PP-05 |
 
 ## Critical path
 FN-00 → FN-00b → PP-01 → PP-02 → FN-01 → FN-02 → FN-03 → FN-05 → FN-06.
