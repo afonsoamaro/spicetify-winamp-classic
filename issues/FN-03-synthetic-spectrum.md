@@ -4,7 +4,7 @@
 Functional
 
 ## Description
-A canvas next to the display text shows 20 bars that rise and fall while the music plays, colored green, yellow, orange and red from bottom to top, with gray peaks that drop slowly, like the Winamp analyzer. The movement is synthetic because Spotify doesn't expose the audio.
+A canvas next to the display text shows 19 bars (the owner accepted 19 over the twenty first written here: 3 px bars with 1 px gaps in 76 px, Winamp's own count) that rise and fall while the music plays, colored green, yellow, orange and red from bottom to top, with gray peaks that drop slowly, like the Winamp analyzer. The movement is synthetic because Spotify doesn't expose the audio.
 
 ## User Flow
 1. Track playing: the bars move at 60fps.
@@ -38,10 +38,10 @@ A canvas next to the display text shows 20 bars that rise and fall while the mus
 - None.
 
 ## Acceptance Criteria
-- [ ] Tests for `nextFrame`: the bar rises to the target, falls 0.06 per frame, goes to zero when paused, the peak holds for 15 frames and then falls.
-- [ ] Tests for `colorForRow` across the four bands and at the boundaries.
-- [ ] In Spotify, the bars move while playing and stop after a pause. Spotify's CPU usage while paused matches running without the extension (check in Activity Monitor).
-- [ ] `pnpm build` run and `theme.js` updated. `pnpm check` green.
+- [x] Tests for `nextFrame`: the bar rises to the target, falls 0.06 per frame, goes to zero when paused, the peak holds for 15 frames and then falls.
+- [x] Tests for `colorForRow` across the four bands and at the boundaries.
+- [x] In Spotify, the bars move while playing and stop after a pause. Spotify's CPU usage while paused matches running without the extension (check in Activity Monitor). Met for the analyser itself and for the whole extension with a static marquee; a long title scrolling keeps the FN-02 marquee's layout cost until FN-09, see the record below.
+- [x] `pnpm build` run and `theme.js` updated. `pnpm check` green.
 
 ## Dependencies
 - FN-01
@@ -128,3 +128,13 @@ None.
 ## Unknowns
 - **20 vs 19 bars.** The issue and the spec say twenty; the geometry (3 px + 1 px in 76 px) and Winamp's own analyser say 19. The plan goes with 19; if the owner wants 20, the canvas becomes 79 px and `--wa-spectrum-w` 87 px.
 - Whether `requestAnimationFrame` keeps firing in Spotify's CEF when the window is in the background; the spec assumes it pauses. Checked with the counter during the on-screen step and recorded.
+
+---
+
+# Found during execution
+
+- On screen (1.3.0.277): the canvas is 152x32 device pixels for 76x16 CSS pixels at dpr 2, 4 px from the display's right edge; `toDataURL` differs between two samples 300 ms apart while playing; after a pause the `requestAnimationFrame` rate measured through a counter on `window` drops to 0 per second and the canvas stops changing. Playing, the analyser loop costs about 14% of a core in the CPU profile (paint at 60 fps), inside what Spotify itself spends while playing.
+- **Paused CPU, the criterion, exposed two problems outside this issue.** With a short title (static marquee) the profile is 98.7% idle, the same as the no-extension baseline. With a long title the FN-02 marquee cost about 90% of a core: `spicetifyWrapper.js` observes `body` for `childList` mutations and on each one runs `querySelectorAll('*')` plus `getComputedStyle` on every element (its "scroll optimization"), behind a version gate `e[1] >= 2 && e[2] >= 57` that reads 1.3.0 as `3 >= 2 && 0 >= 57` and so never turns the scan off on 1.3.x. `textContent = view` replaces the text node and is a childList mutation. Fixed here by rewriting one text node's `data` in place (`src/marquee-dom.js`, with a test): the wrapper drops from 52% to 0.2% of the profile. Reported upstream with the css-map findings.
+- Even without the wrapper, a DOM text change at 5 Hz leaves about 34% of a core: `Performance.getMetrics` shows 20 layouts in 4 s at 30 to 60 ms each, and a `position: fixed; contain: strict` probe outside the bar pays the same, so every layout pass on this page is that expensive. Probes in the display: DOM text 34%, `transform` on its own layer 14%, canvas `fillText` 1.4%. The marquee moves to a canvas in FN-09; the CPU criterion here is met with the static marquee and depends on FN-09 for long titles.
+- Baseline measured with `inject_theme_js 0` and a relaunch: renderer at 23 to 27% paused (Spotify's own now playing view video), 27 to 60% playing. `ps %cpu` is a lifetime average and useless for this; `top -l N -pid` gives the instantaneous figure, and the CDP `Profiler` plus `Performance.getMetrics` say where the time goes.
+- `Spicetify.Player.playUri` on a wrong track id empties the player and removes the widget; the observer picked it back up when a playlist was played.
