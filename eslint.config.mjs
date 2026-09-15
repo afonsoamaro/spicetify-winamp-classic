@@ -18,7 +18,7 @@ export default [
     files: ['scripts/**/*.js', 'test/**/*.js', '*.config.js', 'eslint.config.mjs'],
     languageOptions: {
       sourceType: 'module',
-      globals: { ...globals.node },
+      globals: { ...globals.node, ...globals.browser },
     },
   },
 ];
