@@ -101,6 +101,21 @@ describe('createMarqueeInjection', () => {
     expect(player.count('songchange')).toBe(1);
   });
 
+  it('rewrites one text node in place instead of replacing children', () => {
+    const display = makeDisplay();
+    const player = fakePlayer(LONG);
+    injection = createMarqueeInjection({ measure, player: () => player });
+    injection.run(display);
+    const node = marquee()?.firstChild;
+    setWidth(player, 80);
+
+    vi.advanceTimersByTime(TICK_MS * 3);
+
+    expect(marquee()?.childNodes).toHaveLength(1);
+    expect(marquee()?.firstChild).toBe(node);
+    expect(node?.nodeType).toBe(Node.TEXT_NODE);
+  });
+
   it('keeps short text still and runs no timer', () => {
     const display = makeDisplay();
     const player = fakePlayer(SHORT);

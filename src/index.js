@@ -5,9 +5,10 @@
 // order they mount in.
 import { LOG_PREFIX, mount, waitForSpicetify } from './dom.js';
 import { createMarqueeInjection } from './marquee-dom.js';
+import { createSpectrumInjection } from './spectrum-dom.js';
 
 /** @type {import('./dom.js').Injection[]} */
-const INJECTIONS = [createMarqueeInjection()];
+const INJECTIONS = [createMarqueeInjection(), createSpectrumInjection()];
 
 async function main() {
   try {

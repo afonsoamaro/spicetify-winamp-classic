@@ -41,6 +41,12 @@ export function canvasMeasure(el, text) {
 export function createMarqueeInjection({ measure = canvasMeasure, player = () => Spicetify.Player } = {}) {
   /** @type {HTMLElement | null} */
   let el = null;
+  // The text lives in one node whose data is rewritten in place. Assigning
+  // textContent would replace the node, and that childList mutation makes
+  // Spicetify's body observer rescan every element on the page (its version
+  // gate misreads 1.3.x), which costs about half a core at five ticks a second.
+  /** @type {Text | null} */
+  let node = null;
   /** @type {ReturnType<typeof setInterval> | null} */
   let timer = null;
   /** @type {ReturnType<typeof setInterval> | null} */
@@ -57,21 +63,21 @@ export function createMarqueeInjection({ measure = canvasMeasure, player = () =>
   };
 
   const tick = () => {
-    if (!el) return;
-    ({ view: el.textContent, offset } = scrollStep(text, offset, width));
+    if (!node) return;
+    ({ view: node.data, offset } = scrollStep(text, offset, width));
   };
 
   // Decides between static text and scrolling from the element's current
   // width. Called on mount, on every song change and when the display resizes.
   const layout = () => {
     stop();
-    if (!el) return;
+    if (!el || !node) return;
     const px = el.clientWidth;
     const needed = measure(el, text);
     // A zero width means the element is not laid out (hidden display, or a
     // test without layout): show the text whole and keep the timer off.
     if (px <= 0 || needed <= px) {
-      el.textContent = text;
+      node.data = text;
       return;
     }
     width = Math.max(1, Math.floor(px / (needed / text.length)));
@@ -103,6 +109,8 @@ export function createMarqueeInjection({ measure = canvasMeasure, player = () =>
     run(display) {
       el = document.createElement('div');
       el.className = MARQUEE_CLASS;
+      node = document.createTextNode('');
+      el.append(node);
       const info = display.querySelector(TRACK_INFO_SELECTOR);
       if (info) info.insertAdjacentElement('afterend', el);
       else display.append(el);
@@ -127,6 +135,7 @@ export function createMarqueeInjection({ measure = canvasMeasure, player = () =>
       }
       el?.remove();
       el = null;
+      node = null;
     },
   };
 }
