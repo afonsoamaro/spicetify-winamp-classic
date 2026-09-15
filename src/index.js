@@ -1,9 +1,22 @@
 // @ts-check
 // Entry point of the theme extension. After `pnpm build` this becomes the
 // tail of theme.js, which Spicetify injects when inject_theme_js is on.
+// Later issues push their injection into INJECTIONS here; the order is the
+// order they mount in.
+import { LOG_PREFIX, mount, waitForSpicetify } from './dom.js';
 
-function main() {
-  console.log('[winamp-classic] loaded');
+/** @type {import('./dom.js').Injection[]} */
+const INJECTIONS = [];
+
+async function main() {
+  try {
+    await waitForSpicetify();
+  } catch (err) {
+    console.error(`${LOG_PREFIX} ${err instanceof Error ? err.message : err}`);
+    return;
+  }
+  mount(INJECTIONS);
+  console.log(`${LOG_PREFIX} mounted`);
 }
 
 main();
