@@ -2,6 +2,90 @@
 (function () {
 'use strict';
 
+// --- time.js ---
+// @ts-check
+// Time formatting for the display. Pure, no DOM.
+
+/** @param {number} n */
+const pad = (n) => String(n).padStart(2, '0');
+
+/**
+ * `m:ss`, or `h:mm:ss` past one hour. Anything that is not a non-negative
+ * finite number reads as `0:00`, so a missing duration never breaks the text.
+ * @param {unknown} ms
+ * @returns {string}
+ */
+function formatTime(ms) {
+  if (typeof ms !== 'number' || !Number.isFinite(ms) || ms < 0) return '0:00';
+  const total = Math.floor(ms / 1000);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
+
+// --- marquee.js ---
+// @ts-check
+// Text of the display and the scroll step. Pure, no DOM: the DOM side that
+// measures the display and drives the timer lives in marquee-dom.js.
+
+// Winamp put this between the end of the text and its next lap.
+const SEPARATOR = '  ***  ';
+
+/**
+ * @typedef {object} Track
+ * @property {string} artist
+ * @property {string} title
+ * @property {number} durationMs
+ */
+
+/**
+ * Reduces Spicetify's player item to what the display needs. Every read is
+ * optional so a missing item, a podcast without artists or a local file
+ * without metadata still yields something to show.
+ * @param {Partial<Spicetify.PlayerTrack> | undefined | null} item
+ * @returns {Track}
+ */
+function describeItem(item) {
+  const artists = item?.artists?.map((artist) => artist.name).filter(Boolean) ?? [];
+  return {
+    artist: artists.length > 0 ? artists.join(', ') : (item?.metadata?.artist_name ?? ''),
+    title: item?.name ?? item?.metadata?.title ?? '',
+    durationMs: item?.duration?.milliseconds ?? 0,
+  };
+}
+
+/**
+ * `ARTIST - TITLE (m:ss)`, uppercase. Without an artist only the title; with
+ * nothing at all, the word WINAMP, which is what an idle Winamp showed.
+ * @param {Track} track
+ * @returns {string}
+ */
+function displayText({ artist, title, durationMs }) {
+  const a = artist.trim();
+  const t = title.trim();
+  const base = a && t ? `${a} - ${t}` : t || a || 'WINAMP';
+  const time = durationMs > 0 ? ` (${formatTime(durationMs)})` : '';
+  return `${base}${time}`.toUpperCase();
+}
+
+/**
+ * The window of `width` characters visible at `offset`, and the offset for
+ * the next step. Text that fits is returned whole with the offset pinned at
+ * zero; text that does not fit scrolls through `text + SEPARATOR` and wraps.
+ * @param {string} text
+ * @param {number} offset
+ * @param {number} width
+ * @returns {{ view: string, offset: number }}
+ */
+function scrollStep(text, offset, width) {
+  if (width <= 0) return { view: '', offset: 0 };
+  if (text.length <= width) return { view: text, offset: 0 };
+  const loop = text + SEPARATOR;
+  const start = offset % loop.length;
+  return { view: (loop + loop).slice(start, start + width), offset: (start + 1) % loop.length };
+}
+
 // --- dom.js ---
 // @ts-check
 // The one module that touches the DOM and the Spicetify globals. The other
@@ -131,6 +215,138 @@ function mount(injections, { root = document } = {}) {
   return { remount: sync, disconnect: () => observer.disconnect() };
 }
 
+// --- marquee-dom.js ---
+// @ts-check
+// The DOM side of the marquee: an element next to Spotify's track info that
+// shows the display text and scrolls it when it does not fit. user.css hides
+// the track info while this element is present, so nothing React renders is
+// ever rewritten and a remount is safe.
+
+const MARQUEE_CLASS = 'wa-marquee';
+const TICK_MS = 200;
+const DATA_POLL_MS = 250;
+const TRACK_INFO_SELECTOR = '.main-nowPlayingWidget-trackInfo';
+
+/**
+ * Width in pixels of `text` in the element's computed font. Silkscreen is
+ * proportional, so this is the honest measure; the character count of the
+ * visible window comes from the average width of the text being shown.
+ * @param {HTMLElement} el
+ * @param {string} text
+ * @returns {number}
+ */
+function canvasMeasure(el, text) {
+  const ctx = document.createElement('canvas').getContext('2d');
+  if (!ctx) return text.length * 8;
+  ctx.font = getComputedStyle(el).font;
+  return ctx.measureText(text).width;
+}
+
+/**
+ * The slice of Spicetify.Player the marquee uses, so tests can pass a fake.
+ * @typedef {object} PlayerLike
+ * @property {Partial<Spicetify.PlayerState>} [data]
+ * @property {(type: string, callback: () => void) => void} addEventListener
+ * @property {(type: string, callback: () => void) => void} removeEventListener
+ */
+
+/**
+ * @param {{ measure?: (el: HTMLElement, text: string) => number, player?: () => PlayerLike }} [options]
+ * @returns {import('./dom.js').Injection}
+ */
+function createMarqueeInjection({ measure = canvasMeasure, player = () => Spicetify.Player } = {}) {
+  /** @type {HTMLElement | null} */
+  let el = null;
+  /** @type {ReturnType<typeof setInterval> | null} */
+  let timer = null;
+  /** @type {ReturnType<typeof setInterval> | null} */
+  let pending = null;
+  /** @type {ResizeObserver | null} */
+  let resize = null;
+  let text = '';
+  let offset = 0;
+  let width = 0;
+
+  const stop = () => {
+    if (timer !== null) clearInterval(timer);
+    timer = null;
+  };
+
+  const tick = () => {
+    if (!el) return;
+    ({ view: el.textContent, offset } = scrollStep(text, offset, width));
+  };
+
+  // Decides between static text and scrolling from the element's current
+  // width. Called on mount, on every song change and when the display resizes.
+  const layout = () => {
+    stop();
+    if (!el) return;
+    const px = el.clientWidth;
+    const needed = measure(el, text);
+    // A zero width means the element is not laid out (hidden display, or a
+    // test without layout): show the text whole and keep the timer off.
+    if (px <= 0 || needed <= px) {
+      el.textContent = text;
+      return;
+    }
+    width = Math.max(1, Math.floor(px / (needed / text.length)));
+    tick();
+    timer = setInterval(tick, TICK_MS);
+  };
+
+  const refresh = () => {
+    text = displayText(describeItem(player().data?.item));
+    offset = 0;
+    layout();
+  };
+
+  // Spicetify fills Player.data a moment after the bar renders and fires
+  // songchange only when the track uri changes, so a mount that lands before
+  // the data would show WINAMP until the next track. Poll until it is there.
+  const waitForData = () => {
+    if (pending !== null) clearInterval(pending);
+    pending = setInterval(() => {
+      if (!player().data?.item) return;
+      if (pending !== null) clearInterval(pending);
+      pending = null;
+      refresh();
+    }, DATA_POLL_MS);
+  };
+
+  return {
+    name: 'marquee',
+    run(display) {
+      el = document.createElement('div');
+      el.className = MARQUEE_CLASS;
+      const info = display.querySelector(TRACK_INFO_SELECTOR);
+      if (info) info.insertAdjacentElement('afterend', el);
+      else display.append(el);
+      refresh();
+      if (!player().data?.item) waitForData();
+      player().addEventListener('songchange', refresh);
+      if (typeof ResizeObserver !== 'undefined') {
+        resize = new ResizeObserver(layout);
+        resize.observe(display);
+      }
+    },
+    cleanup() {
+      stop();
+      if (pending !== null) clearInterval(pending);
+      pending = null;
+      resize?.disconnect();
+      resize = null;
+      try {
+        player().removeEventListener('songchange', refresh);
+      } catch (err) {
+        console.warn(`${LOG_PREFIX} marquee: could not remove the songchange listener`, err);
+      }
+      el?.remove();
+      el = null;
+    },
+  };
+}
+
 // --- index.js ---
 // @ts-check
 // Entry point of the theme extension. After `pnpm build` this becomes the
@@ -139,7 +355,7 @@ function mount(injections, { root = document } = {}) {
 // order they mount in.
 
 /** @type {import('./dom.js').Injection[]} */
-const INJECTIONS = [];
+const INJECTIONS = [createMarqueeInjection()];
 
 async function main() {
   try {

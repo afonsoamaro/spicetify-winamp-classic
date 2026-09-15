@@ -4,9 +4,10 @@
 // Later issues push their injection into INJECTIONS here; the order is the
 // order they mount in.
 import { LOG_PREFIX, mount, waitForSpicetify } from './dom.js';
+import { createMarqueeInjection } from './marquee-dom.js';
 
 /** @type {import('./dom.js').Injection[]} */
-const INJECTIONS = [];
+const INJECTIONS = [createMarqueeInjection()];
 
 async function main() {
   try {
