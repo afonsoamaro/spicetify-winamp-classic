@@ -38,11 +38,11 @@ The now playing bar display shows `ARTIST - TITLE (mm:ss)` in uppercase and scro
 - None.
 
 ## Acceptance Criteria
-- [ ] Tests for `formatTime` with 0, 59s, 1min, 59min59s, 1h, a negative value and `NaN`.
-- [ ] Tests for `displayText` with and without an artist, and with duration.
-- [ ] Tests for `scrollStep` with text shorter than the width (fixed offset), equal to it, and longer (wrap with separator).
-- [ ] In Spotify, the display scrolls with a long title and stays still with a short one.
-- [ ] `pnpm build` run and `theme.js` updated. `pnpm check` green.
+- [x] Tests for `formatTime` with 0, 59s, 1min, 59min59s, 1h, a negative value and `NaN`.
+- [x] Tests for `displayText` with and without an artist, and with duration.
+- [x] Tests for `scrollStep` with text shorter than the width (fixed offset), equal to it, and longer (wrap with separator).
+- [x] In Spotify, the display scrolls with a long title and stays still with a short one.
+- [x] `pnpm build` run and `theme.js` updated. `pnpm check` green.
 
 ## Dependencies
 - FN-01
@@ -147,3 +147,13 @@ None.
 - Whether `:has()` on the widget performs fine in Spotify's CEF; it is Chromium 120+ so it should. If not, `run` can toggle a class on `display` instead and `cleanup` removes it.
 - Hiding the track info removes the title and artist links from the bar. Winamp had no links there, and the info is still reachable through the cover button and the now playing view; if the owner wants the links back, the marquee can sit above the track info with `pointer-events: none` instead of replacing it.
 - The deviation from the issue text (`marquee-dom.js` instead of `dom.js`) is a call for the owner; the rest of the plan does not change if it goes back into `dom.js`.
+
+---
+
+# Found during execution
+
+- `Spicetify.Player.data` is filled by a 10 ms poll in `spicetifyWrapper.js` once `PlayerAPI._state.item` exists, and `songchange` fires only when the track uri differs from the cached one. On a cold start the marquee mounted before the data and showed `WINAMP` with no later event to fix it. `marquee-dom.js` now polls every 250 ms until `data.item` appears (`waitForData`), covered by a test.
+- A zero `clientWidth` (element not laid out, or jsdom) now means static text and no timer, instead of a one-character window scrolling forever. Covered by a test.
+- On screen (1.3.0.277): cold start shows `QUEEN - SPREAD YOUR WINGS (4:34)` still in a 307 px display; `POLARIS - NIGHTMARE (4:28)` stays still; `IRON MAIDEN - THE TROOPER - 2015 REMASTER (4:13)` scrolls one character per 200 ms with the `  ***  ` separator, sampled through the debug port at 400 ms intervals. `docs/screenshots/player.png` refreshed with the scrolling display.
+- `Spicetify.CosmosAsync.get` against `api.spotify.com` fails with "Resolver not found" on 1.3.0; `Spicetify.Player.playUri(uri)` works for driving playback from the debug port.
+- The window capture helper now picks the tallest Spotify window: after a restart the first CG window id belongs to a 30 px strip, not the main window.

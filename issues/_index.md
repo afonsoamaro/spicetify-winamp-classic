@@ -21,7 +21,7 @@ Source: `SPECS.md`. Spicetify theme that recreates the Winamp 2.x look with CSS,
 | Issue | Name | Status | Dependencies |
 |-------|------|--------|--------------|
 | FN-01 | Extension skeleton and build script | done (Sep 15) | FN-00, PP-02 |
-| FN-02 | Time formatting and display marquee | planned | FN-01 |
+| FN-02 | Time formatting and display marquee | done (Sep 15) | FN-01 |
 | FN-03 | Synthetic spectrum analyzer in the display | todo | FN-01 |
 | FN-04 | Spectrum analyzer synced with getAudioData (spike, optional) | todo | FN-03 |
 | FN-05 | WINAMP title bar | todo | FN-01, PP-02 |
