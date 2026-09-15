@@ -37,11 +37,11 @@ Functional
 - Spicetify types in `types/globals.d.ts`.
 
 ## Acceptance Criteria
-- [ ] `pnpm build` produces `theme.js` as an IIFE with no `import` or `export`.
-- [ ] Vitest test for the build: an input with two modules becomes a single file with no `export` and in the expected order.
-- [ ] Vitest test for `mount`: an injection that throws doesn't stop the next one, and `cleanup` runs before the re-injection (DOM simulated with jsdom).
-- [ ] In Spotify, the console shows `[winamp-classic] mounted` and re-injection works when switching devices.
-- [ ] `pnpm check` green.
+- [x] `pnpm build` produces `theme.js` as an IIFE with no `import` or `export`.
+- [x] Vitest test for the build: an input with two modules becomes a single file with no `export` and in the expected order.
+- [x] Vitest test for `mount`: an injection that throws doesn't stop the next one, and `cleanup` runs before the re-injection (DOM simulated with jsdom).
+- [x] In Spotify, the console shows `[winamp-classic] mounted` and re-injection works when switching devices.
+- [x] `pnpm check` green.
 
 ## Dependencies
 - FN-00, PP-02
@@ -135,3 +135,12 @@ None.
 ## Unknowns
 - Whether Spotify remounts `.main-nowPlayingBar-nowPlayingBar` or the whole `aside` when switching devices. Observing the `aside` covers the first; the `body` fallback covers the second only if the `aside` was missing at start. If the `aside` itself is replaced at runtime, the observer dies silently. Mitigation, if it shows up on screen: observe `root.body` always and accept the wider subtree. Decide with evidence, not up front.
 - jsdom 30 with Vitest 5 has no known incompatibility at planning time; if the environment fails to load, `happy-dom` (20.14.5) is the fallback and the test file changes only its docblock.
+
+---
+
+# Found during execution
+
+- At Spotify startup the display is not there yet: the console shows `display not found, waiting for it` and then `mounted`; the observer picks the widget up once playback state renders. Expected per the plan, worth knowing when reading the console.
+- The remount criterion was checked through the debug port instead of a device switch: the built `theme.js` was fetched from `/extensions/theme.js`, evaluated with a probe injection in `INJECTIONS`, and the widget node was replaced with a clone. Console showed `probe run`, `probe cleanup`, `probe run`, which is the sequence the observer promises. A device switch is the same DOM event from the observer's point of view; the "aside replaced" unknown stays open until it is seen on screen.
+- `Runtime.enable` on the CDP session replays the buffered console, so `node cdp-console.mjs <secs> <pattern>` catches startup logs even when attached late. Kept in the session scratchpad with `cdp.mjs`.
+- The typed mutation check was done by hand: removing the cleanup call in `mount` fails 2 of the 23 tests, restoring it brings them back.
