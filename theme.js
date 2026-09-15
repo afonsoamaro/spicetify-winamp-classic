@@ -86,6 +86,94 @@ function scrollStep(text, offset, width) {
   return { view: (loop + loop).slice(start, start + width), offset: (start + 1) % loop.length };
 }
 
+// --- spectrum.js ---
+// @ts-check
+// State of the spectrum analyser. Pure, no DOM: drawing and scheduling live
+// in spectrum-dom.js. Values are 0..1 fractions of the full bar height.
+
+// 3 px bars with 1 px gaps in a 76 px canvas, the geometry of Winamp's own
+// analyser (19 bands in 75 px).
+const BARS = 19;
+// Rows of 1 px in the 16 px canvas; the colour bands are counted in rows.
+const ROWS = 16;
+// How much a bar drops per frame when its target is lower.
+const DECAY = 0.06;
+// Weight of the previous target when a new random target comes in.
+const SMOOTHING = 0.7;
+// Frames a peak waits above a lower bar before it starts to fall.
+const PEAK_HOLD = 15;
+// How much a peak drops per frame once the hold is over.
+const PEAK_FALL = 0.02;
+
+const BANDS = /** @type {const} */ (['green', 'yellow', 'orange', 'red']);
+
+/**
+ * @typedef {typeof BANDS[number]} Band
+ * @typedef {{ values: number[], targets: number[], peaks: number[], holds: number[] }} SpectrumState
+ */
+
+/**
+ * @param {number} [bars]
+ * @returns {SpectrumState}
+ */
+function createState(bars = BARS) {
+  const zeros = () => new Array(bars).fill(0);
+  return { values: zeros(), targets: zeros(), peaks: zeros(), holds: zeros() };
+}
+
+/**
+ * Advances every bar by one frame, in place. While playing each bar chases a
+ * smoothed random target, jumping up at once and falling at a fixed rate;
+ * paused, the target is zero and everything decays. The peak rides on the
+ * bar, holds for PEAK_HOLD frames once the bar drops under it, then falls.
+ * @param {SpectrumState} state
+ * @param {() => number} rng returns 0..1
+ * @param {boolean} playing
+ * @returns {SpectrumState}
+ */
+function nextFrame(state, rng, playing) {
+  const { values, targets, peaks, holds } = state;
+  for (let i = 0; i < values.length; i += 1) {
+    const target = playing ? SMOOTHING * (targets[i] ?? 0) + (1 - SMOOTHING) * rng() : 0;
+    targets[i] = target;
+    const value = values[i] ?? 0;
+    values[i] = target > value ? target : Math.max(0, value - DECAY);
+
+    const current = values[i] ?? 0;
+    const peak = peaks[i] ?? 0;
+    if (current >= peak) {
+      peaks[i] = current;
+      holds[i] = PEAK_HOLD;
+    } else if ((holds[i] ?? 0) > 0) {
+      holds[i] = (holds[i] ?? 0) - 1;
+    } else {
+      peaks[i] = Math.max(0, peak - PEAK_FALL);
+    }
+  }
+  return state;
+}
+
+/**
+ * Colour band of a row counted from the bottom: the lowest quarter green,
+ * then yellow, orange and red at the top.
+ * @param {number} row
+ * @param {number} totalRows
+ * @returns {Band}
+ */
+function colorForRow(row, totalRows) {
+  const band = Math.min(3, Math.max(0, Math.floor((row / totalRows) * 4)));
+  return BANDS[band] ?? 'green';
+}
+
+/**
+ * True when nothing is left to animate: every bar and every peak at zero.
+ * @param {SpectrumState} state
+ * @returns {boolean}
+ */
+function isIdle(state) {
+  return state.values.every((v) => v === 0) && state.peaks.every((p) => p === 0);
+}
+
 // --- dom.js ---
 // @ts-check
 // The one module that touches the DOM and the Spicetify globals. The other
@@ -257,6 +345,12 @@ function canvasMeasure(el, text) {
 function createMarqueeInjection({ measure = canvasMeasure, player = () => Spicetify.Player } = {}) {
   /** @type {HTMLElement | null} */
   let el = null;
+  // The text lives in one node whose data is rewritten in place. Assigning
+  // textContent would replace the node, and that childList mutation makes
+  // Spicetify's body observer rescan every element on the page (its version
+  // gate misreads 1.3.x), which costs about half a core at five ticks a second.
+  /** @type {Text | null} */
+  let node = null;
   /** @type {ReturnType<typeof setInterval> | null} */
   let timer = null;
   /** @type {ReturnType<typeof setInterval> | null} */
@@ -273,21 +367,21 @@ function createMarqueeInjection({ measure = canvasMeasure, player = () => Spicet
   };
 
   const tick = () => {
-    if (!el) return;
-    ({ view: el.textContent, offset } = scrollStep(text, offset, width));
+    if (!node) return;
+    ({ view: node.data, offset } = scrollStep(text, offset, width));
   };
 
   // Decides between static text and scrolling from the element's current
   // width. Called on mount, on every song change and when the display resizes.
   const layout = () => {
     stop();
-    if (!el) return;
+    if (!el || !node) return;
     const px = el.clientWidth;
     const needed = measure(el, text);
     // A zero width means the element is not laid out (hidden display, or a
     // test without layout): show the text whole and keep the timer off.
     if (px <= 0 || needed <= px) {
-      el.textContent = text;
+      node.data = text;
       return;
     }
     width = Math.max(1, Math.floor(px / (needed / text.length)));
@@ -319,6 +413,8 @@ function createMarqueeInjection({ measure = canvasMeasure, player = () => Spicet
     run(display) {
       el = document.createElement('div');
       el.className = MARQUEE_CLASS;
+      node = document.createTextNode('');
+      el.append(node);
       const info = display.querySelector(TRACK_INFO_SELECTOR);
       if (info) info.insertAdjacentElement('afterend', el);
       else display.append(el);
@@ -343,6 +439,172 @@ function createMarqueeInjection({ measure = canvasMeasure, player = () => Spicet
       }
       el?.remove();
       el = null;
+      node = null;
+    },
+  };
+}
+
+// --- spectrum-dom.js ---
+// @ts-check
+// The DOM side of the spectrum analyser: a canvas in the right padding of the
+// display, drawn on requestAnimationFrame only while there is something to
+// animate. Paused, the bars decay to zero and the loop stops on its own.
+
+const SPECTRUM_CLASS = 'wa-spectrum';
+const CANVAS_W = 76;
+const CANVAS_H = 16;
+const BAR_W = 3;
+const GAP = 1;
+// Below this display width the canvas would sit on top of the text.
+const MIN_DISPLAY_W = 200;
+
+// Theme token per band, with the scheme's own value as the fallback when the
+// token cannot be read (a detached canvas, or a test without the stylesheet).
+const COLOR_TOKENS = /** @type {const} */ ({
+  green: ['--spice-text', '#00ff00'],
+  yellow: ['--wa-vol-mid', '#ffff00'],
+  orange: ['--spice-misc', '#ff9900'],
+  red: ['--spice-notification-error', '#c60000'],
+  peak: ['--wa-bevel-light', '#5a5a6e'],
+});
+
+/** @typedef {Record<keyof typeof COLOR_TOKENS, string>} Colors */
+
+/**
+ * @param {HTMLElement} el
+ * @returns {Colors}
+ */
+function readColors(el) {
+  const style = getComputedStyle(el);
+  const entries = Object.entries(COLOR_TOKENS).map(([band, [token, fallback]]) => {
+    return [band, style.getPropertyValue(token).trim() || fallback];
+  });
+  return /** @type {Colors} */ (Object.fromEntries(entries));
+}
+
+/**
+ * Paints one frame: per bar, one 1 px row per unit of height in the colour of
+ * its band, and the peak as a single row above.
+ * @param {Pick<CanvasRenderingContext2D, 'clearRect' | 'fillRect' | 'fillStyle'>} ctx
+ * @param {import('./spectrum.js').SpectrumState} state
+ * @param {Colors} colors
+ */
+function drawFrame(ctx, state, colors) {
+  ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+  for (let i = 0; i < state.values.length; i += 1) {
+    const x = i * (BAR_W + GAP);
+    const rows = Math.round((state.values[i] ?? 0) * ROWS);
+    for (let row = 0; row < rows; row += 1) {
+      ctx.fillStyle = colors[colorForRow(row, ROWS)];
+      ctx.fillRect(x, CANVAS_H - 1 - row, BAR_W, 1);
+    }
+    const peakRow = Math.round((state.peaks[i] ?? 0) * ROWS) - 1;
+    if (peakRow >= 0) {
+      ctx.fillStyle = colors.peak;
+      ctx.fillRect(x, CANVAS_H - 1 - peakRow, BAR_W, 1);
+    }
+  }
+}
+
+/**
+ * The slice of Spicetify.Player the analyser uses, so tests can pass a fake.
+ * @typedef {object} PlayerLike
+ * @property {() => boolean} isPlaying
+ * @property {(type: string, callback: () => void) => void} addEventListener
+ * @property {(type: string, callback: () => void) => void} removeEventListener
+ */
+
+/**
+ * @param {{
+ *   rng?: () => number,
+ *   player?: () => PlayerLike,
+ *   schedule?: (callback: () => void) => number,
+ *   cancel?: (id: number) => void,
+ * }} [options]
+ * @returns {import('./dom.js').Injection}
+ */
+function createSpectrumInjection({
+  rng = Math.random,
+  player = () => Spicetify.Player,
+  schedule = (callback) => requestAnimationFrame(callback),
+  cancel = (id) => cancelAnimationFrame(id),
+} = {}) {
+  /** @type {HTMLCanvasElement | null} */
+  let canvas = null;
+  /** @type {CanvasRenderingContext2D | null} */
+  let ctx = null;
+  /** @type {ResizeObserver | null} */
+  let resize = null;
+  /** @type {number | null} */
+  let pending = null;
+  let state = createState();
+  /** @type {Colors | null} */
+  let colors = null;
+
+  // origin._state sits behind a getter that can be undefined for a moment.
+  const playing = () => {
+    try {
+      return player().isPlaying();
+    } catch {
+      return false;
+    }
+  };
+
+  const frame = () => {
+    pending = null;
+    if (!ctx || !colors) return;
+    nextFrame(state, rng, playing());
+    drawFrame(ctx, state, colors);
+    if (playing() || !isIdle(state)) start();
+  };
+
+  const start = () => {
+    if (pending === null && ctx) pending = schedule(frame);
+  };
+
+  return {
+    name: 'spectrum',
+    run(display) {
+      const dpr = globalThis.devicePixelRatio || 1;
+      canvas = document.createElement('canvas');
+      canvas.className = SPECTRUM_CLASS;
+      // Decorative: nothing in it is worth announcing.
+      canvas.setAttribute('aria-hidden', 'true');
+      canvas.width = CANVAS_W * dpr;
+      canvas.height = CANVAS_H * dpr;
+      ctx = canvas.getContext('2d');
+      if (!ctx) {
+        console.warn(`${LOG_PREFIX} spectrum: no 2d context, giving up`);
+        canvas = null;
+        return;
+      }
+      ctx.scale(dpr, dpr);
+      display.append(canvas);
+      colors = readColors(canvas);
+      state = createState();
+      player().addEventListener('onplaypause', start);
+      if (typeof ResizeObserver !== 'undefined') {
+        resize = new ResizeObserver(() => {
+          if (canvas) canvas.hidden = display.clientWidth < MIN_DISPLAY_W;
+        });
+        resize.observe(display);
+      }
+      start();
+    },
+    cleanup() {
+      if (pending !== null) cancel(pending);
+      pending = null;
+      resize?.disconnect();
+      resize = null;
+      try {
+        player().removeEventListener('onplaypause', start);
+      } catch (err) {
+        console.warn(`${LOG_PREFIX} spectrum: could not remove the onplaypause listener`, err);
+      }
+      canvas?.remove();
+      canvas = null;
+      ctx = null;
+      colors = null;
     },
   };
 }
@@ -355,7 +617,7 @@ function createMarqueeInjection({ measure = canvasMeasure, player = () => Spicet
 // order they mount in.
 
 /** @type {import('./dom.js').Injection[]} */
-const INJECTIONS = [createMarqueeInjection()];
+const INJECTIONS = [createMarqueeInjection(), createSpectrumInjection()];
 
 async function main() {
   try {

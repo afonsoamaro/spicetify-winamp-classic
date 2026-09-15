@@ -36,8 +36,8 @@
   --wa-knob-h: 14px;
   --wa-groove-h: 10px;
 
-  /* Width reserved on the display for the spectrum analyser canvas that FN-03
-     mounts there, so its size and this padding come from one place. */
+  /* Width reserved on the display for the spectrum analyser: the 76px canvas
+     spectrum-dom.js mounts there plus 4px on each side. */
   --wa-spectrum-w: 84px;
 
   /* The middle of the volume gradient. Its ends are theme colours already,
@@ -103,9 +103,12 @@
 
 /* The display. Winamp's main window has no album art, so only the text block
    becomes the LED panel; the cover keeps its own place to the left of it.
-   The padding on the right reserves the strip where FN-03 mounts its canvas,
-   so the text never runs underneath it. */
+   The padding on the right reserves the strip where spectrum-dom.js mounts
+   the analyser canvas, so the text never runs underneath it; the display is
+   the canvas's containing block, so position is set here rather than left to
+   Spotify's own rule. */
 .main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-left [data-testid="now-playing-widget"] {
+  position: relative;
   background-color: var(--wa-display-bg);
   box-shadow: var(--wa-sunken);
   padding: 4px var(--wa-spectrum-w) 4px 4px;
@@ -153,6 +156,24 @@
 }
 
 .main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-nowPlaying:has(.wa-marquee) .main-nowPlayingWidget-trackInfo {
+  display: none;
+}
+
+/* The spectrum analyser. spectrum-dom.js creates this canvas and draws in it;
+   it sits in the display's right padding, outside the flex row, so the
+   marquee keeps its width. The resize guard toggles the hidden attribute
+   below 200px of display width. */
+.main-nowPlayingBar-nowPlayingBar .wa-spectrum {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  width: 76px;
+  height: 16px;
+  transform: translateY(-50%);
+  image-rendering: pixelated;
+}
+
+.main-nowPlayingBar-nowPlayingBar .wa-spectrum[hidden] {
   display: none;
 }
 
