@@ -617,7 +617,12 @@
   color: var(--wa-white);
 }
 
+/* The sunken section carries the display background, not the input: the
+   input keeps Spotify's elevated fill, which showed the section's own
+   padding as black bands around a dark gray field. The left margin detaches
+   the field from the home key, which used to sit glued to it. */
 .main-globalNav-searchInputSection {
+  margin-left: 8px;
   background-color: var(--wa-display-bg);
   box-shadow: var(--wa-sunken);
 }
@@ -628,6 +633,7 @@
   font-size: 12px;
   text-transform: uppercase;
   color: var(--spice-text);
+  background-color: transparent;
 }
 
 .main-globalNav-searchInputSection input::placeholder {
@@ -637,15 +643,35 @@
 
 /* The element name is in the selector on purpose: Spotify paints the nav
    link with a bare class rule of the same specificity, and its stylesheet
-   loads after this one, so a bare class here would lose the tie. */
+   loads after this one, so a bare class here would lose the tie.
+   The keys are 32x32 because 1.3.0 renders these Encore buttons with a
+   24px icon and 12px of its own padding, which overflowed the old 26px box.
+   There is no global box-sizing reset, so it is set here: with border-box
+   the 4px padding leaves exactly the 24px content box the icon needs. This
+   one rule covers history, home, the Marketplace and custom navlinks alike:
+   Spicetify renders them all as main-globalNav-navLink. */
 .main-globalNav-historyButtons button,
 a.main-globalNav-navLink,
 button.main-globalNav-navLink {
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background-color: var(--spice-button);
   box-shadow: var(--wa-raised);
   color: var(--spice-shadow);
+}
+
+/* Belt and braces: whatever Encore computes, the glyph never exceeds the
+   24px content box. max-, not width, so smaller icons are not upscaled. */
+.main-globalNav-historyButtons button svg,
+a.main-globalNav-navLink svg,
+button.main-globalNav-navLink svg {
+  max-width: 24px;
+  max-height: 24px;
 }
 
 .main-globalNav-historyButtons button:active,
@@ -659,6 +685,24 @@ button.main-globalNav-navLinkActive {
 a.main-globalNav-navLinkActive,
 button.main-globalNav-navLinkActive {
   color: var(--spice-tab-active);
+}
+
+/* Spicetify's class map sends two different hashes to
+   main-actionButtons-spacer: the 1px divider and the wrapper around the
+   What's New and Listening activity buttons (confirmed twice in
+   xpui-modules.js on 1.3.0.277). Spotify's own rule squeezes both to 1px,
+   which hides the two buttons and paints the wrapper green. :has(button)
+   tells them apart: the wrapper gets its box back, the bare divider keeps
+   Spotify's geometry and takes the bevel colour. The What's New badge keeps
+   Spotify's own colour: only the wrapper is touched, never the badge. */
+.main-actionButtons-spacer:has(button) {
+  width: auto;
+  margin: 0;
+  background: transparent;
+}
+
+.main-actionButtons-spacer:not(:has(button)) {
+  background-color: var(--wa-bevel-dark);
 }
 
 /* Section titles. The entity header is the name on a playlist, album or artist

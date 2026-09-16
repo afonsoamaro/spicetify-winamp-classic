@@ -28,3 +28,16 @@ Three parts of the top bar look wrong on 1.3.0.277 with Spicetify 2.45.0, report
 
 ## Dependencies
 - FN-07
+
+## Verification (automated, 2026-09-16, branch `fix/fn-08-top-bar-1-3-0`)
+
+- `pnpm check` green: eslint + stylelint 0 errors, `tsc --noEmit` 0 errors, 88/88 tests, `theme.js` rebuilt (CSS-only change, no JS touched).
+- Bundle evidence (Spotify 1.3.0.277, `xpui-modules.js`): `main-actionButtons-spacer` renders on exactly two elements, the empty divider div and the buttons wrapper div, which is what the `:has(button)` split targets. `Spicetify._renderNavLinks(["marketplace"])` renders Marketplace links with `main-globalNav-navLink`, so the single 32x32 key rule covers history, home, Marketplace and custom navlinks.
+- `main-actionButtons-spacer` is fed by three hashes in `css-map.json` (`YaU17q8G6eTc2eoKRwnL`, `NA8gTZ4nPFEEcDYv`, `MtYp_qNgYodAxs42_Z7u`); reported upstream together with the two FN-07 track-list hashes (see issue link below).
+
+Pending owner validation (needs Spotify with the theme applied):
+
+- Back, forward, home and Marketplace keys show the whole icon inside the bevel.
+- Search reads as one black display with the home key detached.
+- What's New and Listening activity buttons visible as keys, no green bar.
+- `docs/screenshots/home.png` refreshed if the top bar is in the crop.
