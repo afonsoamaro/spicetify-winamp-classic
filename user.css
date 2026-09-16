@@ -95,10 +95,46 @@
    rule below is scoped through its ancestor. Dropping that scope styles the
    volume slider by accident. */
 
+/* The bar is also the positioning context of the WINAMP title bar:
+   titlebar-dom.js prepends a decorative 14px strip to it, and the padding-top
+   grows the bar 14px so the strip never covers the controls whatever the
+   bar's own layout is. When the bar is gone (miniplayer, fullscreen) the
+   strip goes with it, leaving nothing behind. Visual only. */
 .main-nowPlayingBar-nowPlayingBar {
+  position: relative;
+  padding-top: 14px;
   background-color: var(--spice-player);
   box-shadow: var(--wa-raised);
   border-top: 1px solid var(--wa-bevel-light);
+}
+
+.main-nowPlayingBar-nowPlayingBar .wa-titlebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  height: 14px;
+  background: linear-gradient(to bottom, var(--wa-titlebar-start), var(--wa-titlebar-end));
+  font-family: var(--wa-font-pixel);
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--wa-white);
+}
+
+.main-nowPlayingBar-nowPlayingBar .wa-titlebar span:first-child {
+  flex: 1 1 auto;
+  text-align: center;
+}
+
+/* The three decorative squares: minimize, shade, close. No click handler. */
+.main-nowPlayingBar-nowPlayingBar .wa-titlebar span + span {
+  width: 9px;
+  height: 9px;
+  margin-right: 2px;
+  background-color: var(--spice-button);
+  box-shadow: var(--wa-raised);
 }
 
 /* The display. Winamp's main window has no album art, so only the text block

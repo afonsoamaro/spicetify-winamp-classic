@@ -200,6 +200,10 @@ const DISPLAY_SELECTOR = '.main-nowPlayingBar-nowPlayingBar [data-testid="now-pl
 // flows, so this is what the observer watches.
 const BAR_SELECTOR = '[data-testid="now-playing-bar"]';
 
+// The inner bar that holds the three columns. The outer testid element is an
+// ASIDE container; this DIV is where bar-wide strips belong.
+const NOW_PLAYING_BAR_SELECTOR = '.main-nowPlayingBar-nowPlayingBar';
+
 /** @returns {boolean} */
 function isSpicetifyReady() {
   return typeof Spicetify !== 'undefined' && Boolean(Spicetify.Player) && Boolean(Spicetify.Platform);
@@ -647,6 +651,53 @@ function createSpectrumInjection({
   };
 }
 
+// --- titlebar-dom.js ---
+// @ts-check
+// The DOM side of the WINAMP title bar: a 14px decorative strip prepended to
+// the now playing bar, with the word WINAMP centered and three inert squares
+// on the right (minimize, shade, close), echoing the Winamp 2.x main window.
+// user.css makes the bar the positioning context and grows it 14px, so the
+// strip never covers the controls. Visual only: the squares have no handler.
+
+const TITLEBAR_CLASS = 'wa-titlebar';
+const TITLEBAR_TEXT = 'WINAMP';
+const SQUARES = 3;
+
+/**
+ * @returns {import('./dom.js').Injection}
+ */
+function createTitlebarInjection() {
+  /** @type {HTMLElement | null} */
+  let el = null;
+
+  return {
+    name: 'titlebar',
+    run(display) {
+      // The inner bar when it is there (the outer testid element is an ASIDE
+      // container, and the bar CSS only matches the inner DIV), the display
+      // itself otherwise (miniplayer and fullscreen keep the widget but drop
+      // the bar).
+      const bar = display.closest(NOW_PLAYING_BAR_SELECTOR) ?? display.closest(BAR_SELECTOR) ?? display;
+      if (bar.querySelector(`:scope > .${TITLEBAR_CLASS}`)) return;
+      el = document.createElement('div');
+      el.className = TITLEBAR_CLASS;
+      // Decorative: nothing in it is worth announcing.
+      el.setAttribute('aria-hidden', 'true');
+      const label = document.createElement('span');
+      label.textContent = TITLEBAR_TEXT;
+      el.append(label);
+      for (let i = 0; i < SQUARES; i += 1) {
+        el.append(document.createElement('span'));
+      }
+      bar.prepend(el);
+    },
+    cleanup() {
+      el?.remove();
+      el = null;
+    },
+  };
+}
+
 // --- index.js ---
 // @ts-check
 // Entry point of the theme extension. After `pnpm build` this becomes the
@@ -655,7 +706,7 @@ function createSpectrumInjection({
 // order they mount in.
 
 /** @type {import('./dom.js').Injection[]} */
-const INJECTIONS = [createMarqueeInjection(), createSpectrumInjection()];
+const INJECTIONS = [createMarqueeInjection(), createSpectrumInjection(), createTitlebarInjection()];
 
 async function main() {
   try {

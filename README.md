@@ -1,6 +1,6 @@
 # Winamp Classic for Spicetify
 
-A [Spicetify](https://spicetify.app/) theme that brings the Winamp 2.x look to Spotify: bevelled gray panels, green LED displays on black, a pixel font, and a small extension that adds a spectrum analyzer and a scrolling title. The classic title bar (FN-05) is still in progress.
+A [Spicetify](https://spicetify.app/) theme that brings the Winamp 2.x look to Spotify: bevelled gray panels, green LED displays on black, a pixel font, and a small extension that adds a spectrum analyzer, a scrolling title and the classic title bar.
 
 ## Status
 
