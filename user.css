@@ -636,6 +636,14 @@
   background-color: transparent;
 }
 
+/* The input also carries a per-build hash class whose Spotify rule
+   (.main-globalNav-searchInputContainer .<hash>) sets the elevated fill at
+   (0,2,0), which beats the rule above, so the background needs (0,2,1):
+   container scoping, no hash, no !important. */
+.main-globalNav-searchContainer .main-globalNav-searchInputSection input {
+  background-color: transparent;
+}
+
 .main-globalNav-searchInputSection input::placeholder {
   color: var(--spice-subtext);
   text-transform: uppercase;

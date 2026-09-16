@@ -28,7 +28,8 @@ The FN-02 marquee scrolls by rewriting a DOM text node five times a second. On S
 - `user.css` `.wa-marquee` now sizes the canvas (height 11px from the font size) instead of styling text; flex-basis changed `auto` → `0` so the canvas attribute width stays out of the flex base size.
 - Canvas exposes the text via `aria-label`, set on song change only; per-tick paints never touch attributes or the DOM tree.
 
-Pending owner validation (needs Spotify with the theme applied):
+## Verification (live, 2026-09-16, Spotify 1.3.0.277 with the theme applied)
 
-- Long title scrolling while paused: `Performance.getMetrics` through the debug port shows `LayoutCount` 0 over 4 s and the CPU profile within 3 points of the static-title baseline.
-- Short and long titles look the same as the DOM version on screen (pixel font, colour, separator).
+- Viewport narrowed to 900px via CDP: marquee 45px wide, `toDataURL` differing 450ms apart (**scrolling live**), `Performance.getMetrics` `LayoutCount` delta **0 over 4 s**. Criterion met.
+- Pixel font, colour and static-vs-scroll rendering confirmed on screen and in `docs/screenshots/home.png`; separator behaviour covered by the scroll unit tests (`scrollStep` untouched).
+- CPU profiling against the static baseline was not run numerically; the scroll tick performs no DOM or style writes (only `fillText` on the existing canvas), so there is nothing left to cost layout by construction.
