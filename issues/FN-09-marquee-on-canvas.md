@@ -20,3 +20,16 @@ The FN-02 marquee scrolls by rewriting a DOM text node five times a second. On S
 
 ## Dependencies
 - FN-03
+
+## Verification (automated, 2026-09-16, branch `feat/fn-09-canvas-marquee`)
+
+- `pnpm check` green: eslint + stylelint 0 errors, `tsc --noEmit` 0 errors, **88/88 tests** (was 85; new `paintMarquee` unit suite, dpr backing-store test, no-2d-context test), `node scripts/build.js` regenerating `theme.js`.
+- Pure modules untouched: `src/marquee.js` and `src/time.js` unchanged, `scrollStep` still owns the visible window.
+- `user.css` `.wa-marquee` now sizes the canvas (height 11px from the font size) instead of styling text; flex-basis changed `auto` → `0` so the canvas attribute width stays out of the flex base size.
+- Canvas exposes the text via `aria-label`, set on song change only; per-tick paints never touch attributes or the DOM tree.
+
+## Verification (live, 2026-09-16, Spotify 1.3.0.277 with the theme applied)
+
+- Viewport narrowed to 900px via CDP: marquee 45px wide, `toDataURL` differing 450ms apart (**scrolling live**), `Performance.getMetrics` `LayoutCount` delta **0 over 4 s**. Criterion met.
+- Pixel font, colour and static-vs-scroll rendering confirmed on screen and in `docs/screenshots/home.png`; separator behaviour covered by the scroll unit tests (`scrollStep` untouched).
+- CPU profiling against the static baseline was not run numerically; the scroll tick performs no DOM or style writes (only `fillText` on the existing canvas), so there is nothing left to cost layout by construction.
