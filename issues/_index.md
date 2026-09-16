@@ -29,6 +29,7 @@ Source: `SPECS.md`. Spicetify theme that recreates the Winamp 2.x look with CSS,
 | FN-07 | Spotify 1.3.0 compatibility | done (Sep 14) | PP-05 |
 | FN-08 | Top bar fixes on Spotify 1.3.0 | ✅ done (Sep 16), verified live via CDP | FN-07 |
 | FN-09 | Marquee drawn on a canvas | ✅ done (Sep 16), LayoutCount 0 over 4 s while scrolling | FN-03 |
+| FN-10 | Playlist action row + traffic-light clearance | todo | PP-05, FN-08 |
 
 ## Critical path
 FN-00 → FN-00b → PP-01 → PP-02 → FN-01 → FN-02 → FN-03 → FN-05 → FN-06.
