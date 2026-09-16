@@ -24,9 +24,10 @@ On Windows the themes folder is `%appdata%\spicetify\Themes`.
 Spotify overwrites its own files when it updates, which removes every theme. When the app comes back with the stock look, run:
 
 ```bash
-spicetify update       # only if Spicetify itself reports a new version
-spicetify backup apply
+python3 scripts/reapply.py
 ```
+
+The script checks the symlink and config, restores the stock files, takes a fresh backup, applies the theme and verifies it landed. The manual equivalent is `spicetify update` (only if Spicetify itself reports a new version) followed by `spicetify restore` and `spicetify backup apply`: a stale backup makes a plain `backup apply` refuse, and a plain `spicetify apply` is not enough after an update, because the backup it would restore is from the previous Spotify.
 
 `backup apply` takes a fresh backup of the new Spotify and applies the theme on top of it. A plain `spicetify apply` is not enough after an update, because the backup it would restore is from the previous Spotify.
 
