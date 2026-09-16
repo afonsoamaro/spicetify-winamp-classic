@@ -27,7 +27,7 @@ Everything else survived, including the three generated class names for the play
 - [x] Each of the six renders again on 1.3.0, confirmed on screen.
 - [x] No new generated class name unless the issue records why nothing better exists.
 - [x] The post-update ritual is in the README: `spicetify update`, then `spicetify backup apply`.
-- [ ] Any name found by hand is proposed to Spicetify's class map.
+- [x] Any name found by hand is proposed to Spicetify's class map (`spicetify/cli#3949`, opened 2026-09-16 together with the FN-08 spacer collision).
 
 ## Dependencies
 - PP-05
