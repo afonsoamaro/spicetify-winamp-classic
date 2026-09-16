@@ -36,8 +36,9 @@ Make the theme installable from the Spicetify Marketplace, and documented for so
 
 ## Acceptance Criteria
 - [ ] Final `preview.png` and `README.md` on `main`.
+- [ ] Pending PP-05 screenshots (context menu, modal) captured and committed.
 - [ ] Theme installed from the Marketplace on a clean config loads CSS, colors and the extension.
 - [ ] `pnpm check` green and CI green on `main`.
 
 ## Dependencies
-- FN-00b, PP-01 through PP-05, FN-02, FN-03, FN-05
+- FN-00b, PP-01 through PP-05, FN-02, FN-03, FN-05, FN-08, FN-09

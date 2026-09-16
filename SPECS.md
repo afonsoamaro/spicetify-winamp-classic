@@ -1,7 +1,7 @@
 # Winamp Classic: a Spicetify theme
 
 Date: 2026-09-07
-Status: approved in conversation, waiting on `/break` to generate the issues
+Status: issues generated from this spec, 11/16 done as of 2026-09-16; `issues/_index.md` is the source of truth for progress
 
 ## Goal
 
@@ -15,7 +15,7 @@ Third-party .wsz skins, shade mode, equalizer, replacing the player with a compo
 
 ## Target environment
 
-Spicetify 2.44.0, Spotify 1.2.98 on macOS, Marketplace installed.
+Spicetify 2.45.0, Spotify 1.3.0.277 on macOS, Marketplace installed.
 The Spicetify config already has `inject_css 1`, `inject_theme_js 1` and `replace_colors 1`.
 
 ## Repository structure
@@ -147,7 +147,7 @@ A `MutationObserver` on the now playing bar watches for reinjection, because Spo
 ### Spectrum analyzer
 
 A `<canvas>` inserted into the now playing bar display, to the right of the text.
-Twenty bars. On every `requestAnimationFrame` frame, while `Spicetify.Player.isPlaying()` is true, each bar gets a smoothed pseudorandom target and falls at a constant decay rate when the target is lower.
+Nineteen bars. On every `requestAnimationFrame` frame, while `Spicetify.Player.isPlaying()` is true, each bar gets a smoothed pseudorandom target and falls at a constant decay rate when the target is lower.
 Each bar carries a gray peak that rises with the bar and falls slowly, like in Winamp.
 Color by height, bottom to top: green, yellow, orange, red, in discrete steps of 1 pixel of bar height.
 With playback paused the bars decay to zero and the loop stops, so it does not burn CPU.
