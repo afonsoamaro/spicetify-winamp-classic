@@ -137,22 +137,22 @@
   color: var(--spice-subtext);
 }
 
-/* The marquee. marquee-dom.js creates this element next to the track info and
-   scrolls the text in it; while it is there the track info is hidden, but it
-   stays in the DOM so the theme without JS still shows Spotify's text. The
-   separator between laps has double spaces, hence white-space: pre. */
+/* The marquee. marquee-dom.js creates this canvas next to the track info and
+   paints the text in it with fillText; while it is there the track info is
+   hidden, but it stays in the DOM so the theme without JS still shows
+   Spotify's text. The rule sizes the canvas (height from the font size) and
+   carries the display font and colour, which the injection reads back; the
+   text itself is already uppercase, so no text-transform is needed.
+   flex-basis 0 (not auto) keeps the canvas attribute width out of the flex
+   base size, so the box still fills the available row. */
 .main-nowPlayingBar-nowPlayingBar .wa-marquee {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
-  overflow: hidden;
   align-self: center;
+  height: 11px;
   font-family: var(--wa-font-pixel);
   font-size: 11px;
-  line-height: 1;
-  white-space: pre;
   color: var(--spice-text);
-  text-transform: uppercase;
-  letter-spacing: 0;
 }
 
 .main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-nowPlaying:has(.wa-marquee) .main-nowPlayingWidget-trackInfo {

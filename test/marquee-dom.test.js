@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 // @ts-check
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DATA_POLL_MS, MARQUEE_CLASS, TICK_MS, createMarqueeInjection } from '../src/marquee-dom.js';
+import { DATA_POLL_MS, MARQUEE_CLASS, TICK_MS, createMarqueeInjection, paintMarquee } from '../src/marquee-dom.js';
 import { SEPARATOR } from '../src/marquee.js';
 
 const QUEEN = { type: 'artist', uri: 'spotify:artist:1dfeR4HaWDbWqFHLkxsg1d', name: 'Queen' };
@@ -16,6 +16,25 @@ const LONG = { name: 'Spread Your Wings', artists: [QUEEN], duration: { millisec
  * @param {string} text
  */
 const measure = (_el, text) => text.length * 8;
+
+/** A 2D context stand-in that records what gets painted. */
+function fakeContext() {
+  /** @type {string[]} */
+  const views = [];
+  const ctx = {
+    font: '',
+    fillStyle: '',
+    textBaseline: /** @type {CanvasTextBaseline} */ ('alphabetic'),
+    setTransform: vi.fn(),
+    clearRect: vi.fn(),
+    /** @param {string} view */
+    fillText(view) {
+      views.push(view);
+    },
+    views,
+  };
+  return ctx;
+}
 
 /** @typedef {(event?: Event) => void} Listener */
 
@@ -57,10 +76,10 @@ function makeDisplay() {
   return /** @type {HTMLElement} */ (document.querySelector('[data-testid="now-playing-widget"]'));
 }
 
-const marquee = () => /** @type {HTMLElement | null} */ (document.querySelector(`.${MARQUEE_CLASS}`));
+const marquee = () => /** @type {HTMLCanvasElement | null} */ (document.querySelector(`canvas.${MARQUEE_CLASS}`));
 
 /**
- * jsdom has no layout, so the element gets a fixed clientWidth and the
+ * jsdom has no layout, so the canvas gets a fixed clientWidth and the
  * injection is asked to lay out again through a songchange.
  * @param {ReturnType<typeof fakePlayer>} player
  * @param {number} px
@@ -72,11 +91,17 @@ function setWidth(player, px) {
   player.emit('songchange');
 }
 
+/** @type {ReturnType<typeof fakeContext>} */
+let ctx;
 /** @type {import('../src/dom.js').Injection | null} */
 let injection = null;
 
 beforeEach(() => {
   vi.useFakeTimers();
+  ctx = fakeContext();
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
+    () => /** @type {any} */ (ctx),
+  );
 });
 
 afterEach(() => {
@@ -87,8 +112,21 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe('paintMarquee', () => {
+  it('clears, sets the font and colour, and paints the view at the origin', () => {
+    const fresh = fakeContext();
+    paintMarquee(/** @type {any} */ (fresh), 80, 11, '11px Silkscreen', '#00ff00', 'QUEEN - BO');
+
+    expect(fresh.clearRect).toHaveBeenCalledWith(0, 0, 80, 11);
+    expect(fresh.font).toBe('11px Silkscreen');
+    expect(fresh.fillStyle).toBe('#00ff00');
+    expect(fresh.textBaseline).toBe('top');
+    expect(fresh.views).toEqual(['QUEEN - BO']);
+  });
+});
+
 describe('createMarqueeInjection', () => {
-  it('mounts right after the track info and shows the text', () => {
+  it('mounts a canvas right after the track info and paints the text', () => {
     const display = makeDisplay();
     const player = fakePlayer(SHORT);
     injection = createMarqueeInjection({ measure, player: () => player });
@@ -96,24 +134,39 @@ describe('createMarqueeInjection', () => {
     injection.run(display);
 
     const el = marquee();
+    expect(el?.tagName).toBe('CANVAS');
     expect(el?.previousElementSibling?.className).toBe('main-nowPlayingWidget-trackInfo');
-    expect(el?.textContent).toBe('QUEEN - BOHEMIAN (1:00)');
+    expect(el?.getAttribute('aria-label')).toBe('QUEEN - BOHEMIAN (1:00)');
+    expect(ctx.views).toEqual(['QUEEN - BOHEMIAN (1:00)']);
     expect(player.count('songchange')).toBe(1);
   });
 
-  it('rewrites one text node in place instead of replacing children', () => {
+  it('paints in place on the same canvas instead of touching the DOM', () => {
     const display = makeDisplay();
     const player = fakePlayer(LONG);
     injection = createMarqueeInjection({ measure, player: () => player });
     injection.run(display);
-    const node = marquee()?.firstChild;
+    const el = marquee();
     setWidth(player, 80);
 
     vi.advanceTimersByTime(TICK_MS * 3);
 
-    expect(marquee()?.childNodes).toHaveLength(1);
-    expect(marquee()?.firstChild).toBe(node);
-    expect(node?.nodeType).toBe(Node.TEXT_NODE);
+    expect(marquee()).toBe(el);
+    expect(el?.childNodes).toHaveLength(0);
+    expect(ctx.views.length).toBeGreaterThan(1);
+  });
+
+  it('sizes the backing store by the CSS box times the device pixel ratio', () => {
+    vi.stubGlobal('devicePixelRatio', 2);
+    const display = makeDisplay();
+    const player = fakePlayer(SHORT);
+    injection = createMarqueeInjection({ measure, player: () => player });
+    injection.run(display);
+    setWidth(player, 80);
+
+    expect(marquee()?.width).toBe(160);
+    expect(ctx.setTransform).toHaveBeenLastCalledWith(2, 0, 0, 2, 0, 0);
+    vi.unstubAllGlobals();
   });
 
   it('keeps short text still and runs no timer', () => {
@@ -125,7 +178,7 @@ describe('createMarqueeInjection', () => {
 
     vi.advanceTimersByTime(TICK_MS * 5);
 
-    expect(marquee()?.textContent).toBe('QUEEN - BOHEMIAN (1:00)');
+    expect(ctx.views).toEqual(['QUEEN - BOHEMIAN (1:00)', 'QUEEN - BOHEMIAN (1:00)']);
     expect(vi.getTimerCount()).toBe(0);
   });
 
@@ -136,7 +189,8 @@ describe('createMarqueeInjection', () => {
 
     injection.run(display);
 
-    expect(marquee()?.textContent).toBe('QUEEN - SPREAD YOUR WINGS (4:34)');
+    expect(marquee()?.getAttribute('aria-label')).toBe('QUEEN - SPREAD YOUR WINGS (4:34)');
+    expect(ctx.views).toEqual(['QUEEN - SPREAD YOUR WINGS (4:34)']);
     expect(vi.getTimerCount()).toBe(0);
   });
 
@@ -148,14 +202,15 @@ describe('createMarqueeInjection', () => {
     setWidth(player, 80);
 
     const full = 'QUEEN - SPREAD YOUR WINGS (4:34)';
-    expect(marquee()?.textContent).toBe(full.slice(0, 10));
+    // One paint for the zero-width mount, one for the layout after the width.
+    expect(ctx.views.slice(-1)).toEqual([full.slice(0, 10)]);
     vi.advanceTimersByTime(TICK_MS);
-    expect(marquee()?.textContent).toBe(full.slice(1, 11));
+    expect(ctx.views.slice(-1)).toEqual([full.slice(1, 11)]);
     vi.advanceTimersByTime(TICK_MS * (full.length - 4));
-    expect(marquee()?.textContent).toBe(`${full.slice(-3)}${SEPARATOR}`);
+    expect(ctx.views.slice(-1)).toEqual([`${full.slice(-3)}${SEPARATOR}`]);
   });
 
-  it('restarts from the new item on songchange', () => {
+  it('sets the aria-label on songchange, never on tick', () => {
     const display = makeDisplay();
     const player = fakePlayer(LONG);
     injection = createMarqueeInjection({ measure, player: () => player });
@@ -167,9 +222,11 @@ describe('createMarqueeInjection', () => {
     player.emit('songchange');
 
     // Still 80 px wide, so the new text scrolls too, but from offset zero.
-    expect(marquee()?.textContent).toBe('QUEEN - BO');
+    expect(marquee()?.getAttribute('aria-label')).toBe('QUEEN - BOHEMIAN (1:00)');
+    expect(ctx.views.slice(-1)).toEqual(['QUEEN - BO']);
     vi.advanceTimersByTime(TICK_MS);
-    expect(marquee()?.textContent).toBe('UEEN - BOH');
+    expect(ctx.views.slice(-1)).toEqual(['UEEN - BOH']);
+    expect(marquee()?.getAttribute('aria-label')).toBe('QUEEN - BOHEMIAN (1:00)');
   });
 
   it('shows WINAMP when the player has no data', () => {
@@ -179,7 +236,8 @@ describe('createMarqueeInjection', () => {
 
     injection.run(display);
 
-    expect(marquee()?.textContent).toBe('WINAMP');
+    expect(marquee()?.getAttribute('aria-label')).toBe('WINAMP');
+    expect(ctx.views).toEqual(['WINAMP']);
   });
 
   it('picks the item up when the player data arrives after the mount', () => {
@@ -189,12 +247,13 @@ describe('createMarqueeInjection', () => {
     injection.run(display);
 
     vi.advanceTimersByTime(DATA_POLL_MS * 2);
-    expect(marquee()?.textContent).toBe('WINAMP');
+    expect(marquee()?.getAttribute('aria-label')).toBe('WINAMP');
 
     player.data = { item: /** @type {Spicetify.PlayerTrack} */ (SHORT) };
     vi.advanceTimersByTime(DATA_POLL_MS);
 
-    expect(marquee()?.textContent).toBe('QUEEN - BOHEMIAN (1:00)');
+    expect(marquee()?.getAttribute('aria-label')).toBe('QUEEN - BOHEMIAN (1:00)');
+    expect(ctx.views.slice(-1)).toEqual(['QUEEN - BOHEMIAN (1:00)']);
     expect(vi.getTimerCount()).toBe(0);
   });
 
@@ -207,6 +266,20 @@ describe('createMarqueeInjection', () => {
     injection.run(display);
 
     expect(marquee()?.parentElement).toBe(display);
+  });
+
+  it('warns and mounts nothing when there is no 2d context', () => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(() => null);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const display = makeDisplay();
+    const player = fakePlayer(SHORT);
+    injection = createMarqueeInjection({ measure, player: () => player });
+
+    injection.run(display);
+
+    expect(marquee()).toBeNull();
+    expect(warn).toHaveBeenCalledOnce();
+    expect(player.count('songchange')).toBe(0);
   });
 
   it('cleanup removes the element, the timer and the listener', () => {
