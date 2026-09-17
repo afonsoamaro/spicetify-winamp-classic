@@ -23,7 +23,7 @@ Source: `SPECS.md`. Spicetify theme that recreates the Winamp 2.x look with CSS,
 | FN-01 | Extension skeleton and build script | done (Sep 15) | FN-00, PP-02 |
 | FN-02 | Time formatting and display marquee | done (Sep 15) | FN-01 |
 | FN-03 | Synthetic spectrum analyzer in the display | done (Sep 15) | FN-01 |
-| FN-04 | Spectrum analyzer synced with getAudioData (spike, optional) | todo | FN-03 |
+| FN-04 | Spectrum analyzer synced with getAudioData (spike, optional) | ❌ closed as not applicable (Sep 17): endpoint does not resolve on 1.3.0 | FN-03 |
 | FN-05 | WINAMP title bar | ✅ done (Sep 16), verified live via CDP | FN-01, PP-02 |
 | FN-06 | Marketplace release | todo | FN-00b, PP-01 to PP-05, FN-02, FN-03, FN-05 |
 | FN-07 | Spotify 1.3.0 compatibility | done (Sep 14) | PP-05 |
