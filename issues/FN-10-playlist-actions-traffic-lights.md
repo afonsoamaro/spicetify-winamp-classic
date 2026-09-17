@@ -48,3 +48,10 @@ Readable scope exists: the row is `DIV.main-actionBar-ActionBarRow`, the play wr
 
 ## Dependencies
 - PP-05 (controls language), FN-08 (top bar area)
+
+## Verification (automated + live, 2026-09-17, branch `feat/fn-10-playlist-actions`)
+
+- `pnpm check` green (CSS-only change, 88/88 tests untouched).
+- Live (Spotify 1.3.0.277, playlist + album pages): every action-row key measures 32x32, icons 12-20px; play inner span exactly 32x32 green; history container at x=80 (was x=8).
+- Follow-up found live: the play button ships in two readable wrappers (`ActionBarPlayButtonContainer`, `playButton-PlayButton`); both are listed. Encore sizes the green inner span with its own min rules, so the span is pinned with min+max caps (max beats min, no `!important`).
+- `docs/screenshots/playlist.png` and `docs/screenshots/home.png` refreshed from the verified state. Incident on the way: a debug-flag relaunch raced the patch and showed "Something went wrong"; `Page.reload` via CDP recovered it, theme intact.
