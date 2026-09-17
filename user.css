@@ -1170,3 +1170,17 @@ ul[role="menu"] li button:focus span {
   font-family: var(--wa-font-pixel);
   color: var(--wa-white);
 }
+
+/* Feed and panel prose take the pixel face through Encore's public
+   data-encore-id contract (the FN-07 precedent): text, listRowTitle,
+   listRowSubtitle and listRowDetails cover the buddy feed, What's New, the
+   now-playing view and credits alike. Family only, never size, color or
+   casing: each context keeps its own rhythm, and bios stay readable. The
+   body ancestor lifts specificity to (0,1,1) over Encore's (0,1,0) without
+   changing semantics. */
+body [data-encore-id="text"],
+body [data-encore-id="listRowTitle"],
+body [data-encore-id="listRowSubtitle"],
+body [data-encore-id="listRowDetails"] {
+  font-family: var(--wa-font-pixel);
+}

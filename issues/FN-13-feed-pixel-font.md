@@ -26,3 +26,9 @@ Body prose renders in SpotifyMix instead of the theme's pixel face in three plac
 
 ## Dependencies
 - PP-04 (chips precedent), FN-07 (encore-id precedent)
+
+## Verification (automated + live, 2026-09-18, branch `fix/fn-13-feed-font`)
+
+- `pnpm check` green (CSS-only change).
+- Live (Spotify 1.3.0.277): What's New H1 32px, feed titles/meta and NPV title/artist/listeners/bio/credits all Silkscreen, sizes and colors untouched. Home shelves (24px white), library rows, card titles (11px) and track titles (12px green) unchanged.
+- Buddy feed: same Encore prose components, covered by the rule; visual check pending friends activity.
