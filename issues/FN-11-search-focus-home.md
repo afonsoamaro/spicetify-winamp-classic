@@ -27,3 +27,9 @@ When the search field is focused it fills blue (`--background-elevated-highlight
 
 ## Dependencies
 - FN-08 (top bar area)
+
+## Verification (automated + live, 2026-09-18, branch `fix/fn-11-search-focus`)
+
+- `pnpm check` green (CSS-only change).
+- Live (Spotify 1.3.0.277, real click into the field): input, dropdown panel and kbd hints all black/panel, zero blue elements in the search subtree; home key (32x32) shares the field's center line at 590-1680px widths.
+- Follow-ups found live: the kbd hints carry Spotify's own blue gradient on the readable `.main-globalNav-searchInputKBDWrapper` (neutralized by scoping one level up), and the dropdown panel is painted by a generated class (replaced through the readable `.main-actionBar-ActionBarContainer` scope, which cannot reach the playlist action bar).
