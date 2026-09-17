@@ -27,3 +27,9 @@ Two breakages from the FN-10 uniform-key rule, both reported by the owner with s
 
 ## Dependencies
 - FN-10 (action row), FN-07 (rowSectionEnd anchor)
+
+## Verification (automated + live, 2026-09-18, branch `fix/fn-12-row-keys`)
+
+- `pnpm check` green (CSS-only change).
+- Live (Spotify 1.3.0.277, artist page): Following measures 107x32 in Silkscreen, no wrap; icon keys 32x32; track-row like/more 32x32.
+- Follow-up found live: row-end flex shrinks the 32px keys to 29px, so the track-row rule pins `flex: none` (same class of fix as the play span in FN-10).

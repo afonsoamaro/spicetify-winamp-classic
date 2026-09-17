@@ -776,18 +776,16 @@ button.main-globalNav-navLinkActive {
 }
 
 /* The playlist action row. Spotify mixes a 56px green play, a 38x48 explore
-   key and 32px keys of 32 or 56px height with 12 to 32px icons, so the row
-   gets one key recipe: uniform 32x32 raised keys, vertically centered, icons
-   capped so nothing touches the bevel. Play keeps the green accent at the
-   same box (the PP-02 call: play stays green, everything else gray); its
-   green lives on the first inner span, reached structurally, never by its
-   generated class name. Scoped under main-actionBar-ActionBar so the
-   transport keys in the now playing bar keep their own recipe. */
+   key and 32px keys of 32 or 56px height with 12 to 32px icons. Icon keys
+   get one recipe (uniform 32x32, vertically centered, icons capped so
+   nothing touches the bevel) while text keys like Follow keep auto width:
+   the split is by content (button:has(svg)), never by a generated class
+   name, because Encore marks sizes with per-build hashes. Play keeps the
+   green accent at the same box (the PP-02 call: play stays green,
+   everything else gray); its green lives on the first inner span, reached
+   structurally. Scoped under main-actionBar-ActionBar so the transport keys
+   in the now playing bar keep their own recipe. */
 .main-actionBar-ActionBar .main-actionBar-ActionBarRow button {
-  width: 32px;
-  height: 32px;
-  padding: 4px;
-  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -797,11 +795,54 @@ button.main-globalNav-navLinkActive {
   color: var(--spice-shadow);
 }
 
+.main-actionBar-ActionBar .main-actionBar-ActionBarRow button:has(svg) {
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.main-actionBar-ActionBar .main-actionBar-ActionBarRow button:not(:has(svg)) {
+  width: auto;
+  padding: 4px 12px;
+  white-space: nowrap;
+  font-family: var(--wa-font-pixel);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
 .main-actionBar-ActionBar .main-actionBar-ActionBarRow button:active {
   box-shadow: var(--wa-sunken);
 }
 
 .main-actionBar-ActionBar .main-actionBar-ActionBarRow button svg {
+  max-width: 20px;
+  max-height: 20px;
+}
+
+/* Track-row keys (like, add, more) render as 16px slabs under the FN-07
+   duration anchor, which nothing claims. Same 32px key language as the
+   action row above; the duration text in the same section is untouched
+   because only buttons are targeted. */
+.main-trackList-trackList .main-trackList-rowSectionEnd button {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--spice-button);
+  box-shadow: var(--wa-raised);
+  color: var(--spice-shadow);
+}
+
+.main-trackList-trackList .main-trackList-rowSectionEnd button:active {
+  box-shadow: var(--wa-sunken);
+}
+
+.main-trackList-trackList .main-trackList-rowSectionEnd button svg {
   max-width: 20px;
   max-height: 20px;
 }
