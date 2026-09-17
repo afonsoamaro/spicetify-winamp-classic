@@ -25,10 +25,10 @@ The rest of the app gets the same 3D bevel and square corners: Home cards, gener
 
 ## Acceptance Criteria
 - [x] Cards, buttons, inputs and modals with bevels and no rounding. Cards, buttons and inputs confirmed on Home and on a playlist's action bar; the modal is written from a verified class and not yet seen.
-- [ ] Context menu and dropdowns in the panel style with blue hover. Written from verified names, waiting on a pointer to confirm.
+- [x] Context menu and dropdowns in the panel style with blue hover. Re-anchored on 1.3.0: the menu is an Encore list with generated classes (`UL.encore-*`, `LI.* > BUTTON.*`), so the rules moved to `ul[role="menu"]`; the old `.main-contextMenu-*` names stay alongside. Silkscreen green items, blue hover bar with white text, confirmed on screen 2026-09-17.
 - [x] Square cover art and avatars with a sunken border.
 - [x] No text ended up unreadable because of contrast. The hover Spotify would paint in the theme's highlight blue is overridden on every key this block touches.
-- [ ] Screenshots at `docs/screenshots/home.png`, `docs/screenshots/context-menu.png` and `docs/screenshots/modal.png`. Home is in; the other two need the pointer.
+- [x] Screenshots at `docs/screenshots/home.png`, `docs/screenshots/context-menu.png` and `docs/screenshots/modal.png`. Menu captured with the hover bar; modal is the Embed dialog, a native `dialog` element, which gained the panel, bevel and title-strip rules (`dialog`, `dialog h1/h2`).
 
 ## Dependencies
 - PP-01

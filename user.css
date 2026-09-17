@@ -1022,16 +1022,41 @@ html.spotify__os--is-macos .main-globalNav-historyButtonsContainer {
   color: var(--wa-white);
 }
 
+/* Dialogs on 1.3.0 render as native dialog elements (the Embed dialog, the
+   language picker) with generated classes and no readable name, so the
+   element itself is the anchor. Same panel, bevel and title strip as
+   GenericModal; nothing in the sidebar or the now playing bar is a dialog,
+   so no scope is needed. */
+dialog {
+  background-color: var(--spice-player);
+  border: none;
+  box-shadow: var(--wa-raised);
+}
+
+dialog h1,
+dialog h2 {
+  background-image: linear-gradient(to right, var(--wa-titlebar-start), var(--wa-titlebar-end));
+  font-family: var(--wa-font-pixel);
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--wa-white);
+}
+
 /* Context menus and dropdowns are small panels; an item under the pointer is
-   the same blue bar as a selected track. */
+   the same blue bar as a selected track. On 1.3.0 the menu is an Encore list
+   with generated classes and no readable name, so it is reached through its
+   role; the old names stay alongside in case a release brings them back. */
 .main-contextMenu-menu,
-.main-dropDown-dropDown {
+.main-dropDown-dropDown,
+ul[role="menu"] {
   background-color: var(--spice-sidebar);
   box-shadow: var(--wa-raised);
 }
 
 .main-contextMenu-menuItemButton,
-.main-contextMenu-menuItemButton span {
+.main-contextMenu-menuItemButton span,
+ul[role="menu"] li button,
+ul[role="menu"] li button span {
   font-family: var(--wa-font-pixel);
   font-size: 11px;
   text-transform: uppercase;
@@ -1041,7 +1066,11 @@ html.spotify__os--is-macos .main-globalNav-historyButtonsContainer {
 .main-contextMenu-menuItemButton:hover,
 .main-contextMenu-menuItemButton:hover span,
 .main-contextMenu-menuItemButton:focus,
-.main-contextMenu-menuItemButton:focus span {
+.main-contextMenu-menuItemButton:focus span,
+ul[role="menu"] li button:hover,
+ul[role="menu"] li button:hover span,
+ul[role="menu"] li button:focus,
+ul[role="menu"] li button:focus span {
   background-color: var(--spice-selected-row);
   color: var(--wa-white);
 }
