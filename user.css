@@ -663,6 +663,31 @@
   box-shadow: var(--wa-sunken);
 }
 
+/* Hover and focus paint the input elevated-highlight blue through a
+   per-build hash class at (0,3,0); the display must stay black in every
+   state, so this answers at (0,3,1) with no hash and no !important. The
+   caret keeps focus visible. */
+.main-globalNav-searchContainer .main-globalNav-searchInputSection input:hover,
+.main-globalNav-searchContainer .main-globalNav-searchInputSection input:focus {
+  background-color: transparent;
+}
+
+/* Spotify's own rule fades the same blue behind the kbd hints through a
+   gradient on their readable wrapper. Same treatment, scoped one level up
+   to win the (0,1,0) tie without touching specificity anywhere else. */
+.main-globalNav-searchInputSection .main-globalNav-searchInputKBDWrapper {
+  background: none;
+}
+
+/* The open search dropdown is the same elevated-highlight blue through a
+   generated class. It becomes a panel like the menus, scoped to the search
+   container so the playlist action bar (same container class, different
+   ancestor) is untouched. */
+.main-globalNav-searchInputContainer .main-actionBar-ActionBarContainer {
+  background-color: var(--spice-sidebar);
+  box-shadow: var(--wa-raised);
+}
+
 .main-globalNav-searchInputSection input,
 .main-globalNav-searchInputText {
   font-family: var(--wa-font-pixel);
@@ -703,6 +728,7 @@ button.main-globalNav-navLink {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
+  align-self: center;
   justify-content: center;
   background-color: var(--spice-button);
   box-shadow: var(--wa-raised);
