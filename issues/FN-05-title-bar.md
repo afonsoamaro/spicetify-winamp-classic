@@ -40,3 +40,9 @@ A 14px strip above the now playing bar with the classic gradient, the word "WINA
 
 ## Dependencies
 - FN-01, PP-02
+
+## Verification (automated + live, 2026-09-16, branch `feat/fn-05-title-bar`)
+
+- `pnpm check` green: 9 files, 93/93 tests (4 new titlebar suites), `theme.js` rebuilt with `titlebar-dom.js` registered in `scripts/build.js` ORDER.
+- Live (Spotify 1.3.0.277): strip is the first child of the inner `DIV.main-nowPlayingBar-nowPlayingBar`, 14px tall, full width, gradient `rgb(28,28,42)→rgb(58,…)`, Silkscreen label, bar `padding-top: 14px`, three 9x9 squares. Screenshot confirms no overlap with the transport controls.
+- Follow-up found live: `[data-testid="now-playing-bar"]` is an ASIDE container, not the bar; the mount target is the inner `.main-nowPlayingBar-nowPlayingBar` (new `NOW_PLAYING_BAR_SELECTOR` in `dom.js`), with fallback to the container and then the display. Device-switch duplication is covered by the shared cleanup-before-rerun in `mount()`.

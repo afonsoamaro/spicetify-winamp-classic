@@ -23,6 +23,10 @@ export const DISPLAY_SELECTOR = '.main-nowPlayingBar-nowPlayingBar [data-testid=
 // flows, so this is what the observer watches.
 export const BAR_SELECTOR = '[data-testid="now-playing-bar"]';
 
+// The inner bar that holds the three columns. The outer testid element is an
+// ASIDE container; this DIV is where bar-wide strips belong.
+export const NOW_PLAYING_BAR_SELECTOR = '.main-nowPlayingBar-nowPlayingBar';
+
 /** @returns {boolean} */
 export function isSpicetifyReady() {
   return typeof Spicetify !== 'undefined' && Boolean(Spicetify.Player) && Boolean(Spicetify.Platform);
