@@ -42,3 +42,17 @@ If `Spicetify.getAudioData()` still answers on the desktop client, the bar inten
 
 ## Dependencies
 - FN-03
+
+## Spike result (2026-09-17, Spotify 1.3.0.277, Spicetify 2.45.0, via CDP)
+
+`Spicetify.getAudioData` exists as a function, but the request fails on all three tracks tested:
+
+| # | Track | Result |
+|---|---|---|
+| 1 | Klimt 1918 — Dream Core (`06UMgizJg6a0HuoIrULwzh`) | rejected |
+| 2 | Klimt 1918 — Aventine (`1Ug1Ik2jQiwBW9gfwSg7jC`) | rejected |
+| 3 | Klimt 1918 — Nihil Vltra (`20P5I9J5JJjDWD8nYF7tvI`) | rejected |
+
+Full error: `GET request to https://spclient.wg.spotify.com/audio-attributes/v1/audio-analysis/<id>?format=json request failed with error code -1 (Resolver not found!)`.
+
+**Verdict: not applicable, no code.** The endpoint does not resolve from the desktop client, so there is nothing to sync to. The synthetic mode from FN-03 stays the only mode. If a future Spotify answers again, reopen this issue.

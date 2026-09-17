@@ -8,7 +8,7 @@ Under construction. The color scheme and the tooling are in place; the CSS and t
 
 ## Install
 
-Marketplace install will be available once the theme is published. Until then, install it manually:
+From the Spicetify Marketplace: open the Marketplace in Spotify, search for "Winamp Classic" and install it. Or manually:
 
 ```bash
 git clone https://github.com/afonsoamaro/spicetify-winamp-classic.git
@@ -18,6 +18,8 @@ spicetify apply
 ```
 
 On Windows the themes folder is `%appdata%\spicetify\Themes`.
+
+The Marketplace loads `theme.js` from jsdelivr (`https://cdn.jsdelivr.net/gh/afonsoamaro/spicetify-winamp-classic@main/theme.js`, see `manifest.json`). After changing `src/` on `main`, the CDN can serve the old file for up to 24h; purge it at `https://purge.jsdelivr.net/gh/afonsoamaro/spicetify-winamp-classic@main/theme.js`.
 
 ## After Spotify updates
 
