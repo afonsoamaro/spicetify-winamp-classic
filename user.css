@@ -749,6 +749,71 @@ button.main-globalNav-navLinkActive {
   background-color: var(--wa-bevel-dark);
 }
 
+/* The playlist action row. Spotify mixes a 56px green play, a 38x48 explore
+   key and 32px keys of 32 or 56px height with 12 to 32px icons, so the row
+   gets one key recipe: uniform 32x32 raised keys, vertically centered, icons
+   capped so nothing touches the bevel. Play keeps the green accent at the
+   same box (the PP-02 call: play stays green, everything else gray); its
+   green lives on the first inner span, reached structurally, never by its
+   generated class name. Scoped under main-actionBar-ActionBar so the
+   transport keys in the now playing bar keep their own recipe. */
+.main-actionBar-ActionBar .main-actionBar-ActionBarRow button {
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  background-color: var(--spice-button);
+  box-shadow: var(--wa-raised);
+  color: var(--spice-shadow);
+}
+
+.main-actionBar-ActionBar .main-actionBar-ActionBarRow button:active {
+  box-shadow: var(--wa-sunken);
+}
+
+.main-actionBar-ActionBar .main-actionBar-ActionBarRow button svg {
+  max-width: 20px;
+  max-height: 20px;
+}
+
+/* Play fills the whole key with green: no padding on its button, and the
+   inner span is pinned to exactly 32x32. The max- caps matter: Encore sizes
+   that span with its own min rules, and max beats min in the cascade, so
+   this holds without !important. Two readable wrappers exist across pages
+   (ActionBarPlayButtonContainer, playButton-PlayButton); both are listed,
+   no generated name. Placed after the row rule so it wins the (0,2,1) tie. */
+.main-actionBar-ActionBar .main-actionBar-ActionBarPlayButtonContainer button,
+.main-actionBar-ActionBar .main-playButton-PlayButton button {
+  padding: 0;
+}
+
+.main-actionBar-ActionBar .main-actionBar-ActionBarPlayButtonContainer button > span:first-child,
+.main-actionBar-ActionBar .main-playButton-PlayButton button > span:first-child {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  min-width: 32px;
+  max-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  max-height: 32px;
+}
+
+/* The traffic lights are window chrome drawn over the top-left corner, and
+   on this build nothing clears them: the history container starts at x=8.
+   The document carries a platform hook, so the clearance lives only on
+   macOS and no other platform shifts. 72px clears the ~64px cluster with an
+   8px gap. Windows caption buttons are out of scope. */
+html.spotify__os--is-macos .main-globalNav-historyButtonsContainer {
+  margin-left: 72px;
+}
+
 /* Section titles. The entity header is the name on a playlist, album or artist
    page; shelf titles are the headings on Home. Both take the pixel face and
    white, but neither gets a title-bar band: Home would turn into a stack of
