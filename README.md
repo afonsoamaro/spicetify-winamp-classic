@@ -8,7 +8,14 @@ Under construction. The color scheme and the tooling are in place; the CSS and t
 
 ## Install
 
-From the Spicetify Marketplace: open the Marketplace in Spotify, search for "Winamp Classic" and install it. Or manually:
+From the Spicetify Marketplace: the Marketplace only installs a theme while `current_theme` in `config-xpui.ini` is set to `marketplace` (a Spicetify requirement for every theme, not just this one). If Spotify shows "Please set current_theme in config-xpui.ini to 'marketplace'", run:
+
+```bash
+spicetify config current_theme marketplace
+spicetify apply
+```
+
+Then open the Marketplace in Spotify, search for "Winamp Classic", click Install, and reload when prompted. Or install manually, which skips the Marketplace app and this requirement entirely:
 
 ```bash
 git clone https://github.com/afonsoamaro/spicetify-winamp-classic.git

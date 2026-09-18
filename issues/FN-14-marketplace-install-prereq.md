@@ -16,8 +16,13 @@ Installing any theme through the Spicetify Marketplace UI requires `current_them
 - Keep the manual install path unaffected; it does not go through the Marketplace app and never hits this check.
 
 ## Acceptance Criteria
-- [ ] README's Install section states the `current_theme marketplace` prerequisite and the exact commands, next to the existing Marketplace instructions.
-- [ ] `pnpm check` green (docs-only change).
+- [x] README's Install section states the `current_theme marketplace` prerequisite and the exact commands, next to the existing Marketplace instructions.
+- [x] `pnpm check` green (docs-only change).
 
 ## Dependencies
 - FN-06
+
+## Verification (2026-09-18, branch `fix/fn-14-marketplace-install-prereq`)
+
+- `pnpm check` green (docs-only change; no code touched).
+- Live re-confirmation of the whole flow on this diagnosis's own machine: theme folder removed, `current_theme` blank (fresh-install default) → Install click writes nothing, button stays "Install". `current_theme marketplace` set and applied, Spotify restarted → Install click flips the button to "Remove", prompts for reload; after reload the theme is fully live (bevels, marquee, spectrum, 14px title bar, 113 injected rules matching local `user.css`). Owner's dev setup (symlink, `current_theme WinampClassic`, `color_scheme Classic`) restored afterward.
