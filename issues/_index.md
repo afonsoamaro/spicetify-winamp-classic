@@ -33,6 +33,7 @@ Source: `SPECS.md`. Spicetify theme that recreates the Winamp 2.x look with CSS,
 | FN-11 | Search focus fill, dropdown panel, home key alignment | ✅ done (Sep 18), verified live via CDP | FN-08 |
 | FN-12 | Artist action row text keys + track-row action keys | ✅ done (Sep 18), verified live via CDP | FN-10, FN-07 |
 | FN-13 | Pixel typeface in feed, What's New and now-playing views | ✅ done (Sep 18), verified live via CDP | PP-04, FN-07 |
+| FN-14 | Document the Marketplace install prerequisite | ✅ done (Sep 18) | FN-06 |
 
 ## Critical path
 FN-00 → FN-00b → PP-01 → PP-02 → FN-01 → FN-02 → FN-03 → FN-05 → FN-06.
