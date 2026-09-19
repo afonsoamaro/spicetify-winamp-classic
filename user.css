@@ -820,6 +820,29 @@ button.main-globalNav-navLinkActive {
   max-height: 20px;
 }
 
+/* The explore key on artist pages carries a canvas preview thumbnail in an
+   absolutely positioned wrapper sized 30x40, taller than the 32px row on
+   purpose (Spotify's own "scroll through previews" card): left at that size
+   it pokes out above and below every other 32px key in the row, looking
+   like a bigger, separate control instead of one of the keys. Pinned to the
+   button's own 32x32 box here, same uniform-key rule the row already uses,
+   and recessed like the theme's other cover art instead of floating loose. */
+.main-actionBar-ActionBar .main-actionBar-exploreButtonImageWrapper {
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--wa-bevel-dark);
+  box-shadow: var(--wa-sunken);
+  background-color: var(--wa-display-bg);
+}
+
+.main-actionBar-ActionBar .main-actionBar-exploreButtonImageWrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* Track-row keys (like, add, more) render as 16px slabs under the FN-07
    duration anchor, which nothing claims. Same 32px key language as the
    action row above; the duration text in the same section is untouched
