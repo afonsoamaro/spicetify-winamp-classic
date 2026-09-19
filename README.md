@@ -4,7 +4,7 @@ A [Spicetify](https://spicetify.app/) theme that brings the Winamp 2.x look to S
 
 ## Status
 
-Under construction. The color scheme and the tooling are in place; the CSS and the extension are being built issue by issue. Progress is tracked in [`issues/_index.md`](issues/_index.md).
+Under construction. The color scheme and the tooling are in place; the CSS and the extension are being built issue by issue. Progress is tracked in [`issues/_index.md`](https://github.com/afonsoamaro/spicetify-winamp-classic/blob/main/issues/_index.md).
 
 ## Install
 
@@ -61,11 +61,11 @@ The `@font-face` block in `user.css` is generated the same way, by `scripts/embe
 
 ## Contributing
 
-Work is split into small issues in [`issues/`](issues/). One branch per issue, `pnpm check` green before opening a pull request.
+Work is split into small issues in [`issues/`](https://github.com/afonsoamaro/spicetify-winamp-classic/tree/main/issues). One branch per issue, `pnpm check` green before opening a pull request.
 
 ## Credits and license
 
-MIT, see [LICENSE](LICENSE).
+MIT, see [LICENSE](https://github.com/afonsoamaro/spicetify-winamp-classic/blob/main/LICENSE).
 
 No asset from the original Winamp skin is used. The look is recreated with CSS and canvas.
 
