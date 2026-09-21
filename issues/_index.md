@@ -36,6 +36,7 @@ Source: `SPECS.md`. Spicetify theme that recreates the Winamp 2.x look with CSS,
 | FN-14 | Document the Marketplace install prerequisite | ✅ done (Sep 18) | FN-06 |
 | FN-15 | Bevel the artist page's preview-scroll key | ✅ done (Sep 19), verified live via CDP | FN-10, FN-12 |
 | FN-16 | Absolute links in the README for the Marketplace viewer | ✅ done (Sep 19) | FN-06 |
+| FN-17 | Colour scheme fallback for a Marketplace install over another theme | ✅ done (Sep 21), verified live via CDP | FN-06 |
 
 ## Critical path
 FN-00 → FN-00b → PP-01 → PP-02 → FN-01 → FN-02 → FN-03 → FN-05 → FN-06.

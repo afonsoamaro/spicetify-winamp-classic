@@ -22,7 +22,8 @@
     "test": "vitest run",
     "build": "node scripts/build.js",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "embed:font": "node scripts/embed-font.js"
+    "embed:font": "node scripts/embed-font.js",
+    "embed:scheme": "node scripts/embed-scheme.js"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

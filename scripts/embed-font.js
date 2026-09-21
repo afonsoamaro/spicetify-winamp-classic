@@ -8,6 +8,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { isMain, repoRoot } from './lib/main.js';
+import { replaceBlock as replaceBetween } from './lib/markers.js';
 
 export const START = '/* @font-face:start */';
 export const END = '/* @font-face:end */';
@@ -51,20 +52,13 @@ export function fontFaceBlock(fonts) {
 }
 
 /**
- * Replaces whatever sits between the markers, keeping the markers themselves.
+ * Replaces the @font-face block between the markers, keeping the markers.
  * @param {string} css
  * @param {string} block
  * @returns {string}
  */
 export function replaceBlock(css, block) {
-  const start = css.indexOf(START);
-  const end = css.indexOf(END);
-  if (start === -1 || end === -1 || end < start) {
-    throw new Error(`user.css must contain ${START} and ${END}, in that order`);
-  }
-  // The blank line before the end marker keeps stylelint's
-  // comment-empty-line-before happy in the generated file.
-  return `${css.slice(0, start + START.length)}\n${block}\n\n${css.slice(end)}`;
+  return replaceBetween(css, block, { start: START, end: END });
 }
 
 /**
