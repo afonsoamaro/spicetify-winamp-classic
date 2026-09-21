@@ -2,6 +2,18 @@
 
 A [Spicetify](https://spicetify.app/) theme that brings the Winamp 2.x look to Spotify: bevelled gray panels, green LED displays on black, a pixel font, and a small extension that adds a spectrum analyzer, a scrolling title and the classic title bar.
 
+![Home](https://raw.githubusercontent.com/afonsoamaro/spicetify-winamp-classic/main/docs/screenshots/home.png)
+
+The now playing bar is the Winamp main window: LED display with the scrolling title and the spectrum analyzer, transport keys, seek and volume sliders.
+
+![Now playing bar](https://raw.githubusercontent.com/afonsoamaro/spicetify-winamp-classic/main/docs/screenshots/player.png)
+
+Playlist and artist pages:
+
+![Playlist](https://raw.githubusercontent.com/afonsoamaro/spicetify-winamp-classic/main/docs/screenshots/playlist.png)
+
+![Artist](https://raw.githubusercontent.com/afonsoamaro/spicetify-winamp-classic/main/docs/screenshots/artist.png)
+
 ## Status
 
 Under construction. The color scheme and the tooling are in place; the CSS and the extension are being built issue by issue. Progress is tracked in [`issues/_index.md`](https://github.com/afonsoamaro/spicetify-winamp-classic/blob/main/issues/_index.md).
