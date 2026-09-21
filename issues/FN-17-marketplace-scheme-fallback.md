@@ -29,4 +29,4 @@ Installing Winamp Classic from the Marketplace while another Marketplace theme i
 - Reproduced first: StarryNight installed, then Winamp Classic through the card's install path, reload. Stock colours, `activeScheme: null` in the record, no scheme style.
 - The new `user.css` swapped into the live `style.marketplaceUserCSS` with no scheme style present: `--spice-main #000000`, `--spice-text #00ff00`, `--spice-button #3c3c4c`, and the screenshot shows the full Classic look.
 - `pnpm check` green: lint, typecheck, 100 tests, build.
-- Upstream: the ordering bug in `installPreparedTheme` belongs to spicetify/marketplace; this issue works around it on the theme side.
+- Upstream: reported as [spicetify/marketplace#1247](https://github.com/spicetify/marketplace/issues/1247); this issue works around it on the theme side.
