@@ -965,11 +965,27 @@ html.spotify__os--is-macos .main-globalNav-historyButtonsContainer {
    bars, and the entity header already sits on its own artwork. */
 .main-entityHeader-title,
 .main-entityHeader-title h1,
+.main-entityHeader-title [data-encore-id="adaptiveTitle"],
 .main-shelf-title,
 .main-view-container h2 {
   font-family: var(--wa-font-pixel);
   text-transform: uppercase;
   color: var(--wa-white);
+}
+
+/* The artist page renders its name through Encore's adaptiveTitle span,
+   which carries font-family: var(--encore-variable-font-stack) inline. An
+   inline value outranks any selector, so the variable it reads is redefined
+   on the title instead, and the span resolves to the pixel face on its own.
+   The rule above still supplies the casing and the color. The listener count
+   under it is a span with no hook at all; the family on the header text
+   container reaches it by inheritance. */
+.main-entityHeader-title {
+  --encore-variable-font-stack: var(--wa-font-pixel);
+}
+
+.main-entityHeader-headerText {
+  font-family: var(--wa-font-pixel);
 }
 
 /* === Scrollbars === */
@@ -1074,15 +1090,15 @@ html.spotify__os--is-macos .main-globalNav-historyButtonsContainer {
   color: var(--spice-text);
 }
 
-/* Buttons. Play buttons are excluded by their accessible name: the shortcuts on Home
-   keep theirs hidden until hover by hiding only the icon, so any fill on the
-   button shows up as an empty gray box, and no stable class marks them in
-   this build. The aria-label is the one thing about them that will not
-   change with a release. */
-.main-view-container button[class*="-button" i]:not(.main-playButton-PlayButton, [aria-label^="Play" i]),
+/* Buttons. Play and Pause buttons are excluded by their accessible name: the
+   shortcuts on Home keep theirs hidden until hover by hiding only the icon,
+   so any fill on the button shows up as an empty gray box, and no stable
+   class marks them in this build. The aria-label is the one thing about them
+   that will not change with a release. */
+.main-view-container button[class*="-button" i]:not(.main-playButton-PlayButton, [aria-label^="Play" i], [aria-label^="Pause" i]),
 .GenericModal button[class*="-button" i],
 .main-contextMenu-menu button[class*="-button" i],
-.main-actionBar-ActionBar button:not(.main-playButton-PlayButton, [aria-label^="Play" i]) {
+.main-actionBar-ActionBar button:not(.main-playButton-PlayButton, [aria-label^="Play" i], [aria-label^="Pause" i]) {
   background-color: var(--spice-button);
   box-shadow: var(--wa-raised);
   color: var(--spice-shadow);
@@ -1096,10 +1112,10 @@ html.spotify__os--is-macos .main-globalNav-historyButtonsContainer {
   color: var(--spice-text);
 }
 
-.main-view-container button[class*="-button" i]:not(.main-playButton-PlayButton, [aria-label^="Play" i]):hover,
+.main-view-container button[class*="-button" i]:not(.main-playButton-PlayButton, [aria-label^="Play" i], [aria-label^="Pause" i]):hover,
 .GenericModal button[class*="-button" i]:hover,
 .main-contextMenu-menu button[class*="-button" i]:hover,
-.main-actionBar-ActionBar button:not(.main-playButton-PlayButton, [aria-label^="Play" i]):hover {
+.main-actionBar-ActionBar button:not(.main-playButton-PlayButton, [aria-label^="Play" i], [aria-label^="Pause" i]):hover {
   background-color: var(--wa-bevel-light);
   color: var(--spice-text);
 }
@@ -1112,8 +1128,11 @@ html.spotify__os--is-macos .main-globalNav-historyButtonsContainer {
 
 /* The shortcuts grid on Home hides its play button by hiding only the icon,
    so any fill on it shows up as an empty gray box; it goes back to
-   transparent, as does any other play button the generic rule may reach. */
-.main-view-container button[aria-label^="Play" i] {
+   transparent, as does any other play button the generic rule may reach.
+   The label flips to Pause while that shortcut's context is playing and the
+   icon stays hidden at rest all the same, so Pause is excluded alongside. */
+.main-view-container button[aria-label^="Play" i],
+.main-view-container button[aria-label^="Pause" i] {
   background-color: transparent;
   box-shadow: none;
 }
@@ -1259,6 +1278,48 @@ ul[role="menu"] li button:focus span {
 body [data-encore-id="text"],
 body [data-encore-id="listRowTitle"],
 body [data-encore-id="listRowSubtitle"],
-body [data-encore-id="listRowDetails"] {
+body [data-encore-id="listRowDetails"],
+body [data-encore-id="cardTitle"],
+body [data-encore-id="cardSubtitle"] {
   font-family: var(--wa-font-pixel);
+}
+
+/* === Right sidebar keys === */
+
+/* The now playing view and the queue live outside .main-view-container, so
+   the generic button rules never reach them. Same contract as above: the
+   Encore button and tab ids. Primary and secondary (Start a Jam, Following)
+   are gray keys like the action bar's text keys; tertiary (Show all, Open
+   queue) is a link and stays flat; the queue tabs keep Spotify's underline
+   and only take the face. */
+.Root__right-sidebar [data-encore-id="buttonPrimary"],
+.Root__right-sidebar [data-encore-id="buttonSecondary"],
+.Root__right-sidebar [data-encore-id="buttonTertiary"],
+.Root__right-sidebar [data-encore-id="tabItem"] {
+  font-family: var(--wa-font-pixel);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.Root__right-sidebar [data-encore-id="buttonPrimary"],
+.Root__right-sidebar [data-encore-id="buttonSecondary"] {
+  background-color: var(--spice-button);
+  box-shadow: var(--wa-raised);
+  border: 0;
+  color: var(--spice-shadow);
+}
+
+.Root__right-sidebar [data-encore-id="buttonPrimary"]:hover,
+.Root__right-sidebar [data-encore-id="buttonSecondary"]:hover {
+  background-color: var(--wa-bevel-light);
+  color: var(--spice-text);
+}
+
+.Root__right-sidebar [data-encore-id="buttonPrimary"]:active,
+.Root__right-sidebar [data-encore-id="buttonSecondary"]:active {
+  box-shadow: var(--wa-sunken);
+}
+
+.Root__right-sidebar [data-encore-id="buttonTertiary"] {
+  color: var(--spice-text);
 }
