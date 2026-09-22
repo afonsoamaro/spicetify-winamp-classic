@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Spicetify docs
+    url: https://spicetify.app/docs/getting-started
+    about: Installing Spicetify itself, or a problem that shows up with every theme.
+  - name: Spicetify Marketplace
+    url: https://github.com/spicetify/marketplace/issues
+    about: The Install or Remove button in the Marketplace misbehaving, for any theme.
