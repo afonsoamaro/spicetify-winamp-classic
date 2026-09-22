@@ -1,0 +1,30 @@
+name: Idea or request
+description: A screen that needs work, a Winamp detail that is missing, anything you would like to see
+title: "[idea] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Half-formed ideas are fine. If you are not sure it fits the theme, open it anyway and we will talk it through.
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What you would like to see, and where.
+      placeholder: The lyrics panel still looks stock; it could use the LED display treatment.
+    validations:
+      required: true
+  - type: textarea
+    id: reference
+    attributes:
+      label: Reference
+      description: A screenshot of the Spotify screen you mean, or of the Winamp original you are thinking of. Optional, always helpful.
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Anything that applies
+      options:
+        - label: This is about a screen the theme has not covered yet
+        - label: This is a detail of the original Winamp skin that is missing
+        - label: I would be up for trying the change myself
