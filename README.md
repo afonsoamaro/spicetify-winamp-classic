@@ -4,7 +4,7 @@ Spotify wearing the Winamp 2.x face: bevelled gray panels, a green LED display t
 
 No bitmap from the original skin ships here. Every bevel, knob and LED is CSS, and the analyzer is a canvas.
 
-[![CI](https://github.com/afonsoamaro/spicetify-winamp-classic/actions/workflows/ci.yml/badge.svg)](https://github.com/afonsoamaro/spicetify-winamp-classic/actions/workflows/ci.yml) [![Stars](https://img.shields.io/github/stars/afonsoamaro/spicetify-winamp-classic?style=flat-square&logo=github&color=00b800&labelColor=14141c)](https://github.com/afonsoamaro/spicetify-winamp-classic/stargazers) [![License](https://img.shields.io/github/license/afonsoamaro/spicetify-winamp-classic?style=flat-square&color=00b800&labelColor=14141c)](https://github.com/afonsoamaro/spicetify-winamp-classic/blob/main/LICENSE)
+[![CI](https://github.com/afonsoamaro/spicetify-winamp-classic/actions/workflows/ci.yml/badge.svg)](https://github.com/afonsoamaro/spicetify-winamp-classic/actions/workflows/ci.yml) [![Stars](https://img.shields.io/github/stars/afonsoamaro/spicetify-winamp-classic?style=flat-square&logo=github&color=00b800&labelColor=14141c)](https://github.com/afonsoamaro/spicetify-winamp-classic/stargazers) [![License](https://img.shields.io/github/license/afonsoamaro/spicetify-winamp-classic?style=flat-square&color=00b800&labelColor=14141c)](https://github.com/afonsoamaro/spicetify-winamp-classic/blob/main/LICENSE) [![Spotify](https://img.shields.io/badge/Spotify-1.3.0-00b800?style=flat-square&labelColor=14141c)](https://spicetify.app/) [![Spicetify](https://img.shields.io/badge/Spicetify-2.45-00b800?style=flat-square&labelColor=14141c)](https://spicetify.app/)
 
 ![Home](https://raw.githubusercontent.com/afonsoamaro/spicetify-winamp-classic/main/docs/screenshots/home.png)
 
