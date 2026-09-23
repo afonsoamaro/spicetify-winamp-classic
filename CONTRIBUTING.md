@@ -4,7 +4,7 @@ Bug reports, ideas and pull requests are all welcome, and none of them need to b
 
 ## Reporting something
 
-Open an issue: [bug](https://github.com/afonsoamaro/spicetify-winamp-classic/issues/new?template=bug_report.yml), [idea](https://github.com/afonsoamaro/spicetify-winamp-classic/issues/new?template=idea.yml), or a [blank one](https://github.com/afonsoamaro/spicetify-winamp-classic/issues/new) if neither fits.
+Open an issue: [bug](https://github.com/afonsoamaro/spicetify-winamp-classic/issues/new?template=bug_report.yml) or [idea](https://github.com/afonsoamaro/spicetify-winamp-classic/issues/new?template=idea.yml). For a question, or anything that is not quite either, [Discussions](https://github.com/afonsoamaro/spicetify-winamp-classic/discussions) is the easier door.
 
 Two things make a theme bug easy to fix: a screenshot of the screen that looks wrong, and your Spotify version (Spotify, then About Spotify). Spotify renames its CSS classes between releases, so most regressions are a selector that stopped matching, and the version narrows it down fast.
 
