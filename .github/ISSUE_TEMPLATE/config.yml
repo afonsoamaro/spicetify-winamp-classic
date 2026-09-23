@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Questions and general chat
+    url: https://github.com/afonsoamaro/spicetify-winamp-classic/discussions
+    about: Anything that is not a bug or a concrete request. Screenshots of your setup welcome.
   - name: Spicetify docs
     url: https://spicetify.app/docs/getting-started
     about: Installing Spicetify itself, or a problem that shows up with every theme.

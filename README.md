@@ -1,5 +1,11 @@
 # Winamp Classic for Spicetify
 
+[![CI](https://github.com/afonsoamaro/spicetify-winamp-classic/actions/workflows/ci.yml/badge.svg)](https://github.com/afonsoamaro/spicetify-winamp-classic/actions/workflows/ci.yml)
+[![Stars](https://img.shields.io/github/stars/afonsoamaro/spicetify-winamp-classic?style=flat-square&logo=github&color=00b800&labelColor=14141c)](https://github.com/afonsoamaro/spicetify-winamp-classic/stargazers)
+[![License](https://img.shields.io/github/license/afonsoamaro/spicetify-winamp-classic?style=flat-square&color=00b800&labelColor=14141c)](https://github.com/afonsoamaro/spicetify-winamp-classic/blob/main/LICENSE)
+[![Spotify](https://img.shields.io/badge/Spotify-1.3.0-00b800?style=flat-square&labelColor=14141c)](https://spicetify.app/)
+[![Spicetify](https://img.shields.io/badge/Spicetify-2.45-00b800?style=flat-square&labelColor=14141c)](https://spicetify.app/)
+
 Spotify wearing the Winamp 2.x face: bevelled gray panels, a green LED display that scrolls the track title, a spectrum analyzer bouncing next to it, and a pixel typeface all the way down. It really whips the llama's ass.
 
 No bitmap from the original skin ships here. Every bevel, knob and LED is CSS, and the analyzer is a canvas.
@@ -24,7 +30,9 @@ No bitmap from the original skin ships here. Every bevel, knob and LED is CSS, a
 - The Silkscreen pixel font embedded in the theme, so there is nothing to install and nothing to load at runtime.
 - One colour scheme, `Classic`, straight off the Winamp base skin.
 
-It is still being built, screen by screen. What is done and what is next lives in [the issue index](https://github.com/afonsoamaro/spicetify-winamp-classic/blob/main/issues/_index.md).
+Every screen on the original plan is themed and the theme is live on the Marketplace, so what happens next is mostly reacting: Spotify renames a class, a corner turns up that nobody had looked at, someone misses a detail from the old skin. [The issue index](https://github.com/afonsoamaro/spicetify-winamp-classic/blob/main/issues/_index.md) has the trail of what was built and why.
+
+If the theme made you smile, [a star](https://github.com/afonsoamaro/spicetify-winamp-classic/stargazers) helps other people find it on the Marketplace, where themes are sorted by stars.
 
 ## Install
 
@@ -66,7 +74,7 @@ Reports are welcome and small ones are the most useful. A screen that still look
 
 - [Report a bug](https://github.com/afonsoamaro/spicetify-winamp-classic/issues/new?template=bug_report.yml): what you saw, your Spotify version, a screenshot if you have one.
 - [Suggest an idea](https://github.com/afonsoamaro/spicetify-winamp-classic/issues/new?template=idea.yml): a screen that needs work, a detail from the original skin, anything you miss.
-- [Ask something else](https://github.com/afonsoamaro/spicetify-winamp-classic/issues/new): a blank issue, no template, no ceremony.
+- [Ask something else](https://github.com/afonsoamaro/spicetify-winamp-classic/discussions): a question, a "does anyone else see this", a screenshot of your setup. No template, no ceremony.
 
 You do not need to know CSS to be useful here. A screenshot of the screen that looks wrong is usually enough to find the selector Spotify renamed.
 
