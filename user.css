@@ -812,6 +812,44 @@ button.main-globalNav-navLinkActive {
   color: var(--spice-tab-active);
 }
 
+/* The Marketplace tab bar paints the active tab with --spice-tab-active and
+   every label with --spice-text, both green in this scheme, so the active tab
+   was a green block with no readable label. The tabs become keys like Home's
+   filter chips, the active one sunken with a green label. The element name
+   outranks the Marketplace's bare class rules, which load after this file.
+   The label is a span with Spotify's type class, hence the descendants. */
+a.marketplace-tabBar-headerItemLink {
+  border-radius: 0;
+  background-color: var(--spice-button);
+  box-shadow: var(--wa-raised);
+  color: var(--spice-shadow);
+}
+
+a.marketplace-tabBar-headerItemLink,
+a.marketplace-tabBar-headerItemLink * {
+  font-family: var(--wa-font-pixel);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+a.marketplace-tabBar-headerItemLink:hover {
+  background-color: var(--wa-bevel-light);
+}
+
+a.marketplace-tabBar-headerItemLink:hover,
+a.marketplace-tabBar-headerItemLink.marketplace-tabBar-active {
+  color: var(--spice-text);
+}
+
+a.marketplace-tabBar-headerItemLink:active,
+a.marketplace-tabBar-headerItemLink.marketplace-tabBar-active {
+  box-shadow: var(--wa-sunken);
+}
+
+a.marketplace-tabBar-headerItemLink.marketplace-tabBar-active {
+  background-color: var(--spice-button);
+}
+
 /* Spicetify's class map sends two different hashes to
    main-actionButtons-spacer: the 1px divider and the wrapper around the
    What's New and Listening activity buttons (confirmed twice in
