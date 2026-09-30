@@ -105,7 +105,12 @@ Three files in the repo are generated, so do not hand-edit between their markers
 - The `@font-face` block in `user.css`, from the woff2 files in `assets/` by `scripts/embed-font.js`. Run `pnpm embed:font`.
 - The colour block in `user.css`, from `color.ini` by `scripts/embed-scheme.js`. Run `pnpm embed:scheme`. Spicetify injects those variables itself; the copy keeps the theme whole when a Marketplace install over another theme drops the scheme.
 
-The Marketplace loads `theme.js` from jsDelivr (`https://cdn.jsdelivr.net/gh/afonsoamaro/spicetify-winamp-classic@main/theme.js`, see `manifest.json`). After a change lands on `main`, the CDN can serve the old file for up to 24h; purge it at `https://purge.jsdelivr.net/gh/afonsoamaro/spicetify-winamp-classic@main/theme.js`.
+The Marketplace loads both `theme.js` and `user.css` from jsDelivr, on every Spotify start. `theme.js` comes from the URL in `include` (see `manifest.json`); for `user.css` the Marketplace rewrites the GitHub raw URL to `https://cdn.jsdelivr.net/gh/afonsoamaro/spicetify-winamp-classic@main/user.css`. After a change lands on `main`, the CDN can keep serving the old file for hours, and reinstalling the theme does not help. Purge the file you changed:
+
+```sh
+curl https://purge.jsdelivr.net/gh/afonsoamaro/spicetify-winamp-classic@main/user.css
+curl https://purge.jsdelivr.net/gh/afonsoamaro/spicetify-winamp-classic@main/theme.js
+```
 
 Work is planned as small issues in [`issues/`](https://github.com/afonsoamaro/spicetify-winamp-classic/tree/main/issues), each one carrying its own diagnosis and verification notes. They are worth a read before changing a selector: most of them explain why a rule looks the way it does.
 

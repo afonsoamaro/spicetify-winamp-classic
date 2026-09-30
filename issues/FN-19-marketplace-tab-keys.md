@@ -28,3 +28,7 @@ Reported by the owner on 2026-09-30: at the top of the Marketplace, the active t
 ## Verification (2026-09-30, branch `fix/fn-19-marketplace-tab-keys`)
 - Live, with the local `user.css` swapped into the Marketplace's injected style: the five tabs measure `rgb(60, 60, 76)` with the raised bevel, `Silkscreen` 11px uppercase; the active one sunken with a `rgb(0, 255, 0)` label. Clicking Extensions and back moved the sunken state each time; hover on Snippets measured `rgb(90, 90, 110)` with a green label.
 - `pnpm check` green: lint, typecheck, 100 tests, build (CSS-only change).
+
+## Release (2026-09-30)
+- After the merge, the owner removed and reinstalled the theme and still saw the green block. The injected sheet was the pre-fix file (60,796 bytes against 62,066). The Marketplace 1.0.11 rewrites a `raw.githubusercontent.com` CSS URL to `cdn.jsdelivr.net/gh/<user>/<repo>@<branch>/user.css` and fetches it on every start; the jsDelivr edge serving Spotify returned the old file with `age: 36119`, while GitHub raw already had the new one. The `?time=` query the Marketplace appends does not bust that cache.
+- Purging `https://purge.jsdelivr.net/gh/afonsoamaro/spicetify-winamp-classic@main/user.css` fixed it: after a reload the injected sheet was 62,066 bytes and the tabs measured as above, with no CDP swap. README and SPECS now say `user.css` also needs the purge.
