@@ -67,7 +67,7 @@ During development, `spicetify watch -s` reapplies CSS and JS on save.
 
 ### Marketplace loading
 
-The Marketplace downloads `user.css` and `color.ini` from GitHub raw, and `theme.js` from the URL in `include`.
+The Marketplace downloads `color.ini` from GitHub raw once, at install. `user.css` is fetched on every Spotify start from jsDelivr, because the Marketplace rewrites a GitHub raw `usercss` URL to `cdn.jsdelivr.net/gh/<user>/<repo>@<branch>/`; `theme.js` comes from the URL in `include`, also on jsDelivr. A change to either file on `main` shows up only after the CDN refreshes or is purged.
 `user.css` cannot rely on a relative `url()`, because the Marketplace rewrites those paths to the CDN and local loading does not. The font goes in as a data URI.
 
 ## Palette (color.ini)
