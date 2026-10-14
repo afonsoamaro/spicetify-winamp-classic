@@ -1244,6 +1244,26 @@ dialog h2 {
   color: var(--wa-white);
 }
 
+/* The About dialog's "Copy version info" key has a generated class and only a
+   title. Its own rule paints it with the tab-active color, which is the
+   scheme's green, over the same green glyph: a solid green square. The title
+   is the one thing that tells it from the Close button (which has an
+   aria-label and no title), and it does not change with the UI language. */
+dialog button[title] {
+  background-color: var(--spice-button);
+  box-shadow: var(--wa-raised);
+  color: var(--spice-shadow);
+}
+
+dialog button[title]:hover {
+  background-color: var(--wa-bevel-light);
+  color: var(--spice-text);
+}
+
+dialog button[title]:active {
+  box-shadow: var(--wa-sunken);
+}
+
 /* Context menus and dropdowns are small panels; an item under the pointer is
    the same blue bar as a selected track. On 1.3.0 the menu is an Encore list
    with generated classes and no readable name, so it is reached through its
