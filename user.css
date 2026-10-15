@@ -1325,6 +1325,21 @@ dialog button:has(> svg:only-child):not([title], [data-encore-id]) {
   background-color: transparent;
 }
 
+/* The Embed dialog's Size select takes the blue selection bar on hover, a
+   highlight the scheme maps to the track selection color. It is a field, not
+   a row: it keeps its resting fill and the lit text is the only hover cue. */
+dialog select:enabled:hover {
+  background-color: var(--spice-main-elevated);
+}
+
+/* The embed code is one long URL with no break point, and in the pixel face
+   it runs past the dialog and adds a horizontal scrollbar that moves the
+   whole layout. It wraps anywhere instead. */
+dialog pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* Context menus and dropdowns are small panels; an item under the pointer is
    the same blue bar as a selected track. On 1.3.0 the menu is an Encore list
    with generated classes and no readable name, so it is reached through its
