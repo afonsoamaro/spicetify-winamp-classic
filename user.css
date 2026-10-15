@@ -178,9 +178,20 @@
   color: var(--wa-white);
 }
 
+/* The label centers on the whole strip, not on what the squares leave over,
+   which put it half their width (about 17px) left of the controls below. It
+   leaves the flow so the first square takes the right edge by its auto margin,
+   whatever number of squares there are. */
 .main-nowPlayingBar-nowPlayingBar .wa-titlebar span:first-child {
-  flex: 1 1 auto;
-  text-align: center;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main-nowPlayingBar-nowPlayingBar .wa-titlebar span:nth-child(2) {
+  margin-left: auto;
 }
 
 /* The three decorative squares: minimize, shade, close. No click handler. */
