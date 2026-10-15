@@ -304,6 +304,13 @@
   box-shadow: inherit;
 }
 
+/* Spotify spaces the two button groups 16px from play while the buttons inside
+   each group sit 8px apart, so play floated in a wider gap. One spacing for
+   the whole transport. */
+.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] .player-controls__buttons {
+  gap: 8px;
+}
+
 /* Sized on the column, not on the controls group: the volume speaker and the
    miniplayer and fullscreen buttons live outside extraControls and came out
    at three different widths. One key size for the whole right-hand strip. */
