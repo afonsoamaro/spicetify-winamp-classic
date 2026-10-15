@@ -178,9 +178,20 @@
   color: var(--wa-white);
 }
 
+/* The label centers on the whole strip, not on what the squares leave over,
+   which put it half their width (about 17px) left of the controls below. It
+   leaves the flow so the first square takes the right edge by its auto margin,
+   whatever number of squares there are. */
 .main-nowPlayingBar-nowPlayingBar .wa-titlebar span:first-child {
-  flex: 1 1 auto;
-  text-align: center;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main-nowPlayingBar-nowPlayingBar .wa-titlebar span:nth-child(2) {
+  margin-left: auto;
 }
 
 /* The three decorative squares: minimize, shade, close. No click handler. */
@@ -291,6 +302,24 @@
 .main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button {
   width: 26px;
   height: 26px;
+}
+
+/* Since 1.3.4 play is an Encore primary button whose green fill and 32px size
+   sit on the inner span, not on the button. The button stays 26px, so the span
+   spilled out of it from the top-left corner and the key read as bigger and
+   off line with its neighbours. The span now fills the button and carries the
+   button's bevel, which its own fill would otherwise cover. */
+.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button[data-encore-id="buttonPrimary"] > span:first-child {
+  width: 100%;
+  height: 100%;
+  box-shadow: inherit;
+}
+
+/* Spotify spaces the two button groups 16px from play while the buttons inside
+   each group sit 8px apart, so play floated in a wider gap. One spacing for
+   the whole transport. */
+.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] .player-controls__buttons {
+  gap: 8px;
 }
 
 /* Sized on the column, not on the controls group: the volume speaker and the
