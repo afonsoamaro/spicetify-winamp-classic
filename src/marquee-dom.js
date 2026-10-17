@@ -1,8 +1,8 @@
 // @ts-check
-// The DOM side of the marquee: a canvas next to Spotify's track info that
-// shows the display text and scrolls it when it does not fit. user.css hides
-// the track info while this element is present, so nothing React renders is
-// ever touched and a remount is safe. Painting with fillText costs no layout,
+// The DOM side of the marquee: a canvas in the display, the track info block,
+// that shows the display text and scrolls it when it does not fit. user.css
+// hides the rest of the block while this element is present, so nothing React
+// renders is ever touched and a remount is safe. Painting with fillText costs no layout,
 // unlike rewriting a DOM text node five times a second.
 import { LOG_PREFIX } from './dom.js';
 import { describeItem, displayText, scrollStep } from './marquee.js';
@@ -10,7 +10,6 @@ import { describeItem, displayText, scrollStep } from './marquee.js';
 export const MARQUEE_CLASS = 'wa-marquee';
 export const TICK_MS = 200;
 export const DATA_POLL_MS = 250;
-export const TRACK_INFO_SELECTOR = '.main-nowPlayingWidget-trackInfo';
 
 /**
  * Width in pixels of `text` in the element's computed font. Silkscreen is
@@ -149,9 +148,7 @@ export function createMarqueeInjection({ measure = canvasMeasure, player = () =>
         return;
       }
       ctx = context;
-      const info = display.querySelector(TRACK_INFO_SELECTOR);
-      if (info) info.insertAdjacentElement('afterend', el);
-      else display.append(el);
+      display.append(el);
       refresh();
       if (!player().data?.item) waitForData();
       player().addEventListener('songchange', refresh);

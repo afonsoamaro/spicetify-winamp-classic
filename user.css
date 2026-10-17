@@ -155,7 +155,7 @@
    grows the bar 14px so the strip never covers the controls whatever the
    bar's own layout is. When the bar is gone (miniplayer, fullscreen) the
    strip goes with it, leaving nothing behind. Visual only. */
-.main-nowPlayingBar-nowPlayingBar {
+[data-testid="now-playing-bar"] > div {
   position: relative;
   padding-top: 14px;
   background-color: var(--spice-player);
@@ -163,7 +163,7 @@
   border-top: 1px solid var(--wa-bevel-light);
 }
 
-.main-nowPlayingBar-nowPlayingBar .wa-titlebar {
+[data-testid="now-playing-bar"] > div .wa-titlebar {
   position: absolute;
   top: 0;
   right: 0;
@@ -182,7 +182,7 @@
    which put it half their width (about 17px) left of the controls below. It
    leaves the flow so the first square takes the right edge by its auto margin,
    whatever number of squares there are. */
-.main-nowPlayingBar-nowPlayingBar .wa-titlebar span:first-child {
+[data-testid="now-playing-bar"] > div .wa-titlebar span:first-child {
   position: absolute;
   inset: 0;
   display: flex;
@@ -190,12 +190,12 @@
   justify-content: center;
 }
 
-.main-nowPlayingBar-nowPlayingBar .wa-titlebar span:nth-child(2) {
+[data-testid="now-playing-bar"] > div .wa-titlebar span:nth-child(2) {
   margin-left: auto;
 }
 
 /* The three decorative squares: minimize, shade, close. No click handler. */
-.main-nowPlayingBar-nowPlayingBar .wa-titlebar span + span {
+[data-testid="now-playing-bar"] > div .wa-titlebar span + span {
   width: 9px;
   height: 9px;
   margin-right: 2px;
@@ -209,19 +209,20 @@
    the analyser canvas, so the text never runs underneath it; the display is
    the canvas's containing block, so position is set here rather than left to
    Spotify's own rule. */
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-left [data-testid="now-playing-widget"] {
+[data-testid="now-playing-bar"] > div [data-testid="now-playing-widget"] > div:not([data-testid], :has(button)) {
   position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
   background-color: var(--wa-display-bg);
   box-shadow: var(--wa-sunken);
   padding: 4px var(--wa-spectrum-w) 4px 4px;
 }
 
-/* The title and artist carry readable class names of their own, so they are
-   addressed directly rather than through the widget's testid. */
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-trackInfo .main-trackInfo-name,
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-trackInfo .main-trackInfo-name a,
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-trackInfo .main-trackInfo-artists,
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-trackInfo .main-trackInfo-artists a {
+/* The title and artist have no readable name or test id of their own in
+   1.3.5, so the text inside the display takes the pixel face as a whole and
+   its first block, the title, takes the lit colour. The artist keeps the muted
+   colour Spotify already gives it. */
+[data-testid="now-playing-bar"] > div [data-testid="now-playing-widget"] > div:not([data-testid], :has(button)) :is(span, a) {
   font-family: var(--wa-font-pixel);
   font-size: 11px;
   text-transform: uppercase;
@@ -229,14 +230,8 @@
   letter-spacing: 0;
 }
 
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-trackInfo .main-trackInfo-name,
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-trackInfo .main-trackInfo-name a {
+[data-testid="now-playing-bar"] > div [data-testid="now-playing-widget"] > div:not([data-testid], :has(button)) > :first-child :is(span, a) {
   color: var(--spice-text);
-}
-
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-trackInfo .main-trackInfo-artists,
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-trackInfo .main-trackInfo-artists a {
-  color: var(--spice-subtext);
 }
 
 /* The marquee. marquee-dom.js creates this canvas next to the track info and
@@ -247,7 +242,7 @@
    text itself is already uppercase, so no text-transform is needed.
    flex-basis 0 (not auto) keeps the canvas attribute width out of the flex
    base size, so the box still fills the available row. */
-.main-nowPlayingBar-nowPlayingBar .wa-marquee {
+[data-testid="now-playing-bar"] > div .wa-marquee {
   flex: 1 1 0;
   min-width: 0;
   align-self: center;
@@ -257,7 +252,12 @@
   color: var(--spice-text);
 }
 
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingWidget-nowPlaying:has(.wa-marquee) .main-nowPlayingWidget-trackInfo {
+[data-testid="now-playing-bar"] > div [data-testid="now-playing-widget"] > div:not([data-testid], :has(button)):has(> .wa-marquee) {
+  display: flex;
+  align-items: center;
+}
+
+[data-testid="now-playing-bar"] > div [data-testid="now-playing-widget"] > div:not([data-testid], :has(button)):has(> .wa-marquee) > :not(.wa-marquee, .wa-spectrum) {
   display: none;
 }
 
@@ -265,7 +265,7 @@
    it sits in the display's right padding, outside the flex row, so the
    marquee keeps its width. The resize guard toggles the hidden attribute
    below 200px of display width. */
-.main-nowPlayingBar-nowPlayingBar .wa-spectrum {
+[data-testid="now-playing-bar"] > div .wa-spectrum {
   position: absolute;
   top: 50%;
   right: 4px;
@@ -275,13 +275,12 @@
   image-rendering: pixelated;
 }
 
-.main-nowPlayingBar-nowPlayingBar .wa-spectrum[hidden] {
+[data-testid="now-playing-bar"] > div .wa-spectrum[hidden] {
   display: none;
 }
 
 /* The cover sits recessed into the panel, like a part screwed into the case. */
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-left [data-testid="cover-art-image"],
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-left .cover-art {
+[data-testid="now-playing-bar"] > div [data-testid="cover-art-button"] {
   border: 2px solid var(--wa-bevel-dark);
   box-shadow: var(--wa-sunken);
 }
@@ -289,8 +288,8 @@
 /* Transport buttons. Winamp gives play no special shape, so neither do we.
    Only color, shadow and size change: touching layout or pointer-events here
    is how a drag target silently stops working. */
-.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button,
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-right button {
+[data-testid="now-playing-bar"] > div [data-testid="player-controls"] button,
+[data-testid="now-playing-bar"] > div > div:has([data-testid="volume-bar"]) button {
   background-color: var(--spice-button);
   box-shadow: var(--wa-raised);
   color: var(--spice-shadow);
@@ -299,7 +298,7 @@
 /* Spotify draws play larger than its neighbours; here the whole transport is
    one size. Its green is left alone on purpose: the owner preferred it to the
    uniform gray Winamp has, and it is the one Spotify colour the theme keeps. */
-.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button {
+[data-testid="now-playing-bar"] > div [data-testid="player-controls"] button {
   width: 26px;
   height: 26px;
 }
@@ -309,7 +308,7 @@
    spilled out of it from the top-left corner and the key read as bigger and
    off line with its neighbours. The span now fills the button and carries the
    button's bevel, which its own fill would otherwise cover. */
-.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button[data-encore-id="buttonPrimary"] > span:first-child {
+[data-testid="now-playing-bar"] > div [data-testid="player-controls"] button[data-encore-id="buttonPrimary"] > span:first-child {
   width: 100%;
   height: 100%;
   box-shadow: inherit;
@@ -318,60 +317,49 @@
 /* Spotify spaces the two button groups 16px from play while the buttons inside
    each group sit 8px apart, so play floated in a wider gap. One spacing for
    the whole transport. */
-.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] .player-controls__buttons {
+[data-testid="now-playing-bar"] > div [data-testid="general-controls"] {
   gap: 8px;
 }
 
 /* Sized on the column, not on the controls group: the volume speaker and the
    miniplayer and fullscreen buttons live outside extraControls and came out
    at three different widths. One key size for the whole right-hand strip. */
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-right button {
+[data-testid="now-playing-bar"] > div > div:has([data-testid="volume-bar"]) button {
   flex: 0 0 auto;
   width: 22px;
   height: 22px;
   padding: 0;
 }
 
-.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button:hover,
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-right button:hover {
+[data-testid="now-playing-bar"] > div [data-testid="player-controls"] button:hover,
+[data-testid="now-playing-bar"] > div > div:has([data-testid="volume-bar"]) button:hover {
   background-color: var(--wa-bevel-light);
   transform: none;
 }
 
-.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button:active,
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-right button:active {
+[data-testid="now-playing-bar"] > div [data-testid="player-controls"] button:active,
+[data-testid="now-playing-bar"] > div > div:has([data-testid="volume-bar"]) button:active {
   box-shadow: var(--wa-sunken);
 }
 
-/* Shuffle and repeat are the only controls with an on state, and the only
-   mark of it in the DOM is a generated class, one per control. Their
-   per-button data-testid and aria-checked never render in this build, and
-   Spicetify's class map has no readable name for either class, so the hashes
-   are read from the bundle of Spotify 1.2.99.317. A future release will
-   rename them and the keys will stop lighting up, which is a quiet loss of an
-   indicator rather than a broken bar. Re-read them from the bundle then.
-
-   Repeat carries its class on the button, so the bevel lands where it should.
-   Shuffle is not solved: it marks itself elsewhere in the tree and none of
-   the three classes read from the bundle reach it, so a shuffle that is on
-   still looks idle. The :has() list covers the shapes that do work: the bevel has to land on the key itself, not on
-   whatever holds the class. The ancestors are repeated because the rule that
-   paints an idle key is more specific than a bare class and was winning.
+/* Shuffle and repeat are the only controls with an on state. Spotify marks it
+   two ways and the rule takes both: repeat carries role="checkbox" with
+   aria-checked, and either control, when on, swaps Encore's subdued text colour
+   class for the bright accent one (encore-internal-color-text-bright-accent).
+   Both belong to Spotify's own contract, unlike the generated per-control
+   classes this used to read out of the bundle (which a release renamed and
+   which never reached shuffle at all).
 
    Winamp shows a toggled key as pressed in, so the bevel carries the state
    and the icon lights with it. */
-.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button.S4N_g0WWfksBnMSa,
-.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button.oh6rATYB9cGtHuBW,
-.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button:has(.S4N_g0WWfksBnMSa),
-.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] button:has(.oh6rATYB9cGtHuBW) {
+[data-testid="now-playing-bar"] > div [data-testid="player-controls"] button:is([aria-checked="true"], .encore-internal-color-text-bright-accent) {
   box-shadow: var(--wa-sunken);
   color: var(--spice-text);
 }
 
 /* Spotify also marks the state with a dot under the icon. The pressed key
    already says it, and Winamp has no such dot. */
-.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] .S4N_g0WWfksBnMSa::before,
-.main-nowPlayingBar-nowPlayingBar [data-testid="player-controls"] .oh6rATYB9cGtHuBW::before {
+[data-testid="now-playing-bar"] > div [data-testid="player-controls"] button:is([aria-checked="true"], .encore-internal-color-text-bright-accent)::before {
   display: none;
 }
 
@@ -379,28 +367,28 @@
    reads as a cut-off button rather than a deliberate one. Winamp's case has a
    margin on every side, so the column gets one and its controls are centred
    on the same line. */
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-right {
+[data-testid="now-playing-bar"] > div > div:has([data-testid="volume-bar"]) {
   padding-right: 10px;
 }
 
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-extraControls {
+[data-testid="now-playing-bar"] > div div:has(> [data-testid="volume-bar"]) {
   align-items: center;
   gap: 4px;
 }
 
 /* Winamp's elapsed counter is the big number on the panel; the duration is
    the small one beside it. */
-.main-nowPlayingBar-nowPlayingBar [data-testid="playback-position"],
-.main-nowPlayingBar-nowPlayingBar [data-testid="playback-duration"] {
+[data-testid="now-playing-bar"] > div [data-testid="playback-position"],
+[data-testid="now-playing-bar"] > div [data-testid="playback-duration"] {
   font-family: var(--wa-font-pixel);
   color: var(--spice-text);
 }
 
-.main-nowPlayingBar-nowPlayingBar [data-testid="playback-position"] {
+[data-testid="now-playing-bar"] > div [data-testid="playback-position"] {
   font-size: 14px;
 }
 
-.main-nowPlayingBar-nowPlayingBar [data-testid="playback-duration"] {
+[data-testid="now-playing-bar"] > div [data-testid="playback-duration"] {
   font-size: 11px;
   color: var(--spice-subtext);
 }
@@ -413,32 +401,32 @@
    that, so it is set on the same element, one step more specific. Without it
    the layers stay 4px inside a 10px groove and the bar looks like it shrinks
    when the pointer arrives. */
-.main-nowPlayingBar-nowPlayingBar [data-testid="playback-progressbar"] .progress-bar,
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-volumeBar .progress-bar {
+[data-testid="now-playing-bar"] > div [data-testid="playback-progressbar"] [data-testid="progress-bar"],
+[data-testid="now-playing-bar"] > div [data-testid="volume-bar"] [data-testid="progress-bar"] {
   --progress-bar-height: var(--wa-groove-h);
 }
 
 /* Both grooves are a sunken channel of the same height; only what fills them
    differs. */
-.main-nowPlayingBar-nowPlayingBar [data-testid="playback-progressbar"] .x-progressBar-progressBarBg,
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-volumeBar .x-progressBar-progressBarBg {
+[data-testid="now-playing-bar"] > div [data-testid="playback-progressbar"] [data-testid="progress-bar-background"],
+[data-testid="now-playing-bar"] > div [data-testid="volume-bar"] [data-testid="progress-bar-background"] {
   box-shadow: var(--wa-sunken);
   height: var(--wa-groove-h);
 }
 
-.main-nowPlayingBar-nowPlayingBar [data-testid="playback-progressbar"] .x-progressBar-progressBarBg {
+[data-testid="now-playing-bar"] > div [data-testid="playback-progressbar"] [data-testid="progress-bar-background"] {
   background-color: var(--wa-display-bg);
 }
 
-.main-nowPlayingBar-nowPlayingBar [data-testid="playback-progressbar"] .x-progressBar-fillColor {
+[data-testid="now-playing-bar"] > div [data-testid="playback-progressbar"] .x-progressBar-fillColor {
   background-color: var(--spice-text);
 }
 
 /* Spotify hides the handle until the bar is hovered. Winamp's slider always
    shows its knob, and on the volume groove the knob is the only level
    indicator, so display is forced rather than opacity. */
-.main-nowPlayingBar-nowPlayingBar [data-testid="playback-progressbar"] .progress-bar__slider,
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-volumeBar .progress-bar__slider {
+[data-testid="now-playing-bar"] > div [data-testid="playback-progressbar"] [data-testid="progress-bar-handle"],
+[data-testid="now-playing-bar"] > div [data-testid="volume-bar"] [data-testid="progress-bar-handle"] {
   display: flex;
   width: var(--wa-knob-w);
   height: var(--wa-knob-h);
@@ -449,7 +437,7 @@
 
 /* The volume groove shows the whole gradient at all times and the knob alone
    says where the level is, which is how Winamp reads it. */
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-volumeBar .x-progressBar-progressBarBg {
+[data-testid="now-playing-bar"] > div [data-testid="volume-bar"] [data-testid="progress-bar-background"] {
   background-image: linear-gradient(
     to right,
     var(--spice-text),
@@ -467,19 +455,19 @@
    Spotify switches to, and the volume groove keeps its gradient rather than
    filling in behind the knob. Scoping the block to the bar already outranks
    Spotify's own rules, so none of this needs !important. */
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-volumeBar .progress-bar .x-progressBar-fillColor {
+[data-testid="now-playing-bar"] > div [data-testid="volume-bar"] [data-testid="progress-bar"] .x-progressBar-fillColor {
   background-color: transparent;
 }
 
-.main-nowPlayingBar-nowPlayingBar [data-testid="playback-progressbar"] .progress-bar .x-progressBar-fillColor {
+[data-testid="now-playing-bar"] > div [data-testid="playback-progressbar"] [data-testid="progress-bar"] .x-progressBar-fillColor {
   background-color: var(--spice-text);
 }
 
 /* Spotify reveals a white middle layer to preview where a click would land.
    Winamp's sliders never change under the pointer, and on the volume groove it
    reads as a chunk of the gradient turning white. */
-.main-nowPlayingBar-nowPlayingBar .main-nowPlayingBar-volumeBar .progress-bar .x-progressBar-progressFillColor,
-.main-nowPlayingBar-nowPlayingBar [data-testid="playback-progressbar"] .progress-bar .x-progressBar-progressFillColor {
+[data-testid="now-playing-bar"] > div [data-testid="volume-bar"] [data-testid="progress-bar"] .x-progressBar-progressFillColor,
+[data-testid="now-playing-bar"] > div [data-testid="playback-progressbar"] [data-testid="progress-bar"] .x-progressBar-progressFillColor {
   visibility: hidden;
 }
 

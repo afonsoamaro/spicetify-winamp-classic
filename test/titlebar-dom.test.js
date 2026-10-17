@@ -2,18 +2,17 @@
 // @ts-check
 import { afterEach, describe, expect, it } from 'vitest';
 import { SQUARES, TITLEBAR_CLASS, TITLEBAR_TEXT, createTitlebarInjection } from '../src/titlebar-dom.js';
+import { BAR_WITH_WIDGET_HTML, innerBarInDocument } from './fixtures/now-playing.js';
 
 /** The display wrapped in the inner bar inside the ASIDE container, like the real footer. */
 function makeBar() {
-  document.body.innerHTML =
-    '<aside data-testid="now-playing-bar"><div class="main-nowPlayingBar-nowPlayingBar"><div class="left"></div>' +
-    '<div data-testid="now-playing-widget"><div class="main-nowPlayingWidget-trackInfo"></div></div></div></aside>';
-  return /** @type {HTMLElement} */ (document.querySelector('.main-nowPlayingBar-nowPlayingBar'));
+  document.body.innerHTML = BAR_WITH_WIDGET_HTML;
+  return innerBarInDocument();
 }
 
 /** @param {ParentNode} bar */
 const displayIn = (bar) =>
-  /** @type {HTMLElement} */ (bar.querySelector('[data-testid="now-playing-widget"]'));
+  /** @type {HTMLElement} */ (bar.querySelector('[data-testid="now-playing-widget"] > div:not([data-testid], :has(button))'));
 
 /** @param {ParentNode} bar */
 const titlebar = (bar) => bar.querySelector(`:scope > .${TITLEBAR_CLASS}`);
@@ -50,11 +49,9 @@ describe('createTitlebarInjection', () => {
   });
 
   it('mounts on the inner bar, not on the ASIDE container', () => {
-    document.body.innerHTML =
-      '<aside data-testid="now-playing-bar"><div class="main-nowPlayingBar-nowPlayingBar">' +
-      '<div data-testid="now-playing-widget"></div></div></aside>';
+    document.body.innerHTML = BAR_WITH_WIDGET_HTML;
     const aside = /** @type {HTMLElement} */ (document.querySelector('[data-testid="now-playing-bar"]'));
-    const inner = /** @type {HTMLElement} */ (aside.querySelector('.main-nowPlayingBar-nowPlayingBar'));
+    const inner = innerBarInDocument();
     const injection = createTitlebarInjection();
 
     injection.run(displayIn(aside));
