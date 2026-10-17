@@ -43,7 +43,12 @@ Mapped classes missing on 1.3.5 (from `pnpm compat`, FN-22), grouped: Root__righ
 - Verified live: title strip centered on the controls (830 px, same as the buttons), marquee scrolling in a LED panel that fills the widget, spectrum mounted, five 26 px keys with 8 px spacing, seek and volume grooves with the knob. The on-state was checked by setting the ARIA attribute on the node (both controls), not by toggling playback.
 - Learned on the way: the `now-playing-widget` of 1.3.5 wraps the cover, the text and the action buttons, so the display is its text block, not the widget.
 
-### Phase 2, other surfaces (open)
-After phase 1, `pnpm compat` on the 1.3.5 bundle reports 56 of 70 mapped classes still missing (68 before). The bar's own leftovers are `x-progressBar-fillColor` and `x-progressBar-progressFillColor`: the seek and volume grooves have two absolute full-width layers (the elapsed fill and the hover preview) with one more level inside, which was not mapped. At rest the fill is already the right green, so what is lost is the rule that keeps it green and hides the white preview while hovering.
+### Phase 2, other surfaces (in progress)
 
-`pnpm compat` still lists the mapped classes of track lists, library rows, top bar and search, context menus, action bars, entity header, cards. Each one is migrated and checked on screen like the bar was, one surface per commit.
+Done, verified live on 1.3.5.3058 (2026-10-17), `pnpm compat` down from 56 to 37 mapped classes missing:
+- **Track lists** on the ARIA grid (`role="grid"` in the main view, rows with `aria-selected`, `columnheader`, `gridcell` by `aria-colindex`): black list, pixel face, title lit and the rest muted at 12 px, raised header strip, selection bar and white text (set `aria-selected` on a row to check, since the app has nothing selected). Open: the playing row is white through Encore's bright accent class on the title cell, not confirmed with a track playing; the queue in the right sidebar is a separate surface.
+- **Top bar** on `#global-nav-bar`, `form[role="search"]`, the Encore ids and `[data-testid="topbar"]`: LED search display (hover and focus stay black), 32 px keys for back, forward, Marketplace, Home, What's New and Listening activity, page strip title. Open: the active Home key has no stable marker in 1.3.5 (no attribute changes), the open search dropdown panel is unverified.
+
+Still open: library rows in the sidebar, context menu and dropdown, cards and the shortcut grid, action bars (play key, explore), entity header and avatar, right sidebar and the queue, the edit-details dialog title, and the seek and volume groove fills.
+
+Phase 1 leaves two mapped names of the bar itself unmigrated: `x-progressBar-fillColor` and `x-progressBar-progressFillColor`: the seek and volume grooves have two absolute full-width layers (the elapsed fill and the hover preview) with one more level inside, which was not mapped. At rest the fill is already the right green, so what is lost is the rule that keeps it green and hides the white preview while hovering.

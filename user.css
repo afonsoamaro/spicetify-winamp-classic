@@ -473,99 +473,95 @@
 
 /* === Track lists === */
 
-/* Every rule is scoped under .main-trackList-trackList, which is on the list
-   in playlists, albums, the queue, search and artist pages alike. That keeps
-   them off the now playing bar and wins the ties that Spotify's stylesheets,
-   loaded after this one, would otherwise take. */
-.main-trackList-trackList {
+/* The list is an ARIA grid, which Spotify keeps whatever it does to the class
+   names: role="grid" holds role="row" rows, the header row holds columnheaders
+   and every other row carries aria-selected. Nothing here depends on a class.
+   Scoping to the main view keeps the rules off the library in the sidebar,
+   which is a grid of its own. Column 1 is the index, column 2 the title and
+   artist, and the last cell the duration with its two action keys; the columns
+   in between (album, date added) come and go with the page. */
+.main-view-container [role="grid"] {
   background-color: var(--spice-main);
 }
 
-.main-trackList-trackList .main-trackList-trackListRow {
+.main-view-container [role="grid"] [role="row"][aria-selected] {
   color: var(--spice-text);
 }
 
 /* The row's own font never reaches the text: the title, the artist line, the
    index and the duration each carry their own, so the pixel font is set on
-   them instead of on the row.
-
-   Spotify 1.3.0 dropped the readable names for the title and the duration.
-   The title link carries a testid and the duration sits in the row's last
-   section, both readable; the old names stay so a release that brings them
-   back lights up without an edit. */
-.main-trackList-trackList .main-trackList-trackListRow a,
-.main-trackList-trackList .main-trackList-trackListRow span,
-.main-trackList-trackList .main-trackList-rowMainContentTitle,
-.main-trackList-trackList .main-trackList-rowMainContent [data-testid="internal-track-link"],
-.main-trackList-trackList .main-trackList-rowMainContent > :first-child,
-.main-trackList-trackList .main-trackList-rowMainContentSubTitle,
-.main-trackList-trackList .main-trackList-rowMarker,
-.main-trackList-trackList .main-trackList-duration,
-.main-trackList-trackList .main-trackList-rowSectionEnd,
-.main-trackList-trackList .main-trackList-rowSectionEnd * {
+   them instead of on the row. */
+.main-view-container [role="grid"] [role="row"][aria-selected] a,
+.main-view-container [role="grid"] [role="row"][aria-selected] span,
+.main-view-container [role="grid"] [role="row"][aria-selected] [role="gridcell"] > div,
+.main-view-container [role="grid"] [role="row"][aria-selected] [data-encore-id="text"],
+.main-view-container [role="grid"] [role="row"][aria-selected] [role="gridcell"]:last-child * {
   font-family: var(--wa-font-pixel);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0;
 }
 
-.main-trackList-trackList .main-trackList-rowMainContentTitle,
-.main-trackList-trackList .main-trackList-rowMainContent [data-testid="internal-track-link"],
-.main-trackList-trackList .main-trackList-rowMainContent > :first-child {
+.main-view-container [role="grid"] [role="row"][aria-selected] [aria-colindex="2"] > div > :first-child,
+.main-view-container [role="grid"] [role="row"][aria-selected] [aria-colindex="2"] > div > :first-child a {
   color: var(--spice-text);
 }
 
-.main-trackList-trackList .main-trackList-rowMainContentSubTitle,
-.main-trackList-trackList .main-trackList-rowMarker,
-.main-trackList-trackList .main-trackList-duration,
-.main-trackList-trackList .main-trackList-rowSectionEnd,
-.main-trackList-trackList .main-trackList-rowSectionEnd * {
+.main-view-container [role="grid"] [role="row"][aria-selected] [aria-colindex="2"] > div > :not(:first-child),
+.main-view-container [role="grid"] [role="row"][aria-selected] [aria-colindex="2"] > div > :not(:first-child) a,
+.main-view-container [role="grid"] [role="row"][aria-selected] [aria-colindex="1"],
+.main-view-container [role="grid"] [role="row"][aria-selected] [aria-colindex="1"] span,
+.main-view-container [role="grid"] [role="row"][aria-selected] [role="gridcell"]:last-child,
+.main-view-container [role="grid"] [role="row"][aria-selected] [role="gridcell"]:last-child * {
   color: var(--spice-subtext);
 }
 
 /* The selection bar covers the whole row, index and duration included, and
-   turns every cell white, as Winamp's playlist does. It is keyed on
-   aria-selected, which the row carries and which will outlive any generated
-   class name. Hover is left to Spotify: its gray reads fine, Winamp's list
-   had no hover at all, and the theme's own hover rule lost to Spotify's. */
-.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] {
+   turns every cell white, as Winamp's playlist does. Hover is left to Spotify:
+   its gray reads fine, Winamp's list had no hover at all, and the theme's own
+   hover rule lost to Spotify's. */
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] {
   background-color: var(--spice-selected-row);
 }
 
-.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] a,
-.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] span,
-.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] .main-trackList-rowMainContentTitle,
-.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] .main-trackList-rowMainContentSubTitle,
-.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] .main-trackList-rowMarker,
-.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] .main-trackList-duration {
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] a,
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] span,
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] [role="gridcell"],
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] [role="gridcell"] *,
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] [aria-colindex="2"] > div > :first-child,
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] [aria-colindex="2"] > div > :first-child a,
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] [aria-colindex="2"] > div > :not(:first-child),
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] [aria-colindex="2"] > div > :not(:first-child) a {
   color: var(--wa-white);
 }
 
-/* The playing row is white, which is how Winamp marks the current track. The
-   class is generated and read from Spotify 1.2.99.317: there is no attribute
-   for this state, so a future release renames it and the white goes quietly.
-   Re-read it from the bundle when that happens. */
-.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMainContentTitle,
-.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMainContent [data-testid="internal-track-link"],
-.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMainContent > :first-child,
-.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMainContentSubTitle,
-.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMarker,
-.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-duration,
-.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowSectionEnd * {
+/* The playing row is white, which is how Winamp marks the current track.
+   There is no attribute for this state, but Encore paints the playing title
+   with its bright accent colour class, the same one the transport keys use for
+   shuffle and repeat, so the row is found through that. The check is limited
+   to the title cell: the "add to playlist" key in the last cell carries the
+   same class on every row. Not yet confirmed with a track playing (FN-21). */
+.main-view-container [role="grid"] [role="row"][aria-selected]:has([aria-colindex="2"] .encore-internal-color-text-bright-accent) [aria-colindex="2"] > div > :first-child,
+.main-view-container [role="grid"] [role="row"][aria-selected]:has([aria-colindex="2"] .encore-internal-color-text-bright-accent) [aria-colindex="2"] > div > :first-child a,
+.main-view-container [role="grid"] [role="row"][aria-selected]:has([aria-colindex="2"] .encore-internal-color-text-bright-accent) [aria-colindex="2"] > div > :not(:first-child),
+.main-view-container [role="grid"] [role="row"][aria-selected]:has([aria-colindex="2"] .encore-internal-color-text-bright-accent) [aria-colindex="2"] > div > :not(:first-child) a,
+.main-view-container [role="grid"] [role="row"][aria-selected]:has([aria-colindex="2"] .encore-internal-color-text-bright-accent) [aria-colindex="1"] span,
+.main-view-container [role="grid"] [role="row"][aria-selected]:has([aria-colindex="2"] .encore-internal-color-text-bright-accent) [role="gridcell"]:last-child * {
   color: var(--wa-white);
 }
 
 /* The column header is the playlist window's title strip: a raised gray band
    over the black list, with white pixel text. */
-.main-trackList-trackList .main-trackList-trackListHeader {
+.main-view-container [role="grid"] [role="row"]:has(> [role="columnheader"]) {
   background-color: var(--spice-player);
   box-shadow: var(--wa-raised);
   border-bottom: 0;
 }
 
-.main-trackList-trackList .main-trackList-trackListHeader,
-.main-trackList-trackList .main-trackList-trackListHeader button,
-.main-trackList-trackList .main-trackList-trackListHeader span {
+.main-view-container [role="grid"] [role="row"]:has(> [role="columnheader"]),
+.main-view-container [role="grid"] [role="row"]:has(> [role="columnheader"]) button,
+.main-view-container [role="grid"] [role="row"]:has(> [role="columnheader"]) span,
+.main-view-container [role="grid"] [role="row"]:has(> [role="columnheader"]) [role="columnheader"] div {
   font-family: var(--wa-font-pixel);
   font-size: 11px;
   text-transform: uppercase;
@@ -704,96 +700,73 @@
 
 /* === Top bar === */
 
-/* The search field is an LED display and the history and nav buttons are
+/* The bar and its parts hang on what Spotify keeps: the global-nav-bar id,
+   the search form's role, the Encore ids and the page strip's test ids. The
+   old readable class names came from the Spicetify class map, which does not
+   cover every Spotify version (FN-21).
+
+   The search field is an LED display and the history and nav buttons are
    keys, built from the same recipes as the now playing bar. */
-.main-globalNav-searchContainer,
-.main-globalNav-searchSection {
+#global-nav-bar div:has(> form[role="search"]),
+#global-nav-bar div:has(> div > form[role="search"]) {
   background-color: transparent;
 }
 
 /* The page's sticky strip fades in over the artwork as you scroll. Spotify
-   drives that with opacity on main-topBar-background, so only its colour is
-   set here. main-topBar-topbarContent stays untouched: painting it was what
-   left a gray band floating over every header at the top of the page. */
-.main-topBar-background {
+   drives that with opacity on the strip's first child, so only its colour is
+   set here. The content layer next to it stays untouched: painting it was
+   what left a gray band floating over every header at the top of the page. */
+[data-testid="topbar"] > :first-child {
   background-color: var(--spice-sidebar);
 }
 
-.main-entityHeader-topbarTitle {
+[data-testid="topbar-content"] > [data-encore-id="text"] {
   font-family: var(--wa-font-pixel);
   text-transform: uppercase;
   color: var(--wa-white);
 }
 
-/* The sunken section carries the display background, not the input: the
-   input keeps Spotify's elevated fill, which showed the section's own
-   padding as black bands around a dark gray field. The left margin detaches
-   the field from the home key, which used to sit glued to it. */
-.main-globalNav-searchInputSection {
+/* The sunken form is the display: the field inside is transparent, since an
+   elevated fill on it showed the form's own padding as black bands around a
+   dark gray field. The left margin detaches the field from the home key,
+   which used to sit glued to it. */
+#global-nav-bar form[role="search"] {
   margin-left: 8px;
   background-color: var(--wa-display-bg);
   box-shadow: var(--wa-sunken);
 }
 
-/* Hover and focus paint the input elevated-highlight blue through a
-   per-build hash class at (0,3,0); the display must stay black in every
-   state, so this answers at (0,3,1) with no hash and no !important. The
-   caret keeps focus visible. */
-.main-globalNav-searchContainer .main-globalNav-searchInputSection input:hover,
-.main-globalNav-searchContainer .main-globalNav-searchInputSection input:focus {
+/* Spotify paints the field elevated-highlight blue on hover and focus, and
+   fades the same blue behind the keyboard hints with a gradient. The display
+   stays black in every state; the caret keeps focus visible. */
+#global-nav-bar form[role="search"] input,
+#global-nav-bar form[role="search"] input:hover,
+#global-nav-bar form[role="search"] input:focus,
+#global-nav-bar form[role="search"] kbd {
   background-color: transparent;
+  background-image: none;
 }
 
-/* Spotify's own rule fades the same blue behind the kbd hints through a
-   gradient on their readable wrapper. Same treatment, scoped one level up
-   to win the (0,1,0) tie without touching specificity anywhere else. */
-.main-globalNav-searchInputSection .main-globalNav-searchInputKBDWrapper {
-  background: none;
-}
-
-/* The open search dropdown is the same elevated-highlight blue through a
-   generated class. It becomes a panel like the menus, scoped to the search
-   container so the playlist action bar (same container class, different
-   ancestor) is untouched. */
-.main-globalNav-searchInputContainer .main-actionBar-ActionBarContainer {
-  background-color: var(--spice-sidebar);
-  box-shadow: var(--wa-raised);
-}
-
-.main-globalNav-searchInputSection input,
-.main-globalNav-searchInputText {
+#global-nav-bar form[role="search"] input {
   font-family: var(--wa-font-pixel);
   font-size: 12px;
   text-transform: uppercase;
   color: var(--spice-text);
-  background-color: transparent;
 }
 
-/* The input also carries a per-build hash class whose Spotify rule
-   (.main-globalNav-searchInputContainer .<hash>) sets the elevated fill at
-   (0,2,0), which beats the rule above, so the background needs (0,2,1):
-   container scoping, no hash, no !important. */
-.main-globalNav-searchContainer .main-globalNav-searchInputSection input {
-  background-color: transparent;
-}
-
-.main-globalNav-searchInputSection input::placeholder {
+#global-nav-bar form[role="search"] input::placeholder {
   color: var(--spice-subtext);
   text-transform: uppercase;
 }
 
-/* The element name is in the selector on purpose: Spotify paints the nav
-   link with a bare class rule of the same specificity, and its stylesheet
-   loads after this one, so a bare class here would lose the tie.
-   The keys are 32x32 because 1.3.0 renders these Encore buttons with a
-   24px icon and 12px of its own padding, which overflowed the old 26px box.
-   There is no global box-sizing reset, so it is set here: with border-box
-   the 4px padding leaves exactly the 24px content box the icon needs. This
-   one rule covers history, home, the Marketplace and custom navlinks alike:
-   Spicetify renders them all as main-globalNav-navLink. */
-.main-globalNav-historyButtons button,
-a.main-globalNav-navLink,
-button.main-globalNav-navLink {
+/* The keys are 32x32 because 1.3.0 renders these Encore buttons with a 24px
+   icon and 12px of its own padding, which overflowed the old 26px box. There
+   is no global box-sizing reset, so it is set here: with border-box the 4px
+   padding leaves exactly the 24px content box the icon needs. One rule covers
+   history, home, the Marketplace, What's New and Listening activity; the
+   avatar is the one with aria-expanded and the search form's own buttons are
+   inside the display, so both are left out. */
+#global-nav-bar button[data-encore-id="buttonTertiary"]:not(form *, [aria-expanded]) {
   width: 32px;
   height: 32px;
   padding: 4px;
@@ -809,24 +782,13 @@ button.main-globalNav-navLink {
 
 /* Belt and braces: whatever Encore computes, the glyph never exceeds the
    24px content box. max-, not width, so smaller icons are not upscaled. */
-.main-globalNav-historyButtons button svg,
-a.main-globalNav-navLink svg,
-button.main-globalNav-navLink svg {
+#global-nav-bar button[data-encore-id="buttonTertiary"]:not(form *, [aria-expanded]) svg {
   max-width: 24px;
   max-height: 24px;
 }
 
-.main-globalNav-historyButtons button:active,
-a.main-globalNav-navLink:active,
-button.main-globalNav-navLink:active,
-a.main-globalNav-navLinkActive,
-button.main-globalNav-navLinkActive {
+#global-nav-bar button[data-encore-id="buttonTertiary"]:not(form *, [aria-expanded]):active {
   box-shadow: var(--wa-sunken);
-}
-
-a.main-globalNav-navLinkActive,
-button.main-globalNav-navLinkActive {
-  color: var(--spice-tab-active);
 }
 
 /* The Marketplace tab bar paints the active tab with --spice-tab-active and
