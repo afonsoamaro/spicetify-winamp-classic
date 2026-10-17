@@ -700,96 +700,73 @@
 
 /* === Top bar === */
 
-/* The search field is an LED display and the history and nav buttons are
+/* The bar and its parts hang on what Spotify keeps: the global-nav-bar id,
+   the search form's role, the Encore ids and the page strip's test ids. The
+   old readable class names came from the Spicetify class map, which does not
+   cover every Spotify version (FN-21).
+
+   The search field is an LED display and the history and nav buttons are
    keys, built from the same recipes as the now playing bar. */
-.main-globalNav-searchContainer,
-.main-globalNav-searchSection {
+#global-nav-bar div:has(> form[role="search"]),
+#global-nav-bar div:has(> div > form[role="search"]) {
   background-color: transparent;
 }
 
 /* The page's sticky strip fades in over the artwork as you scroll. Spotify
-   drives that with opacity on main-topBar-background, so only its colour is
-   set here. main-topBar-topbarContent stays untouched: painting it was what
-   left a gray band floating over every header at the top of the page. */
-.main-topBar-background {
+   drives that with opacity on the strip's first child, so only its colour is
+   set here. The content layer next to it stays untouched: painting it was
+   what left a gray band floating over every header at the top of the page. */
+[data-testid="topbar"] > :first-child {
   background-color: var(--spice-sidebar);
 }
 
-.main-entityHeader-topbarTitle {
+[data-testid="topbar-content"] > [data-encore-id="text"] {
   font-family: var(--wa-font-pixel);
   text-transform: uppercase;
   color: var(--wa-white);
 }
 
-/* The sunken section carries the display background, not the input: the
-   input keeps Spotify's elevated fill, which showed the section's own
-   padding as black bands around a dark gray field. The left margin detaches
-   the field from the home key, which used to sit glued to it. */
-.main-globalNav-searchInputSection {
+/* The sunken form is the display: the field inside is transparent, since an
+   elevated fill on it showed the form's own padding as black bands around a
+   dark gray field. The left margin detaches the field from the home key,
+   which used to sit glued to it. */
+#global-nav-bar form[role="search"] {
   margin-left: 8px;
   background-color: var(--wa-display-bg);
   box-shadow: var(--wa-sunken);
 }
 
-/* Hover and focus paint the input elevated-highlight blue through a
-   per-build hash class at (0,3,0); the display must stay black in every
-   state, so this answers at (0,3,1) with no hash and no !important. The
-   caret keeps focus visible. */
-.main-globalNav-searchContainer .main-globalNav-searchInputSection input:hover,
-.main-globalNav-searchContainer .main-globalNav-searchInputSection input:focus {
+/* Spotify paints the field elevated-highlight blue on hover and focus, and
+   fades the same blue behind the keyboard hints with a gradient. The display
+   stays black in every state; the caret keeps focus visible. */
+#global-nav-bar form[role="search"] input,
+#global-nav-bar form[role="search"] input:hover,
+#global-nav-bar form[role="search"] input:focus,
+#global-nav-bar form[role="search"] kbd {
   background-color: transparent;
+  background-image: none;
 }
 
-/* Spotify's own rule fades the same blue behind the kbd hints through a
-   gradient on their readable wrapper. Same treatment, scoped one level up
-   to win the (0,1,0) tie without touching specificity anywhere else. */
-.main-globalNav-searchInputSection .main-globalNav-searchInputKBDWrapper {
-  background: none;
-}
-
-/* The open search dropdown is the same elevated-highlight blue through a
-   generated class. It becomes a panel like the menus, scoped to the search
-   container so the playlist action bar (same container class, different
-   ancestor) is untouched. */
-.main-globalNav-searchInputContainer .main-actionBar-ActionBarContainer {
-  background-color: var(--spice-sidebar);
-  box-shadow: var(--wa-raised);
-}
-
-.main-globalNav-searchInputSection input,
-.main-globalNav-searchInputText {
+#global-nav-bar form[role="search"] input {
   font-family: var(--wa-font-pixel);
   font-size: 12px;
   text-transform: uppercase;
   color: var(--spice-text);
-  background-color: transparent;
 }
 
-/* The input also carries a per-build hash class whose Spotify rule
-   (.main-globalNav-searchInputContainer .<hash>) sets the elevated fill at
-   (0,2,0), which beats the rule above, so the background needs (0,2,1):
-   container scoping, no hash, no !important. */
-.main-globalNav-searchContainer .main-globalNav-searchInputSection input {
-  background-color: transparent;
-}
-
-.main-globalNav-searchInputSection input::placeholder {
+#global-nav-bar form[role="search"] input::placeholder {
   color: var(--spice-subtext);
   text-transform: uppercase;
 }
 
-/* The element name is in the selector on purpose: Spotify paints the nav
-   link with a bare class rule of the same specificity, and its stylesheet
-   loads after this one, so a bare class here would lose the tie.
-   The keys are 32x32 because 1.3.0 renders these Encore buttons with a
-   24px icon and 12px of its own padding, which overflowed the old 26px box.
-   There is no global box-sizing reset, so it is set here: with border-box
-   the 4px padding leaves exactly the 24px content box the icon needs. This
-   one rule covers history, home, the Marketplace and custom navlinks alike:
-   Spicetify renders them all as main-globalNav-navLink. */
-.main-globalNav-historyButtons button,
-a.main-globalNav-navLink,
-button.main-globalNav-navLink {
+/* The keys are 32x32 because 1.3.0 renders these Encore buttons with a 24px
+   icon and 12px of its own padding, which overflowed the old 26px box. There
+   is no global box-sizing reset, so it is set here: with border-box the 4px
+   padding leaves exactly the 24px content box the icon needs. One rule covers
+   history, home, the Marketplace, What's New and Listening activity; the
+   avatar is the one with aria-expanded and the search form's own buttons are
+   inside the display, so both are left out. */
+#global-nav-bar button[data-encore-id="buttonTertiary"]:not(form *, [aria-expanded]) {
   width: 32px;
   height: 32px;
   padding: 4px;
@@ -805,24 +782,13 @@ button.main-globalNav-navLink {
 
 /* Belt and braces: whatever Encore computes, the glyph never exceeds the
    24px content box. max-, not width, so smaller icons are not upscaled. */
-.main-globalNav-historyButtons button svg,
-a.main-globalNav-navLink svg,
-button.main-globalNav-navLink svg {
+#global-nav-bar button[data-encore-id="buttonTertiary"]:not(form *, [aria-expanded]) svg {
   max-width: 24px;
   max-height: 24px;
 }
 
-.main-globalNav-historyButtons button:active,
-a.main-globalNav-navLink:active,
-button.main-globalNav-navLink:active,
-a.main-globalNav-navLinkActive,
-button.main-globalNav-navLinkActive {
+#global-nav-bar button[data-encore-id="buttonTertiary"]:not(form *, [aria-expanded]):active {
   box-shadow: var(--wa-sunken);
-}
-
-a.main-globalNav-navLinkActive,
-button.main-globalNav-navLinkActive {
-  color: var(--spice-tab-active);
 }
 
 /* The Marketplace tab bar paints the active tab with --spice-tab-active and
