@@ -23,7 +23,8 @@
     "build": "node scripts/build.js",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "embed:font": "node scripts/embed-font.js",
-    "embed:scheme": "node scripts/embed-scheme.js"
+    "embed:scheme": "node scripts/embed-scheme.js",
+    "compat": "node scripts/compat-check.js"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

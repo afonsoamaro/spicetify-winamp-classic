@@ -86,7 +86,7 @@ python3 scripts/reapply.py
 
 The script checks the symlink and config, restores the stock files, takes a fresh backup, applies the theme and verifies it landed. The manual equivalent is `spicetify update` (only if Spicetify itself reports a new version) followed by `spicetify restore` and `spicetify backup apply`: a stale backup makes a plain `backup apply` refuse, and a plain `spicetify apply` is not enough after an update, because the backup it would restore is from the previous Spotify.
 
-Spotify also renames CSS classes between releases. If a part of the theme falls back to the stock look after an update, that is a selector that no longer matches. Please open an issue with the Spotify version.
+Spotify also renames CSS classes between releases, and the readable `main-*` names that older versions of this theme relied on are not Spotify's at all: they come from Spicetify's class map, which only covers the Spotify versions Spicetify has been updated for. The theme now hangs on what Spotify keeps (`data-testid`, `data-encore-id`, ARIA attributes, structure), and a scheduled check watches for the rest: every day it looks for a new Spotify release, and when one is out it reads the client's bundle and opens an issue if an anchor the theme needs has disappeared. Run the same check yourself with `pnpm compat <path to xpui or xpui.spa>`. If a part of the theme still falls back to the stock look after an update, please open an issue with the Spotify version.
 
 ## Development
 

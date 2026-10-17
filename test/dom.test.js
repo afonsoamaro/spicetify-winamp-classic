@@ -2,13 +2,12 @@
 // @ts-check
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LOG_PREFIX, cleanupInjections, findDisplay, mount, runInjections, waitForSpicetify } from '../src/dom.js';
+import { BAR_WITH_WIDGET_HTML, appendWidget, barHtml, displayInDocument, innerBarInDocument } from './fixtures/now-playing.js';
 
 /** Builds the bar with a display inside and returns the display. */
 function makeBar() {
-  document.body.innerHTML =
-    '<aside data-testid="now-playing-bar"><div class="main-nowPlayingBar-nowPlayingBar">' +
-    '<div data-testid="now-playing-widget"></div></div></aside>';
-  return /** @type {HTMLElement} */ (document.querySelector('[data-testid="now-playing-widget"]'));
+  document.body.innerHTML = BAR_WITH_WIDGET_HTML;
+  return displayInDocument();
 }
 
 /** Lets MutationObserver callbacks (microtasks) run. */
@@ -116,9 +115,8 @@ describe('mount', () => {
     const display = makeBar();
     handles.push(mount([injection('a')]));
 
-    const fresh = document.createElement('div');
-    fresh.dataset.testid = 'now-playing-widget';
-    display.replaceWith(fresh);
+    // A new text block in the same widget is a new display: no test id, no button.
+    display.replaceWith(document.createElement('div'));
     await tick();
 
     expect(log).toEqual(['run:a', 'cleanup:a', 'run:a']);
@@ -136,17 +134,14 @@ describe('mount', () => {
 
   it('warns once when there is no display and runs when it shows up', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    document.body.innerHTML =
-      '<aside data-testid="now-playing-bar"><div class="main-nowPlayingBar-nowPlayingBar"></div></aside>';
+    document.body.innerHTML = barHtml();
     handles.push(mount([injection('a')]));
 
     expect(log).toEqual([]);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0]?.[0]).toContain('display not found');
 
-    const widget = document.createElement('div');
-    widget.dataset.testid = 'now-playing-widget';
-    document.querySelector('.main-nowPlayingBar-nowPlayingBar')?.appendChild(widget);
+    appendWidget(innerBarInDocument().firstElementChild ?? innerBarInDocument());
     await tick();
 
     expect(log).toEqual(['run:a']);
@@ -156,16 +151,14 @@ describe('mount', () => {
   it('cleans up when the display goes away and a failing cleanup does not block the next round', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const display = makeBar();
-    const bar = /** @type {HTMLElement} */ (document.querySelector('.main-nowPlayingBar-nowPlayingBar'));
+    const column = /** @type {HTMLElement} */ (innerBarInDocument().firstElementChild);
     handles.push(mount([injection('a', { cleanupThrows: true }), injection('b')]));
 
-    display.remove();
+    display.parentElement?.remove();
     await tick();
     expect(log).toEqual(['run:a', 'run:b', 'cleanup:a', 'cleanup:b']);
 
-    const widget = document.createElement('div');
-    widget.dataset.testid = 'now-playing-widget';
-    bar.appendChild(widget);
+    appendWidget(column);
     await tick();
     expect(log.slice(4)).toEqual(['run:a', 'run:b']);
   });

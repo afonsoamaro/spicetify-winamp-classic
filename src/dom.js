@@ -17,7 +17,14 @@ export const LOG_PREFIX = '[winamp-classic]';
 
 // The display is the track info block that user.css turns into the LED
 // panel. It only exists while something is playing.
-export const DISPLAY_SELECTOR = '.main-nowPlayingBar-nowPlayingBar [data-testid="now-playing-widget"]';
+//
+// Spotify 1.3.5 dropped the readable class names (they came from the Spicetify
+// class map, which does not cover every Spotify version), so this hangs on what
+// Spotify keeps: the now-playing-widget test id and the shape of the widget. The
+// widget holds the cover (it has a test id), the text block and the action
+// buttons; the text block is the child with neither a test id nor a button.
+export const DISPLAY_SELECTOR =
+  '[data-testid="now-playing-bar"] [data-testid="now-playing-widget"] > div:not([data-testid], :has(button))';
 
 // The stable parent of the bar. Spotify remounts the bar inside it in some
 // flows, so this is what the observer watches.
@@ -25,7 +32,7 @@ export const BAR_SELECTOR = '[data-testid="now-playing-bar"]';
 
 // The inner bar that holds the three columns. The outer testid element is an
 // ASIDE container; this DIV is where bar-wide strips belong.
-export const NOW_PLAYING_BAR_SELECTOR = '.main-nowPlayingBar-nowPlayingBar';
+export const NOW_PLAYING_BAR_SELECTOR = `${BAR_SELECTOR} > div`;
 
 /** @returns {boolean} */
 export function isSpicetifyReady() {

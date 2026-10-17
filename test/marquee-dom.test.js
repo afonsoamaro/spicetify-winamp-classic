@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DATA_POLL_MS, MARQUEE_CLASS, TICK_MS, createMarqueeInjection, paintMarquee } from '../src/marquee-dom.js';
 import { SEPARATOR } from '../src/marquee.js';
+import { BAR_WITH_WIDGET_HTML, displayInDocument } from './fixtures/now-playing.js';
 
 const QUEEN = { type: 'artist', uri: 'spotify:artist:1dfeR4HaWDbWqFHLkxsg1d', name: 'Queen' };
 /** @type {Partial<Spicetify.PlayerTrack>} */
@@ -68,12 +69,10 @@ function fakePlayer(item) {
   };
 }
 
-/** Builds the display with Spotify's track info inside. */
+/** Builds the bar and returns the display, the text block Spotify renders. */
 function makeDisplay() {
-  document.body.innerHTML =
-    '<div data-testid="now-playing-widget"><div class="cover"></div>' +
-    '<div class="main-nowPlayingWidget-trackInfo">spotify text</div><div class="actions"></div></div>';
-  return /** @type {HTMLElement} */ (document.querySelector('[data-testid="now-playing-widget"]'));
+  document.body.innerHTML = BAR_WITH_WIDGET_HTML;
+  return displayInDocument();
 }
 
 const marquee = () => /** @type {HTMLCanvasElement | null} */ (document.querySelector(`canvas.${MARQUEE_CLASS}`));
@@ -126,7 +125,7 @@ describe('paintMarquee', () => {
 });
 
 describe('createMarqueeInjection', () => {
-  it('mounts a canvas right after the track info and paints the text', () => {
+  it('mounts a canvas in the display and paints the text', () => {
     const display = makeDisplay();
     const player = fakePlayer(SHORT);
     injection = createMarqueeInjection({ measure, player: () => player });
@@ -135,7 +134,8 @@ describe('createMarqueeInjection', () => {
 
     const el = marquee();
     expect(el?.tagName).toBe('CANVAS');
-    expect(el?.previousElementSibling?.className).toBe('main-nowPlayingWidget-trackInfo');
+    expect(el?.parentElement).toBe(display);
+    expect(display.querySelector('.bXWo')?.textContent).toBe('title');
     expect(el?.getAttribute('aria-label')).toBe('QUEEN - BOHEMIAN (1:00)');
     expect(ctx.views).toEqual(['QUEEN - BOHEMIAN (1:00)']);
     expect(player.count('songchange')).toBe(1);

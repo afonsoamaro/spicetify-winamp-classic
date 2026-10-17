@@ -1,0 +1,134 @@
+name: Spotify compatibility
+
+# Spotify updates itself, and the theme hangs on anchors in its markup. This
+# checks the newest macOS client against those anchors (scripts/compat-check.js)
+# and opens an issue when one is gone, so the break is known before anyone
+# opens the app. FN-22.
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Check even if this Spotify build was already checked
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: spotify-compat
+
+env:
+  SPOTIFY_DMG: https://download.scdn.co/SpotifyARM64.dmg
+  LABEL: spotify-compat
+
+jobs:
+  compat:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      # The ETag of the download changes with every release, so a HEAD request
+      # is the whole "is there a new Spotify" check; the 175 MB download only
+      # happens when it moved.
+      - name: Read the release signal
+        id: signal
+        run: |
+          etag=$(curl -sIL --fail --retry 3 "$SPOTIFY_DMG" | awk 'tolower($1) == "etag:" { gsub(/[^0-9A-Za-z]/, "", $2); print $2 }' | tail -n 1)
+          test -n "$etag"
+          echo "etag=$etag" >> "$GITHUB_OUTPUT"
+
+      # A hit means this build was already checked: the key is the ETag, and the
+      # entry is only saved when the job below finished.
+      - name: Skip a build that was already checked
+        id: seen
+        uses: actions/cache@v6
+        with:
+          path: .compat-seen
+          key: spotify-seen-${{ steps.signal.outputs.etag }}
+
+      - name: Decide
+        id: gate
+        env:
+          SEEN: ${{ steps.seen.outputs.cache-hit }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          if [ "$SEEN" = "true" ] && [ "$FORCE" != "true" ]; then echo "run=false" >> "$GITHUB_OUTPUT"; else echo "run=true" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/checkout@v7
+        if: steps.gate.outputs.run == 'true'
+
+      # Same pinned action as ci.yml: pnpm and Node come from package.json.
+      - uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
+        if: steps.gate.outputs.run == 'true'
+        with:
+          cache: true
+          require-lockfile: true
+
+      # The client is read on this ephemeral runner only: its bundle is checked
+      # and nothing from it is stored or published.
+      - name: Download Spotify and read its bundle
+        id: spotify
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          curl -fL --retry 3 -o "$RUNNER_TEMP/Spotify.dmg" "$SPOTIFY_DMG"
+          hdiutil attach -nobrowse -readonly -mountpoint "$RUNNER_TEMP/spotify-mnt" "$RUNNER_TEMP/Spotify.dmg" > /dev/null
+          app="$RUNNER_TEMP/spotify-mnt/Spotify.app"
+          version=$(plutil -extract CFBundleShortVersionString raw "$app/Contents/Info.plist" | tr -cd '0-9.')
+          test -n "$version"
+          cp "$app/Contents/Resources/Apps/xpui.spa" "$RUNNER_TEMP/xpui.spa"
+          hdiutil detach "$RUNNER_TEMP/spotify-mnt" > /dev/null
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "spa=$RUNNER_TEMP/xpui.spa" >> "$GITHUB_OUTPUT"
+
+      # Exit 1 means anchors are missing, which is a result to report, not a
+      # failure of the job; any other code is a real error and fails it.
+      - name: Check the theme's anchors
+        id: check
+        if: steps.gate.outputs.run == 'true'
+        env:
+          VERSION: ${{ steps.spotify.outputs.version }}
+          SPA: ${{ steps.spotify.outputs.spa }}
+        run: |
+          status=0
+          pnpm compat "$SPA" --version "$VERSION" --out "$RUNNER_TEMP/report.md" > /dev/null || status=$?
+          if [ "$status" -gt 1 ]; then exit "$status"; fi
+          echo "missing=$status" >> "$GITHUB_OUTPUT"
+
+      # One issue per Spotify version: a rerun updates it instead of opening a
+      # second. A new version supersedes the open issues of older ones, and a
+      # clean run closes whatever is open, naming the version it was verified on.
+      - name: Open, update or close the compat issue
+        if: steps.gate.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.spotify.outputs.version }}
+          MISSING: ${{ steps.check.outputs.missing }}
+        run: |
+          gh label create "$LABEL" --description "Spotify release broke theme anchors" --color d93f0b 2>/dev/null || true
+          open=$(gh issue list --label "$LABEL" --state open --json number,title)
+          if [ "$MISSING" = "0" ]; then
+            for number in $(echo "$open" | jq -r '.[].number'); do
+              gh issue close "$number" --comment "Every anchor is present on Spotify $VERSION, checked by the compat monitor."
+            done
+            exit 0
+          fi
+          title="Spotify $VERSION: anchors missing"
+          { cat "$RUNNER_TEMP/report.md"; printf '\nOpened by the compat monitor (`.github/workflows/spotify-compat.yml`). Reproduce locally with `pnpm compat <path to xpui or xpui.spa>`.\n'; } > "$RUNNER_TEMP/body.md"
+          current=$(echo "$open" | jq -r --arg title "$title" '.[] | select(.title == $title) | .number' | head -n 1)
+          if [ -n "$current" ]; then
+            gh issue edit "$current" --body-file "$RUNNER_TEMP/body.md"
+            exit 0
+          fi
+          url=$(gh issue create --title "$title" --label "$LABEL" --body-file "$RUNNER_TEMP/body.md")
+          for number in $(echo "$open" | jq -r '.[].number'); do
+            gh issue close "$number" --comment "Superseded by $url for Spotify $VERSION."
+          done
+
+      - name: Mark the build as checked
+        if: steps.gate.outputs.run == 'true'
+        env:
+          ETAG: ${{ steps.signal.outputs.etag }}
+        run: echo "$ETAG" > .compat-seen

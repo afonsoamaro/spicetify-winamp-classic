@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LOG_PREFIX } from '../src/dom.js';
 import { CANVAS_H, CANVAS_W, COLOR_TOKENS, createSpectrumInjection, drawFrame } from '../src/spectrum-dom.js';
 import { ROWS, createState } from '../src/spectrum.js';
+import { BAR_WITH_WIDGET_HTML, displayInDocument } from './fixtures/now-playing.js';
 
 /** @typedef {{ x: number, y: number, w: number, h: number, color: string }} Rect */
 
@@ -89,8 +90,8 @@ function fakeScheduler() {
 }
 
 function makeDisplay() {
-  document.body.innerHTML = '<div data-testid="now-playing-widget"><div class="main-nowPlayingWidget-trackInfo"></div></div>';
-  return /** @type {HTMLElement} */ (document.querySelector('[data-testid="now-playing-widget"]'));
+  document.body.innerHTML = BAR_WITH_WIDGET_HTML;
+  return displayInDocument();
 }
 
 const canvasEl = () => /** @type {HTMLCanvasElement | null} */ (document.querySelector('canvas.wa-spectrum'));
