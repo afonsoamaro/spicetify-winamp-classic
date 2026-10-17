@@ -473,99 +473,95 @@
 
 /* === Track lists === */
 
-/* Every rule is scoped under .main-trackList-trackList, which is on the list
-   in playlists, albums, the queue, search and artist pages alike. That keeps
-   them off the now playing bar and wins the ties that Spotify's stylesheets,
-   loaded after this one, would otherwise take. */
-.main-trackList-trackList {
+/* The list is an ARIA grid, which Spotify keeps whatever it does to the class
+   names: role="grid" holds role="row" rows, the header row holds columnheaders
+   and every other row carries aria-selected. Nothing here depends on a class.
+   Scoping to the main view keeps the rules off the library in the sidebar,
+   which is a grid of its own. Column 1 is the index, column 2 the title and
+   artist, and the last cell the duration with its two action keys; the columns
+   in between (album, date added) come and go with the page. */
+.main-view-container [role="grid"] {
   background-color: var(--spice-main);
 }
 
-.main-trackList-trackList .main-trackList-trackListRow {
+.main-view-container [role="grid"] [role="row"][aria-selected] {
   color: var(--spice-text);
 }
 
 /* The row's own font never reaches the text: the title, the artist line, the
    index and the duration each carry their own, so the pixel font is set on
-   them instead of on the row.
-
-   Spotify 1.3.0 dropped the readable names for the title and the duration.
-   The title link carries a testid and the duration sits in the row's last
-   section, both readable; the old names stay so a release that brings them
-   back lights up without an edit. */
-.main-trackList-trackList .main-trackList-trackListRow a,
-.main-trackList-trackList .main-trackList-trackListRow span,
-.main-trackList-trackList .main-trackList-rowMainContentTitle,
-.main-trackList-trackList .main-trackList-rowMainContent [data-testid="internal-track-link"],
-.main-trackList-trackList .main-trackList-rowMainContent > :first-child,
-.main-trackList-trackList .main-trackList-rowMainContentSubTitle,
-.main-trackList-trackList .main-trackList-rowMarker,
-.main-trackList-trackList .main-trackList-duration,
-.main-trackList-trackList .main-trackList-rowSectionEnd,
-.main-trackList-trackList .main-trackList-rowSectionEnd * {
+   them instead of on the row. */
+.main-view-container [role="grid"] [role="row"][aria-selected] a,
+.main-view-container [role="grid"] [role="row"][aria-selected] span,
+.main-view-container [role="grid"] [role="row"][aria-selected] [role="gridcell"] > div,
+.main-view-container [role="grid"] [role="row"][aria-selected] [data-encore-id="text"],
+.main-view-container [role="grid"] [role="row"][aria-selected] [role="gridcell"]:last-child * {
   font-family: var(--wa-font-pixel);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0;
 }
 
-.main-trackList-trackList .main-trackList-rowMainContentTitle,
-.main-trackList-trackList .main-trackList-rowMainContent [data-testid="internal-track-link"],
-.main-trackList-trackList .main-trackList-rowMainContent > :first-child {
+.main-view-container [role="grid"] [role="row"][aria-selected] [aria-colindex="2"] > div > :first-child,
+.main-view-container [role="grid"] [role="row"][aria-selected] [aria-colindex="2"] > div > :first-child a {
   color: var(--spice-text);
 }
 
-.main-trackList-trackList .main-trackList-rowMainContentSubTitle,
-.main-trackList-trackList .main-trackList-rowMarker,
-.main-trackList-trackList .main-trackList-duration,
-.main-trackList-trackList .main-trackList-rowSectionEnd,
-.main-trackList-trackList .main-trackList-rowSectionEnd * {
+.main-view-container [role="grid"] [role="row"][aria-selected] [aria-colindex="2"] > div > :not(:first-child),
+.main-view-container [role="grid"] [role="row"][aria-selected] [aria-colindex="2"] > div > :not(:first-child) a,
+.main-view-container [role="grid"] [role="row"][aria-selected] [aria-colindex="1"],
+.main-view-container [role="grid"] [role="row"][aria-selected] [aria-colindex="1"] span,
+.main-view-container [role="grid"] [role="row"][aria-selected] [role="gridcell"]:last-child,
+.main-view-container [role="grid"] [role="row"][aria-selected] [role="gridcell"]:last-child * {
   color: var(--spice-subtext);
 }
 
 /* The selection bar covers the whole row, index and duration included, and
-   turns every cell white, as Winamp's playlist does. It is keyed on
-   aria-selected, which the row carries and which will outlive any generated
-   class name. Hover is left to Spotify: its gray reads fine, Winamp's list
-   had no hover at all, and the theme's own hover rule lost to Spotify's. */
-.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] {
+   turns every cell white, as Winamp's playlist does. Hover is left to Spotify:
+   its gray reads fine, Winamp's list had no hover at all, and the theme's own
+   hover rule lost to Spotify's. */
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] {
   background-color: var(--spice-selected-row);
 }
 
-.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] a,
-.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] span,
-.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] .main-trackList-rowMainContentTitle,
-.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] .main-trackList-rowMainContentSubTitle,
-.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] .main-trackList-rowMarker,
-.main-trackList-trackList .main-trackList-trackListRow[aria-selected="true"] .main-trackList-duration {
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] a,
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] span,
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] [role="gridcell"],
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] [role="gridcell"] *,
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] [aria-colindex="2"] > div > :first-child,
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] [aria-colindex="2"] > div > :first-child a,
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] [aria-colindex="2"] > div > :not(:first-child),
+.main-view-container [role="grid"] [role="row"][aria-selected][aria-selected="true"] [aria-colindex="2"] > div > :not(:first-child) a {
   color: var(--wa-white);
 }
 
-/* The playing row is white, which is how Winamp marks the current track. The
-   class is generated and read from Spotify 1.2.99.317: there is no attribute
-   for this state, so a future release renames it and the white goes quietly.
-   Re-read it from the bundle when that happens. */
-.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMainContentTitle,
-.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMainContent [data-testid="internal-track-link"],
-.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMainContent > :first-child,
-.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMainContentSubTitle,
-.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowMarker,
-.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-duration,
-.main-trackList-trackList .TiaWL1ubrITBXdmD .main-trackList-rowSectionEnd * {
+/* The playing row is white, which is how Winamp marks the current track.
+   There is no attribute for this state, but Encore paints the playing title
+   with its bright accent colour class, the same one the transport keys use for
+   shuffle and repeat, so the row is found through that. The check is limited
+   to the title cell: the "add to playlist" key in the last cell carries the
+   same class on every row. Not yet confirmed with a track playing (FN-21). */
+.main-view-container [role="grid"] [role="row"][aria-selected]:has([aria-colindex="2"] .encore-internal-color-text-bright-accent) [aria-colindex="2"] > div > :first-child,
+.main-view-container [role="grid"] [role="row"][aria-selected]:has([aria-colindex="2"] .encore-internal-color-text-bright-accent) [aria-colindex="2"] > div > :first-child a,
+.main-view-container [role="grid"] [role="row"][aria-selected]:has([aria-colindex="2"] .encore-internal-color-text-bright-accent) [aria-colindex="2"] > div > :not(:first-child),
+.main-view-container [role="grid"] [role="row"][aria-selected]:has([aria-colindex="2"] .encore-internal-color-text-bright-accent) [aria-colindex="2"] > div > :not(:first-child) a,
+.main-view-container [role="grid"] [role="row"][aria-selected]:has([aria-colindex="2"] .encore-internal-color-text-bright-accent) [aria-colindex="1"] span,
+.main-view-container [role="grid"] [role="row"][aria-selected]:has([aria-colindex="2"] .encore-internal-color-text-bright-accent) [role="gridcell"]:last-child * {
   color: var(--wa-white);
 }
 
 /* The column header is the playlist window's title strip: a raised gray band
    over the black list, with white pixel text. */
-.main-trackList-trackList .main-trackList-trackListHeader {
+.main-view-container [role="grid"] [role="row"]:has(> [role="columnheader"]) {
   background-color: var(--spice-player);
   box-shadow: var(--wa-raised);
   border-bottom: 0;
 }
 
-.main-trackList-trackList .main-trackList-trackListHeader,
-.main-trackList-trackList .main-trackList-trackListHeader button,
-.main-trackList-trackList .main-trackList-trackListHeader span {
+.main-view-container [role="grid"] [role="row"]:has(> [role="columnheader"]),
+.main-view-container [role="grid"] [role="row"]:has(> [role="columnheader"]) button,
+.main-view-container [role="grid"] [role="row"]:has(> [role="columnheader"]) span,
+.main-view-container [role="grid"] [role="row"]:has(> [role="columnheader"]) [role="columnheader"] div {
   font-family: var(--wa-font-pixel);
   font-size: 11px;
   text-transform: uppercase;
