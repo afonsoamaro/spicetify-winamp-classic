@@ -58,6 +58,12 @@ describe('checkAnchors', () => {
     expect(missingCount(result)).toBe(2);
   });
 
+  it('counts an id built by a template literal as present, by suffix or by prefix', () => {
+    const bundle = '"data-testid":`${kind}-image` "data-testid":`entity-${slot}`';
+    const result = checkAnchors({ testids: ['playlist-image', 'entity-title', 'playlist-banner'], encoreIds: [], mapped: [] }, bundle, {});
+    expect(result.missing.testids).toEqual(['playlist-banner']);
+  });
+
   it('lists encore ids as unchecked instead of missing, even when the bundle has none', () => {
     const result = checkAnchors(anchors, '', cssMap);
     expect(result.unchecked).toEqual(['buttonPrimary']);
