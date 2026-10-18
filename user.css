@@ -418,7 +418,7 @@
   background-color: var(--wa-display-bg);
 }
 
-[data-testid="now-playing-bar"] > div [data-testid="playback-progressbar"] .x-progressBar-fillColor {
+[data-testid="now-playing-bar"] > div [data-testid="playback-progressbar"] [data-testid="progress-bar-background"] > :nth-child(3) > div {
   background-color: var(--spice-text);
 }
 
@@ -446,7 +446,13 @@
   );
 }
 
-/* Both of these are written without :hover on purpose. Spotify turns a slider
+/* The groove's layers have no names or test ids of their own, so they are
+   reached by position inside progress-bar-background, which is the order
+   Spotify renders them in: a marker, the hover preview (second), the elapsed
+   fill (third) and the knob. If a release reorders them the fill and the
+   preview swap, which shows at once on screen.
+
+   Both of these are written without :hover on purpose. Spotify turns a slider
    "active" from its whole widget, so pointing at the speaker button alone is
    enough, and it signals that state through a hashed class as well as through
    hover. Matching the element in every state is shorter than chasing both.
@@ -455,19 +461,15 @@
    Spotify switches to, and the volume groove keeps its gradient rather than
    filling in behind the knob. Scoping the block to the bar already outranks
    Spotify's own rules, so none of this needs !important. */
-[data-testid="now-playing-bar"] > div [data-testid="volume-bar"] [data-testid="progress-bar"] .x-progressBar-fillColor {
+[data-testid="now-playing-bar"] > div [data-testid="volume-bar"] [data-testid="progress-bar-background"] > :nth-child(3) > div {
   background-color: transparent;
-}
-
-[data-testid="now-playing-bar"] > div [data-testid="playback-progressbar"] [data-testid="progress-bar"] .x-progressBar-fillColor {
-  background-color: var(--spice-text);
 }
 
 /* Spotify reveals a white middle layer to preview where a click would land.
    Winamp's sliders never change under the pointer, and on the volume groove it
    reads as a chunk of the gradient turning white. */
-[data-testid="now-playing-bar"] > div [data-testid="volume-bar"] [data-testid="progress-bar"] .x-progressBar-progressFillColor,
-[data-testid="now-playing-bar"] > div [data-testid="playback-progressbar"] [data-testid="progress-bar"] .x-progressBar-progressFillColor {
+[data-testid="now-playing-bar"] > div [data-testid="volume-bar"] [data-testid="progress-bar-background"] > :nth-child(2) > div,
+[data-testid="now-playing-bar"] > div [data-testid="playback-progressbar"] [data-testid="progress-bar-background"] > :nth-child(2) > div {
   visibility: hidden;
 }
 
@@ -573,127 +575,114 @@
 /* The library panel is a second bevelled case next to the main window. Its
    header takes the title-bar gradient, the entries take the playlist recipe,
    and the entry for the page you are on is the selection bar. State comes
-   from aria-selected, which the entry carries. */
-.main-yourLibraryX-libraryContainer {
+   from aria-selected, which the entry carries.
+
+   Everything hangs on what Spotify keeps: the sidebar's id, its header
+   element, the entries' grid roles and Encore ids, and the filter chips as
+   the options of a listbox. The readable main-yourLibraryX-* names came from
+   the Spicetify class map, which does not cover every Spotify version
+   (FN-21). */
+[id="Desktop_LeftSidebar_Id"] nav {
   background-color: var(--spice-sidebar);
   box-shadow: var(--wa-raised);
 }
 
-.main-yourLibraryX-header {
+[id="Desktop_LeftSidebar_Id"] header {
   background-image: linear-gradient(to right, var(--wa-titlebar-start), var(--wa-titlebar-end));
 }
 
-.main-yourLibraryX-header,
-.main-yourLibraryX-header button,
-.main-yourLibraryX-header span {
+[id="Desktop_LeftSidebar_Id"] header,
+[id="Desktop_LeftSidebar_Id"] header button,
+[id="Desktop_LeftSidebar_Id"] header span {
   font-family: var(--wa-font-pixel);
   font-size: 11px;
   text-transform: uppercase;
   color: var(--wa-white);
 }
 
-/* Spotify 1.3.0 dropped the readable name of the entry itself; the container
-   around it kept its name and the entry still carries aria-selected. */
-.main-yourLibraryX-listItem,
-.main-yourLibraryX-listItem a,
-.main-yourLibraryX-listItem span,
-.main-yourLibraryX-libraryItemContainer,
-.main-yourLibraryX-libraryItemContainer a,
-.main-yourLibraryX-libraryItemContainer span,
-.main-yourLibraryX-libraryItemContainer p {
+[id="Desktop_LeftSidebar_Id"] [role="grid"] [role="row"][aria-selected],
+[id="Desktop_LeftSidebar_Id"] [role="grid"] [role="row"][aria-selected] a,
+[id="Desktop_LeftSidebar_Id"] [role="grid"] [role="row"][aria-selected] span,
+[id="Desktop_LeftSidebar_Id"] [role="grid"] [role="row"][aria-selected] p {
   font-family: var(--wa-font-pixel);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0;
+}
+
+[id="Desktop_LeftSidebar_Id"] [role="grid"] [role="row"][aria-selected] [data-encore-id="listRowTitle"] {
   color: var(--spice-text);
 }
 
-.main-yourLibraryX-listItem[aria-selected="true"],
-.main-yourLibraryX-libraryItemContainer[aria-selected="true"],
-.main-yourLibraryX-libraryItemContainer [aria-selected="true"] {
+[id="Desktop_LeftSidebar_Id"] [role="grid"] [role="row"][aria-selected][aria-selected="true"] {
   background-color: var(--spice-selected-row);
   box-shadow: var(--wa-sunken);
 }
 
-.main-yourLibraryX-listItem[aria-selected="true"] a,
-.main-yourLibraryX-listItem[aria-selected="true"] span,
-.main-yourLibraryX-libraryItemContainer[aria-selected="true"] *,
-.main-yourLibraryX-libraryItemContainer [aria-selected="true"] * {
+[id="Desktop_LeftSidebar_Id"] [role="grid"] [role="row"][aria-selected][aria-selected="true"] * {
   color: var(--wa-white);
 }
 
-.main-yourLibraryX-filterArea button,
-.main-yourLibraryX-header button {
+/* The header's buttons are keys, and so are the filter chips below it. */
+[id="Desktop_LeftSidebar_Id"] header button,
+[id="Desktop_LeftSidebar_Id"] [data-encore-id="chip"],
+[id="Desktop_LeftSidebar_Id"] [data-encore-id="chip"] > span {
   background-color: var(--spice-button);
   box-shadow: var(--wa-raised);
   color: var(--spice-shadow);
 }
 
-.main-yourLibraryX-libraryContainer .main-yourLibraryX-header button,
-.main-yourLibraryX-libraryContainer .main-yourLibraryX-header button * {
+[id="Desktop_LeftSidebar_Id"] header button,
+[id="Desktop_LeftSidebar_Id"] header button *,
+[id="Desktop_LeftSidebar_Id"] [data-encore-id="chip"],
+[id="Desktop_LeftSidebar_Id"] [data-encore-id="chip"] > span,
+[id="Desktop_LeftSidebar_Id"] [data-encore-id="chip"] * {
   font-family: var(--wa-font-pixel);
   font-size: 11px;
   text-transform: uppercase;
   color: var(--spice-shadow);
-}
-
-/* The filter chips (Playlists, Podcasts, Albums, Artists) sit in a container
-   of their own with generated class names. The chips themselves carry a
-   design-system class with "chip" in its name, so a case-insensitive
-   substring match reaches them without a hash, the way the maintained
-   themes in the Marketplace do it. */
-.main-yourLibraryX-libraryContainer [class*="chip" i] {
-  font-family: var(--wa-font-pixel);
-  font-size: 11px;
-  text-transform: uppercase;
-  color: var(--spice-shadow);
-  background-color: var(--spice-button);
-  box-shadow: var(--wa-raised);
 }
 
 /* Hover on every key in the panel lightens the gray and lights the label
    green. The gray alone was too close to the resting shade to read as a
    change, and Spotify's own hover paints the keys with the theme's highlight,
-   which is the blue selection bar, unreadable under black text. */
-.main-yourLibraryX-libraryContainer .main-yourLibraryX-header button:hover,
-.main-yourLibraryX-libraryContainer .main-yourLibraryX-filterArea button:hover,
-.main-yourLibraryX-libraryContainer [class*="chip" i]:hover {
+   which is the blue selection bar, unreadable under black text. Only the
+   colour reaches the label inside: painting the descendants' own background
+   boxed the text of any key whose label is a nested element. */
+[id="Desktop_LeftSidebar_Id"] header button:hover,
+[id="Desktop_LeftSidebar_Id"] [data-encore-id="chip"]:hover,
+[id="Desktop_LeftSidebar_Id"] [data-encore-id="chip"] > span:hover {
   background-color: var(--wa-bevel-light);
   color: var(--spice-text);
 }
 
-/* Only the colour reaches the label inside: painting the descendants' own
-   background boxed the text of any key whose label is a nested element. */
-.main-yourLibraryX-libraryContainer .main-yourLibraryX-header button:hover *,
-.main-yourLibraryX-libraryContainer [class*="chip" i]:hover,
-.main-yourLibraryX-libraryContainer [class*="chip" i]:hover * {
+[id="Desktop_LeftSidebar_Id"] header button:hover *,
+[id="Desktop_LeftSidebar_Id"] [data-encore-id="chip"]:hover * {
   color: var(--spice-text);
 }
 
-/* The panel title is not a key and does not react to the pointer. */
-.main-yourLibraryX-libraryContainer .main-yourLibraryX-header .main-yourLibraryX-collapseButton button:hover,
-.main-yourLibraryX-libraryContainer .main-yourLibraryX-header .main-yourLibraryX-collapseButton button:hover * {
-  background-color: transparent;
-  color: var(--wa-white);
-}
-
-.main-yourLibraryX-libraryContainer [class*="chip" i]:active,
-.main-yourLibraryX-libraryContainer [class*="chip" i][aria-checked="true"],
-.main-yourLibraryX-libraryContainer [class*="chip" i][aria-pressed="true"] {
+[id="Desktop_LeftSidebar_Id"] [data-encore-id="chip"]:active,
+[id="Desktop_LeftSidebar_Id"] [data-encore-id="chip"] > span:active,
+[id="Desktop_LeftSidebar_Id"] [data-encore-id="chip"][aria-selected="true"],
+[id="Desktop_LeftSidebar_Id"] [data-encore-id="chip"] > span[aria-selected="true"],
+[id="Desktop_LeftSidebar_Id"] [data-encore-id="chip"][aria-checked="true"],
+[id="Desktop_LeftSidebar_Id"] [data-encore-id="chip"] > span[aria-checked="true"] {
   box-shadow: var(--wa-sunken);
   color: var(--spice-text);
 }
 
-/* "Your Library" is itself the collapse button, wrapped in a div that carries
-   the class, so the key recipe above would box the panel's title. It is the
-   title of the strip, not a key. */
-.main-yourLibraryX-header .main-yourLibraryX-collapseButton button {
+/* "Your Library" is itself the collapse button, so the key recipe above would
+   box the panel's title. It is the title of the strip, not a key, and it does
+   not react to the pointer. It is the header button with the heading in it. */
+[id="Desktop_LeftSidebar_Id"] header button:has(h1),
+[id="Desktop_LeftSidebar_Id"] header button:has(h1):hover {
   background-color: transparent;
   box-shadow: none;
   color: var(--wa-white);
 }
 
-.main-yourLibraryX-header .main-yourLibraryX-collapseButton button * {
+[id="Desktop_LeftSidebar_Id"] header button:has(h1) *,
+[id="Desktop_LeftSidebar_Id"] header button:has(h1):hover * {
   font-size: 12px;
   color: var(--wa-white);
 }
@@ -791,6 +780,13 @@
   box-shadow: var(--wa-sunken);
 }
 
+/* The news and update badges are a circle inside the button's icon, painted
+   with the scheme's notification colour, which is the toast blue and fought
+   with the green everywhere else. Only the dot changes; toasts keep theirs. */
+#global-nav-bar button circle {
+  fill: var(--spice-text);
+}
+
 /* The Marketplace tab bar paints the active tab with --spice-tab-active and
    every label with --spice-text, both green in this scheme, so the active tab
    was a green block with no readable label. The tabs become keys like Home's
@@ -829,35 +825,19 @@ a.marketplace-tabBar-headerItemLink.marketplace-tabBar-active {
   background-color: var(--spice-button);
 }
 
-/* Spicetify's class map sends two different hashes to
-   main-actionButtons-spacer: the 1px divider and the wrapper around the
-   What's New and Listening activity buttons (confirmed twice in
-   xpui-modules.js on 1.3.0.277). Spotify's own rule squeezes both to 1px,
-   which hides the two buttons and paints the wrapper green. :has(button)
-   tells them apart: the wrapper gets its box back, the bare divider keeps
-   Spotify's geometry and takes the bevel colour. The What's New badge keeps
-   Spotify's own colour: only the wrapper is touched, never the badge. */
-.main-actionButtons-spacer:has(button) {
-  width: auto;
-  margin: 0;
-  background: transparent;
-}
-
-.main-actionButtons-spacer:not(:has(button)) {
-  background-color: var(--wa-bevel-dark);
-}
-
 /* The playlist action row. Spotify mixes a 56px green play, a 38x48 explore
    key and 32px keys of 32 or 56px height with 12 to 32px icons. Icon keys
    get one recipe (uniform 32x32, vertically centered, icons capped so
    nothing touches the bevel) while text keys like Follow keep auto width:
    the split is by content (button:has(svg)), never by a generated class
-   name, because Encore marks sizes with per-build hashes. Play keeps the
+   name, because Encore marks sizes with per-build hashes. The sort key is
+   the one exception, a combobox with an icon and a label: a 32px box cut it
+   down to its first letter. Play keeps the
    green accent at the same box (the PP-02 call: play stays green,
    everything else gray); its green lives on the first inner span, reached
-   structurally. Scoped under main-actionBar-ActionBar so the transport keys
-   in the now playing bar keep their own recipe. */
-.main-actionBar-ActionBar .main-actionBar-ActionBarRow button {
+   structurally. Scoped under the action bar's test id so the transport keys in
+   the now playing bar keep their own recipe. */
+[data-testid="action-bar"] [data-testid="action-bar-row"] button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -867,14 +847,14 @@ a.marketplace-tabBar-headerItemLink.marketplace-tabBar-active {
   color: var(--spice-shadow);
 }
 
-.main-actionBar-ActionBar .main-actionBar-ActionBarRow button:has(svg) {
+[data-testid="action-bar"] [data-testid="action-bar-row"] button:has(svg):not([role="combobox"]) {
   width: 32px;
   height: 32px;
   padding: 4px;
   box-sizing: border-box;
 }
 
-.main-actionBar-ActionBar .main-actionBar-ActionBarRow button:not(:has(svg)) {
+[data-testid="action-bar"] [data-testid="action-bar-row"] button:not(:has(svg)) {
   width: auto;
   padding: 4px 12px;
   white-space: nowrap;
@@ -883,11 +863,11 @@ a.marketplace-tabBar-headerItemLink.marketplace-tabBar-active {
   text-transform: uppercase;
 }
 
-.main-actionBar-ActionBar .main-actionBar-ActionBarRow button:active {
+[data-testid="action-bar"] [data-testid="action-bar-row"] button:active {
   box-shadow: var(--wa-sunken);
 }
 
-.main-actionBar-ActionBar .main-actionBar-ActionBarRow button svg {
+[data-testid="action-bar"] [data-testid="action-bar-row"] button svg {
   max-width: 20px;
   max-height: 20px;
 }
@@ -899,7 +879,7 @@ a.marketplace-tabBar-headerItemLink.marketplace-tabBar-active {
    like a bigger, separate control instead of one of the keys. Pinned to the
    button's own 32x32 box here, same uniform-key rule the row already uses,
    and recessed like the theme's other cover art instead of floating loose. */
-.main-actionBar-ActionBar .main-actionBar-exploreButtonImageWrapper {
+[data-testid="action-bar"] [data-testid="watch-feed-entity-button"] > div:has(> img) {
   top: 0;
   left: 0;
   width: 32px;
@@ -909,7 +889,7 @@ a.marketplace-tabBar-headerItemLink.marketplace-tabBar-active {
   background-color: var(--wa-display-bg);
 }
 
-.main-actionBar-ActionBar .main-actionBar-exploreButtonImageWrapper img {
+[data-testid="action-bar"] [data-testid="watch-feed-entity-button"] > div:has(> img) img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -919,7 +899,7 @@ a.marketplace-tabBar-headerItemLink.marketplace-tabBar-active {
    duration anchor, which nothing claims. Same 32px key language as the
    action row above; the duration text in the same section is untouched
    because only buttons are targeted. */
-.main-trackList-trackList .main-trackList-rowSectionEnd button {
+.main-view-container [role="grid"] [role="row"][aria-selected] [role="gridcell"]:last-child button {
   flex: none;
   width: 32px;
   height: 32px;
@@ -933,11 +913,11 @@ a.marketplace-tabBar-headerItemLink.marketplace-tabBar-active {
   color: var(--spice-shadow);
 }
 
-.main-trackList-trackList .main-trackList-rowSectionEnd button:active {
+.main-view-container [role="grid"] [role="row"][aria-selected] [role="gridcell"]:last-child button:active {
   box-shadow: var(--wa-sunken);
 }
 
-.main-trackList-trackList .main-trackList-rowSectionEnd button svg {
+.main-view-container [role="grid"] [role="row"][aria-selected] [role="gridcell"]:last-child button svg {
   max-width: 20px;
   max-height: 20px;
 }
@@ -945,16 +925,13 @@ a.marketplace-tabBar-headerItemLink.marketplace-tabBar-active {
 /* Play fills the whole key with green: no padding on its button, and the
    inner span is pinned to exactly 32x32. The max- caps matter: Encore sizes
    that span with its own min rules, and max beats min in the cascade, so
-   this holds without !important. Two readable wrappers exist across pages
-   (ActionBarPlayButtonContainer, playButton-PlayButton); both are listed,
-   no generated name. Placed after the row rule so it wins the (0,2,1) tie. */
-.main-actionBar-ActionBar .main-actionBar-ActionBarPlayButtonContainer button,
-.main-actionBar-ActionBar .main-playButton-PlayButton button {
+   this holds without !important. The play key is the Encore primary button of
+   the action bar, which is the same on every page. Placed after the row rule so it wins the tie. */
+[data-testid="action-bar"] button[data-encore-id="buttonPrimary"] {
   padding: 0;
 }
 
-.main-actionBar-ActionBar .main-actionBar-ActionBarPlayButtonContainer button > span:first-child,
-.main-actionBar-ActionBar .main-playButton-PlayButton button > span:first-child {
+[data-testid="action-bar"] button[data-encore-id="buttonPrimary"] > span:first-child {
   flex: none;
   display: inline-flex;
   align-items: center;
@@ -967,23 +944,13 @@ a.marketplace-tabBar-headerItemLink.marketplace-tabBar-active {
   max-height: 32px;
 }
 
-/* The traffic lights are window chrome drawn over the top-left corner, and
-   on this build nothing clears them: the history container starts at x=8.
-   The document carries a platform hook, so the clearance lives only on
-   macOS and no other platform shifts. 72px clears the ~64px cluster with an
-   8px gap. Windows caption buttons are out of scope. */
-html.spotify__os--is-macos .main-globalNav-historyButtonsContainer {
-  margin-left: 72px;
-}
-
 /* Section titles. The entity header is the name on a playlist, album or artist
-   page; shelf titles are the headings on Home. Both take the pixel face and
+   page; the headings on Home are plain h2s. Both take the pixel face and
    white, but neither gets a title-bar band: Home would turn into a stack of
    bars, and the entity header already sits on its own artwork. */
-.main-entityHeader-title,
-.main-entityHeader-title h1,
-.main-entityHeader-title [data-encore-id="adaptiveTitle"],
-.main-shelf-title,
+[data-testid="entity-header"] [data-testid="entityTitle"],
+[data-testid="entity-header"] [data-testid="entityTitle"] h1,
+[data-testid="entity-header"] [data-encore-id="adaptiveTitle"],
 .main-view-container h2 {
   font-family: var(--wa-font-pixel);
   text-transform: uppercase;
@@ -995,13 +962,11 @@ html.spotify__os--is-macos .main-globalNav-historyButtonsContainer {
    inline value outranks any selector, so the variable it reads is redefined
    on the title instead, and the span resolves to the pixel face on its own.
    The rule above still supplies the casing and the color. The listener count
-   under it is a span with no hook at all; the family on the header text
-   container reaches it by inheritance. */
-.main-entityHeader-title {
+   under it is a span with no hook at all; the family on the whole header
+   reaches it by inheritance. */
+[data-testid="entity-header"] {
   --encore-variable-font-stack: var(--wa-font-pixel);
-}
 
-.main-entityHeader-headerText {
   font-family: var(--wa-font-pixel);
 }
 
@@ -1039,61 +1004,43 @@ html.spotify__os--is-macos .main-globalNav-historyButtonsContainer {
    they are matched by substring, the way the chips are, and only inside the
    containers this block owns. */
 
-/* Cards */
-.main-card-card {
-  background-color: var(--spice-card);
-  box-shadow: var(--wa-raised);
-}
-
-.main-card-card:hover {
-  background-color: var(--wa-bevel-light);
-}
-
-.main-cardImage-imageWrapper {
+/* Cards. The card, its title and the line under it are Encore parts with ids
+   of their own: [data-encore-id="card"], "cardTitle" and "cardSubtitle". The
+   readable main-card-* names that used to be here came from the Spicetify
+   class map, and the card panel rule they carried had already stopped
+   matching on 1.3.0, so the cards sit on the page without a case of their
+   own, as in the screenshots. */
+[data-encore-id="card"] img {
   border: 2px solid var(--wa-bevel-dark);
   box-shadow: var(--wa-sunken);
 }
 
-/* Spotify 1.3.0 moved the shelf card to the Encore design system: the card is
-   [data-encore-id="card"] (css-map still names it main-card-cardContainer),
-   the title is [data-encore-id="cardTitle"] and the line under it is
-   [data-encore-id="cardSubtitle"]. main-card-card and main-card-cardMetadata
-   are gone from the DOM. Encore paints the text through
-   .encore-internal-color-text-subdued and .encore-text-* rules that load after
-   this sheet, so the card container is in the selector to win the tie. The
-   pre-1.3.0 names stay so an older release lights up without an edit. */
-.main-cardHeader-text,
-.main-cardSubHeader-root,
-.main-card-card .main-card-cardTitle,
-.main-card-card .main-card-cardMetadata,
-.main-card-card .main-card-cardMetadata *,
-.main-card-cardContainer [data-encore-id="cardTitle"],
-.main-card-cardContainer [data-encore-id="cardTitle"] *,
-.main-card-cardContainer [data-encore-id="cardSubtitle"],
-.main-card-cardContainer [data-encore-id="cardSubtitle"] * {
+/* Encore paints the text through .encore-internal-color-text-subdued and
+   .encore-text-* rules that load after this sheet, so the card is in the
+   selector to win the tie. */
+[data-encore-id="card"] [data-encore-id="cardTitle"],
+[data-encore-id="card"] [data-encore-id="cardTitle"] *,
+[data-encore-id="card"] [data-encore-id="cardSubtitle"],
+[data-encore-id="card"] [data-encore-id="cardSubtitle"] * {
   font-family: var(--wa-font-pixel);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0;
 }
 
-.main-cardHeader-text,
-.main-card-card .main-card-cardTitle,
-.main-card-cardContainer [data-encore-id="cardTitle"],
-.main-card-cardContainer [data-encore-id="cardTitle"] * {
+[data-encore-id="card"] [data-encore-id="cardTitle"],
+[data-encore-id="card"] [data-encore-id="cardTitle"] * {
   color: var(--spice-text);
 }
 
-.main-cardSubHeader-root,
-.main-card-card .main-card-cardMetadata,
-.main-card-card .main-card-cardMetadata *,
-.main-card-cardContainer [data-encore-id="cardSubtitle"],
-.main-card-cardContainer [data-encore-id="cardSubtitle"] * {
+[data-encore-id="card"] [data-encore-id="cardSubtitle"],
+[data-encore-id="card"] [data-encore-id="cardSubtitle"] * {
   color: var(--spice-subtext);
 }
 
 /* The filter chips at the top of Home, same technique as the library's. */
-.main-view-container [class*="chip" i] {
+.main-view-container [data-encore-id="chip"],
+.main-view-container [data-encore-id="chip"] > span {
   font-family: var(--wa-font-pixel);
   font-size: 11px;
   text-transform: uppercase;
@@ -1102,7 +1049,8 @@ html.spotify__os--is-macos .main-globalNav-historyButtonsContainer {
   box-shadow: var(--wa-raised);
 }
 
-.main-view-container [class*="chip" i]:hover {
+.main-view-container [data-encore-id="chip"]:hover,
+.main-view-container [data-encore-id="chip"] > span:hover {
   background-color: var(--wa-bevel-light);
   color: var(--spice-text);
 }
@@ -1112,10 +1060,9 @@ html.spotify__os--is-macos .main-globalNav-historyButtonsContainer {
    so any fill on the button shows up as an empty gray box, and no stable
    class marks them in this build. The aria-label is the one thing about them
    that will not change with a release. */
-.main-view-container button[class*="-button" i]:not(.main-playButton-PlayButton, [aria-label^="Play" i], [aria-label^="Pause" i]),
+.main-view-container button[class*="-button" i]:not([aria-label^="Play" i], [aria-label^="Pause" i]),
 .GenericModal button[class*="-button" i],
-.main-contextMenu-menu button[class*="-button" i],
-.main-actionBar-ActionBar button:not(.main-playButton-PlayButton, [aria-label^="Play" i], [aria-label^="Pause" i]) {
+[data-testid="action-bar"] button:not([aria-label^="Play" i], [aria-label^="Pause" i]) {
   background-color: var(--spice-button);
   box-shadow: var(--wa-raised);
   color: var(--spice-shadow);
@@ -1129,17 +1076,16 @@ html.spotify__os--is-macos .main-globalNav-historyButtonsContainer {
   color: var(--spice-text);
 }
 
-.main-view-container button[class*="-button" i]:not(.main-playButton-PlayButton, [aria-label^="Play" i], [aria-label^="Pause" i]):hover,
+.main-view-container button[class*="-button" i]:not([aria-label^="Play" i], [aria-label^="Pause" i]):hover,
 .GenericModal button[class*="-button" i]:hover,
-.main-contextMenu-menu button[class*="-button" i]:hover,
-.main-actionBar-ActionBar button:not(.main-playButton-PlayButton, [aria-label^="Play" i], [aria-label^="Pause" i]):hover {
+[data-testid="action-bar"] button:not([aria-label^="Play" i], [aria-label^="Pause" i]):hover {
   background-color: var(--wa-bevel-light);
   color: var(--spice-text);
 }
 
 .main-view-container button[class*="-button" i]:active,
 .GenericModal button[class*="-button" i]:active,
-.main-actionBar-ActionBar button:active {
+[data-testid="action-bar"] button:active {
   box-shadow: var(--wa-sunken);
 }
 
@@ -1157,8 +1103,8 @@ html.spotify__os--is-macos .main-globalNav-historyButtonsContainer {
 /* The two play buttons that are meant to be seen at rest, on the action bar
    and floating over a card, are the green key outside the now playing bar.
    These come after the transparent rule and outrank it. */
-.main-view-container .main-actionBar-ActionBar button.main-playButton-PlayButton,
-.main-view-container .main-card-PlayButtonContainer button {
+.main-view-container [data-testid="action-bar"] button[data-encore-id="buttonPrimary"],
+.main-view-container [data-encore-id="card"] button[data-encore-id="buttonPrimary"] {
   background-color: var(--spice-button-active);
   box-shadow: var(--wa-raised);
   color: var(--spice-shadow);
@@ -1169,7 +1115,7 @@ html.spotify__os--is-macos .main-globalNav-historyButtonsContainer {
 .GenericModal [class*="-form-input" i],
 .GenericModal input,
 .GenericModal textarea,
-.main-view-container .x-filterBox-filterInput {
+.main-view-container input[type="search"] {
   background-color: var(--wa-display-bg);
   box-shadow: var(--wa-sunken);
   font-family: var(--wa-font-pixel);
@@ -1194,8 +1140,7 @@ html.spotify__os--is-macos .main-globalNav-historyButtonsContainer {
 }
 
 .GenericModal h1,
-.GenericModal h2,
-.main-playlistEditDetailsModal-title {
+.GenericModal h2 {
   background-image: linear-gradient(to right, var(--wa-titlebar-start), var(--wa-titlebar-end));
   font-family: var(--wa-font-pixel);
   font-size: 12px;
@@ -1291,18 +1236,13 @@ dialog pre {
 }
 
 /* Context menus and dropdowns are small panels; an item under the pointer is
-   the same blue bar as a selected track. On 1.3.0 the menu is an Encore list
-   with generated classes and no readable name, so it is reached through its
-   role; the old names stay alongside in case a release brings them back. */
-.main-contextMenu-menu,
-.main-dropDown-dropDown,
+   the same blue bar as a selected track. The menu is an Encore list with
+   generated classes and no readable name, so it is reached through its role. */
 ul[role="menu"] {
   background-color: var(--spice-sidebar);
   box-shadow: var(--wa-raised);
 }
 
-.main-contextMenu-menuItemButton,
-.main-contextMenu-menuItemButton span,
 ul[role="menu"] li button,
 ul[role="menu"] li button span {
   font-family: var(--wa-font-pixel);
@@ -1311,10 +1251,6 @@ ul[role="menu"] li button span {
   color: var(--spice-text);
 }
 
-.main-contextMenu-menuItemButton:hover,
-.main-contextMenu-menuItemButton:hover span,
-.main-contextMenu-menuItemButton:focus,
-.main-contextMenu-menuItemButton:focus span,
 ul[role="menu"] li button:hover,
 ul[role="menu"] li button:hover span,
 ul[role="menu"] li button:focus,
@@ -1335,9 +1271,8 @@ ul[role="menu"] li button:focus span {
 
 /* Images and the profile avatar sit recessed into the panel. The global
    reset already squared the avatar. */
-.main-image-image,
-.main-entityHeader-image,
-.main-avatar-image {
+[data-testid="playlist-image"],
+#global-nav-bar button[aria-expanded] figure {
   border: 2px solid var(--wa-bevel-dark);
   box-shadow: var(--wa-sunken);
 }
@@ -1370,40 +1305,40 @@ body [data-encore-id="cardSubtitle"] {
 
 /* === Right sidebar keys === */
 
-/* The now playing view and the queue live outside .main-view-container, so
+/* The now playing view and the queue live in the right panel, outside the main view, so
    the generic button rules never reach them. Same contract as above: the
    Encore button and tab ids. Primary and secondary (Start a Jam, Following)
    are gray keys like the action bar's text keys; tertiary (Show all, Open
    queue) is a link and stays flat; the queue tabs keep Spotify's underline
    and only take the face. */
-.Root__right-sidebar [data-encore-id="buttonPrimary"],
-.Root__right-sidebar [data-encore-id="buttonSecondary"],
-.Root__right-sidebar [data-encore-id="buttonTertiary"],
-.Root__right-sidebar [data-encore-id="tabItem"] {
+[id="Desktop_PanelContainer_Id"] [data-encore-id="buttonPrimary"],
+[id="Desktop_PanelContainer_Id"] [data-encore-id="buttonSecondary"],
+[id="Desktop_PanelContainer_Id"] [data-encore-id="buttonTertiary"],
+[id="Desktop_PanelContainer_Id"] [data-encore-id="tabItem"] {
   font-family: var(--wa-font-pixel);
   font-size: 11px;
   text-transform: uppercase;
 }
 
-.Root__right-sidebar [data-encore-id="buttonPrimary"],
-.Root__right-sidebar [data-encore-id="buttonSecondary"] {
+[id="Desktop_PanelContainer_Id"] [data-encore-id="buttonPrimary"],
+[id="Desktop_PanelContainer_Id"] [data-encore-id="buttonSecondary"] {
   background-color: var(--spice-button);
   box-shadow: var(--wa-raised);
   border: 0;
   color: var(--spice-shadow);
 }
 
-.Root__right-sidebar [data-encore-id="buttonPrimary"]:hover,
-.Root__right-sidebar [data-encore-id="buttonSecondary"]:hover {
+[id="Desktop_PanelContainer_Id"] [data-encore-id="buttonPrimary"]:hover,
+[id="Desktop_PanelContainer_Id"] [data-encore-id="buttonSecondary"]:hover {
   background-color: var(--wa-bevel-light);
   color: var(--spice-text);
 }
 
-.Root__right-sidebar [data-encore-id="buttonPrimary"]:active,
-.Root__right-sidebar [data-encore-id="buttonSecondary"]:active {
+[id="Desktop_PanelContainer_Id"] [data-encore-id="buttonPrimary"]:active,
+[id="Desktop_PanelContainer_Id"] [data-encore-id="buttonSecondary"]:active {
   box-shadow: var(--wa-sunken);
 }
 
-.Root__right-sidebar [data-encore-id="buttonTertiary"] {
+[id="Desktop_PanelContainer_Id"] [data-encore-id="buttonTertiary"] {
   color: var(--spice-text);
 }
