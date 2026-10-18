@@ -9,7 +9,8 @@
 //     its css-map.json, and only for the Spotify versions it was updated for.
 //
 // The bundle is Spotify's xpui (the folder, or the xpui.spa it ships in). A
-// testid has to appear in it as a quoted string. Encore ids cannot be checked
+// testid has to appear in it as a quoted string (or as the tail of a template
+// literal, for the ids Spotify builds at runtime). Encore ids cannot be checked
 // this way: the Encore library is loaded at runtime and is not in the bundle
 // (a bundle Spicetify patched has them only because Spicetify injects them),
 // so they are listed as unchecked, never as missing. A mapped class is
@@ -103,10 +104,19 @@ export function checkAnchors(anchors, bundle, cssMap) {
   // A testid is a whole string in the bundle, so it is matched between quotes:
   // a bare substring would let "bar" pass on "now-playing-bar".
   const quoted = (/** @type {string} */ value) => ['"', "'", '`'].some((quote) => bundle.includes(`${quote}${value}${quote}`));
+  // Some ids are built from a template, like `${type}-image` for playlist-image,
+  // so no quoted literal exists. The id counts as present when the bundle has a
+  // template literal with the same suffix or the same prefix at a dash.
+  const escape = (/** @type {string} */ text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const templated = (/** @type {string} */ value) =>
+    [...value.matchAll(/-/g)].some(({ index = 0 }) =>
+      new RegExp(`\`\\$\\{[^}]*\\}${escape(value.slice(index))}\``).test(bundle) ||
+      new RegExp(`\`${escape(value.slice(0, index + 1))}\\$\\{[^}]*\\}[^\`]*\``).test(bundle),
+    );
   const mapped = (/** @type {string} */ name) => literal(name) || (hashes.get(name) ?? []).some(literal);
   return {
     missing: {
-      testids: anchors.testids.filter((id) => !quoted(id)),
+      testids: anchors.testids.filter((id) => !quoted(id) && !templated(id)),
       mapped: anchors.mapped.filter((name) => !mapped(name)),
     },
     unchecked: anchors.encoreIds,
