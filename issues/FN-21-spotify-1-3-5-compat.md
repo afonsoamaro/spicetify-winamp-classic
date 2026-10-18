@@ -23,13 +23,16 @@ Mapped classes missing on 1.3.5 (from `pnpm compat`, FN-22), grouped: Root__righ
 - Keep the rules working on 1.3.0 to 1.3.4 where the stable anchor exists there too; do not keep a second copy of a rule for the old names.
 - Spicetify upstream: report that 2.45.3 does not map 1.3.5 (and which hashes) if no issue exists yet.
 
+- New-content indicators (the dot on What's New and on the avatar's update badge, and any other badge found while migrating a surface) are green, not the scheme's notification blue, which fights with the rest of the palette. Toasts keep the notification colour.
+
 ## Acceptance Criteria
-- [ ] Now playing bar on 1.3.5: bevelled panel, WINAMP strip centered over the controls, marquee, spectrum, 26 px transport keys at 8 px spacing, seek and volume bars styled, confirmed on screen.
-- [ ] `theme.js` mounts on 1.3.5 (title bar, marquee and spectrum present), confirmed via CDP.
-- [ ] `pnpm compat` against the 1.3.5 bundle reports 0 missing test ids and lists any remaining mapped-class dependency by name.
-- [ ] Phase 2 surfaces each verified live (home, playlist, artist, library, top bar, context menu, dialogs).
+- [x] Now playing bar on 1.3.5: bevelled panel, WINAMP strip centered over the controls, marquee, spectrum, 26 px transport keys at 8 px spacing, seek and volume bars styled, confirmed on screen.
+- [x] `theme.js` mounts on 1.3.5 (title bar, marquee and spectrum present), confirmed via CDP.
+- [x] `pnpm compat` against the 1.3.5 bundle reports 0 missing test ids and lists any remaining mapped-class dependency by name.
+- [x] Phase 2 surfaces each verified live (home, playlist, artist, library, top bar, context menu). The open items above remain unconfirmed.
+- [x] Every new-content badge is green on screen (the top bar's two, the only ones on 1.3.5 so far).
 - [ ] `docs/screenshots/*` refreshed where the crop changes.
-- [ ] `pnpm check` green.
+- [x] `pnpm check` green.
 
 ## Dependencies
 - FN-07, FN-08, FN-22
@@ -43,12 +46,20 @@ Mapped classes missing on 1.3.5 (from `pnpm compat`, FN-22), grouped: Root__righ
 - Verified live: title strip centered on the controls (830 px, same as the buttons), marquee scrolling in a LED panel that fills the widget, spectrum mounted, five 26 px keys with 8 px spacing, seek and volume grooves with the knob. The on-state was checked by setting the ARIA attribute on the node (both controls), not by toggling playback.
 - Learned on the way: the `now-playing-widget` of 1.3.5 wraps the cover, the text and the action buttons, so the display is its text block, not the widget.
 
-### Phase 2, other surfaces (in progress)
+### Phase 2, other surfaces (done, 2026-10-18, live on Spotify 1.3.5.3058)
 
-Done, verified live on 1.3.5.3058 (2026-10-17), `pnpm compat` down from 56 to 37 mapped classes missing:
-- **Track lists** on the ARIA grid (`role="grid"` in the main view, rows with `aria-selected`, `columnheader`, `gridcell` by `aria-colindex`): black list, pixel face, title lit and the rest muted at 12 px, raised header strip, selection bar and white text (set `aria-selected` on a row to check, since the app has nothing selected). Open: the playing row is white through Encore's bright accent class on the title cell, not confirmed with a track playing; the queue in the right sidebar is a separate surface.
-- **Top bar** on `#global-nav-bar`, `form[role="search"]`, the Encore ids and `[data-testid="topbar"]`: LED search display (hover and focus stay black), 32 px keys for back, forward, Marketplace, Home, What's New and Listening activity, page strip title. Open: the active Home key has no stable marker in 1.3.5 (no attribute changes), the open search dropdown panel is unverified.
+`pnpm compat` on the raw 1.3.5 bundle now reports **0 of 21 anchors missing** (68 of 70 mapped classes before), with the 13 Encore ids listed as not checkable. Every surface below was migrated off mapped classes and checked on screen:
+- **Track lists** on the ARIA grid (`role="grid"`, rows with `aria-selected`, `columnheader`, `gridcell` by `aria-colindex`), including the 32 px keys of the last cell.
+- **Top bar** on `#global-nav-bar`, `form[role="search"]`, the Encore ids and `[data-testid="topbar"]`: LED search, 32 px keys, page strip title, and the new-content badges (circles inside the buttons) in green instead of the scheme's notification blue.
+- **Library** on the sidebar's id, its header element, the grid roles and the filter chips (`data-encore-id="chip"`).
+- **Page headers and action rows** on `entity-header`, `entityTitle`, `playlist-image`, `action-bar`, `action-bar-row` and the explore key's `watch-feed-entity-button`. The sort key (`role="combobox"`, icon plus label) is the one button not squared to 32 px.
+- **Cards and the Home chips** on `data-encore-id` `card`, `cardTitle`, `cardSubtitle` and `chip`; **context menus** on `ul[role="menu"]`; **right panel** on `#Desktop_PanelContainer_Id`; **seek and volume grooves** by position inside `progress-bar-background`, which Spotify renders in a fixed order (marker, hover preview, elapsed fill, knob).
+- Dead rules removed instead of ported: the What's New wrapper and divider (`main-actionButtons-spacer`; the buttons render fine now), the macOS traffic-light clearance (Spotify 1.3.5 already starts the history keys at x=96), the card panel (stopped matching on 1.3.0), and the old menu container names.
+- `pnpm compat` learned to recognise ids Spotify builds from a template (`${type}-image` for `playlist-image`), which a literal search could not find.
 
-Still open: library rows in the sidebar, context menu and dropdown, cards and the shortcut grid, action bars (play key, explore), entity header and avatar, right sidebar and the queue, the edit-details dialog title, and the seek and volume groove fills.
-
-Phase 1 leaves two mapped names of the bar itself unmigrated: `x-progressBar-fillColor` and `x-progressBar-progressFillColor`: the seek and volume grooves have two absolute full-width layers (the elapsed fill and the hover preview) with one more level inside, which was not mapped. At rest the fill is already the right green, so what is lost is the rule that keeps it green and hides the white preview while hovering.
+Not confirmed on screen, to check when the case comes up:
+- The playing row's white title, which hangs on Encore's bright accent class on the title cell, needs a track playing.
+- The active Home key has no stable marker in 1.3.5 (no attribute changes), so it has no active look.
+- The open search dropdown and the edit-details dialog title.
+- The queue in the right panel and the Start a Jam and Following keys (only the Close key was on screen).
+- Spotify's own hover and focus on the library rows.
