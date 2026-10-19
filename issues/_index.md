@@ -41,7 +41,8 @@ Source: `SPECS.md`. Spicetify theme that recreates the Winamp 2.x look with CSS,
 | FN-19 | Marketplace tab bar as keys | ✅ done (Sep 30), verified live via CDP | PP-04, PP-05 |
 | FN-20 | Visualizer with selectable styles | 🧠 brainstorming (Sep 30), discovery pending | FN-03, FN-04, FN-09 |
 | FN-21 | Spotify 1.3.5 compatibility | ✅ done (Oct 18), `pnpm compat` 0 of 21 anchors missing on 1.3.5.3058, verified live; a few states unconfirmed, listed in the issue | FN-07, FN-08, FN-22 |
-| FN-22 | Spotify compatibility monitor in CI | 🚧 check script and workflow written and tested locally against the real 1.3.5 bundle (Oct 17); first scheduled run pending | FN-00b |
+| FN-22 | Spotify compatibility monitor in CI | ✅ done (Oct 19), verified on GitHub: opened, updated and closed #42; the daily cron and the ETag cache skip are not exercised yet | FN-00b |
+| FN-23 | Test that keeps the theme on stable anchors | ✅ done (Oct 19), fails on mapped or hashed classes | FN-21, FN-22 |
 
 ## Critical path
 FN-00 → FN-00b → PP-01 → PP-02 → FN-01 → FN-02 → FN-03 → FN-05 → FN-06.

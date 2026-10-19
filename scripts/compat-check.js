@@ -31,6 +31,7 @@ export const CSS_MAP_URL = 'https://raw.githubusercontent.com/spicetify/cli/main
 const TESTID = /\[data-testid=["']?([\w-]+)["']?\]/g;
 const ENCORE_ID = /\[data-encore-id=["']?([\w-]+)["']?\]/g;
 const CLASS = /\.([A-Za-z_][\w-]*)/g;
+const SCRIPT_CLASS = /(?:^|[\s>+~,)\]])\.([A-Za-z_][\w-]*)/gm;
 // The names the Spicetify class map produces. The theme's own classes (wa-*)
 // and Encore's generated ones (e-*, encore-*) are not part of it.
 const MAPPED = /^(?:main-[A-Za-z]+-|x-[A-Za-z]+-|Root__|player-controls__|progress-bar)/;
@@ -71,6 +72,19 @@ function jsStrings(js) {
  */
 function collect(text, pattern) {
   return new Set([...text.matchAll(pattern)].map((match) => match[1] ?? ''));
+}
+
+/**
+ * Every class a selector of the theme hangs on, mapped or not.
+ * @param {{ css: string, scripts: string[] }} sources
+ * @returns {string[]}
+ */
+export function extractClasses({ css, scripts }) {
+  // In a stylesheet a class may follow an element (a.nav-link). In a script's
+  // strings it only counts at the start or after a space or a combinator, so
+  // file names (dom.js) and property paths (error.message) are not read as one.
+  const fromScripts = scripts.map(jsStrings).join('\n');
+  return [...new Set([...collect(cssSelectors(css), CLASS), ...collect(fromScripts, SCRIPT_CLASS)])].sort();
 }
 
 /**
