@@ -1301,10 +1301,18 @@ ul[role="menu"] li button:focus span {
   color: var(--wa-white);
 }
 
-/* Tooltips carry no readable class, only their role. */
-[role="tooltip"] {
+/* Tooltips carry no readable class, only their role. The role sits on the
+   text element; the panel around it is a plain div of Spotify's, with its own
+   fill and padding. The panel takes the frame and the text only takes the face,
+   or the label is boxed again inside its own panel. */
+div:has(> [role="tooltip"]) {
   background-color: var(--wa-display-bg);
   box-shadow: var(--wa-raised);
+}
+
+[role="tooltip"] {
+  background-color: transparent;
+  box-shadow: none;
   font-family: var(--wa-font-pixel);
   font-size: 11px;
   text-transform: uppercase;
