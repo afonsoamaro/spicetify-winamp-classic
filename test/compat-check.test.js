@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { checkAnchors, extractAnchors, extractClasses, missingCount, parseArgs, readBundle, renderReport } from '../scripts/compat-check.js';
+import { badgeJson, checkAnchors, extractAnchors, extractClasses, missingCount, parseArgs, readBundle, renderReport } from '../scripts/compat-check.js';
 
 /** @type {string[]} */
 const dirs = [];
@@ -118,9 +118,26 @@ describe('renderReport', () => {
   });
 });
 
+describe('badgeJson', () => {
+  it('shows the version, cut to three parts, in green when nothing is missing', () => {
+    expect(badgeJson({ version: '1.3.5.3058', missing: 0 })).toEqual({
+      schemaVersion: 1,
+      label: 'Spotify',
+      message: '1.3.5',
+      color: '00b800',
+      labelColor: '14141c',
+    });
+  });
+
+  it('says broken, in red, when an anchor is missing', () => {
+    expect(badgeJson({ version: '1.3.6.100', missing: 2 })).toMatchObject({ message: '1.3.6 broken', color: 'd93f0b' });
+  });
+});
+
 describe('parseArgs', () => {
   it('takes one bundle path and the optional flags', () => {
-    expect(parseArgs(['xpui', '--version', '1.3.5', '--out', 'r.md', '--css-map', 'map.json'])).toMatchObject({
+    expect(parseArgs(['xpui', '--version', '1.3.5', '--out', 'r.md', '--css-map', 'map.json', '--badge', 'b.json'])).toMatchObject({
+      badge: 'b.json',
       bundle: 'xpui',
       version: '1.3.5',
       out: 'r.md',

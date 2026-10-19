@@ -179,6 +179,24 @@ export function renderReport(result, { version } = {}) {
 }
 
 /**
+ * The data a shields.io endpoint badge reads: the Spotify version the check ran
+ * on, green when every anchor is there and red with "broken" when one is not.
+ * The version is cut to major.minor.patch, as a person reads it.
+ * @param {{ version: string, missing: number }} result
+ * @returns {{ schemaVersion: 1, label: string, message: string, color: string, labelColor: string }}
+ */
+export function badgeJson({ version, missing }) {
+  const short = version.split('.').slice(0, 3).join('.');
+  return {
+    schemaVersion: 1,
+    label: 'Spotify',
+    message: missing === 0 ? short : `${short} broken`,
+    color: missing === 0 ? '00b800' : 'd93f0b',
+    labelColor: '14141c',
+  };
+}
+
+/**
  * @param {string} dir
  * @returns {Promise<string[]>}
  */
@@ -230,7 +248,7 @@ async function loadCssMap(source) {
 
 /**
  * @param {string[]} args
- * @returns {{ bundle: string, cssMap: string, version: string | undefined, out: string | undefined }}
+ * @returns {{ bundle: string, cssMap: string, version: string | undefined, out: string | undefined, badge: string | undefined }}
  */
 export function parseArgs(args) {
   const flags = new Map();
@@ -242,8 +260,8 @@ export function parseArgs(args) {
     if (arg.startsWith('--')) flags.set(arg, words[++i]);
     else rest.push(arg);
   }
-  if (rest.length !== 1) throw new Error('usage: compat-check <xpui dir or .spa> [--css-map <file|url>] [--version <x.y.z>] [--out <report.md>]');
-  return { bundle: /** @type {string} */ (rest[0]), cssMap: flags.get('--css-map') ?? CSS_MAP_URL, version: flags.get('--version'), out: flags.get('--out') };
+  if (rest.length !== 1) throw new Error('usage: compat-check <xpui dir or .spa> [--css-map <file|url>] [--version <x.y.z>] [--out <report.md>] [--badge <badge.json>]');
+  return { bundle: /** @type {string} */ (rest[0]), cssMap: flags.get('--css-map') ?? CSS_MAP_URL, version: flags.get('--version'), out: flags.get('--out'), badge: flags.get('--badge') };
 }
 
 async function main() {
@@ -255,6 +273,10 @@ async function main() {
   const result = checkAnchors(anchors, await readBundle(options.bundle), await loadCssMap(options.cssMap));
   const report = renderReport(result, { version: options.version });
   if (options.out) await writeFile(options.out, report);
+  if (options.badge) {
+    if (!options.version) throw new Error('--badge needs --version');
+    await writeFile(options.badge, `${JSON.stringify(badgeJson({ version: options.version, missing: missingCount(result) }), null, 2)}\n`);
+  }
   process.stdout.write(`${report}\n`);
   process.exitCode = missingCount(result) === 0 ? 0 : 1;
 }
