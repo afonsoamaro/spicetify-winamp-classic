@@ -63,3 +63,9 @@ Not confirmed on screen, to check when the case comes up:
 - The open search dropdown and the edit-details dialog title.
 - The queue in the right panel and the Start a Jam and Following keys (only the Close key was on screen).
 - Spotify's own hover and focus on the library rows.
+
+### Follow-ups after phase 2 (2026-10-19)
+- Event page action row and genre tags: the Save, copy link and more keys now share one height, and the header tags are bevelled once (the key was painted on the link chip and again on its text span).
+- Tooltips were framed twice: the `role="tooltip"` element is only the text, and the panel around it is a div of Spotify's. The panel takes the frame, the text only the face.
+- The dot of a friend listening right now (the avatar figure's `::after`) is green like the other new-content badges. Spotify draws it only for an active friend, so it was checked by giving an avatar the active class, not on a live listener. Other dots filled with `--spice-notification` exist in Spotify's stylesheets (small round dots in notification lists); they are not on screen yet and are recoloured as they turn up.
+

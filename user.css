@@ -787,6 +787,15 @@
   fill: var(--spice-text);
 }
 
+/* The same dot marks a friend who is listening right now: Spotify draws it on
+   the avatar's figure as a pseudo-element, filled with the notification colour
+   and squared by the global reset. It is only drawn when the friend is active,
+   so recolouring it costs nothing on the avatars without it. The page areas
+   are in the selector to outrank Spotify's own two-class rule. */
+:is([id="Desktop_PanelContainer_Id"], [id="Desktop_LeftSidebar_Id"], .main-view-container) figure[title]::after {
+  background-color: var(--spice-text);
+}
+
 /* The Marketplace tab bar paints the active tab with --spice-tab-active and
    every label with --spice-text, both green in this scheme, so the active tab
    was a green block with no readable label. The tabs become keys like Home's
