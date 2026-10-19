@@ -27,10 +27,18 @@ Spotify updates on its own and the theme found out each time from a screenshot (
 - README gets a short "Spotify updates" section: what the monitor does and how to run it locally.
 
 ## Acceptance Criteria
-- [ ] `pnpm compat` reproduces the 1.3.5 findings locally (68 of 78 anchors missing before FN-21, all mapped classes; 11 Encore ids unchecked).
-- [ ] The workflow runs on `workflow_dispatch` and opens an issue for 1.3.5, with no duplicate on a second run.
-- [ ] A passing run closes the open compat issue, and a rerun on an already checked build skips without downloading.
-- [ ] `pnpm check` green, including the new tests.
+- [x] `pnpm compat` reproduces the 1.3.5 findings locally (68 of 78 anchors missing before FN-21, all mapped classes; 11 Encore ids unchecked).
+- [x] The workflow runs on `workflow_dispatch` and opens an issue for 1.3.5, with no duplicate on a second run.
+- [x] A passing run closes the open compat issue.
+- [ ] A rerun on an already checked build skips without downloading (the cache path; every run so far used `force`).
+- [x] `pnpm check` green, including the new tests.
 
 ## Dependencies
 - FN-00b
+
+## Verification (2026-10-17 to 2026-10-19, on GitHub)
+- First dispatch on Spotify 1.3.5.3058 opened #42 with the report (56 of 70 anchors missing at the time, matching the local run).
+- A second dispatch with `force` updated #42 and opened nothing else.
+- After FN-21 landed, a dispatch found 0 of 21 missing and closed #42 with a comment naming the version.
+- Real-archive findings fixed on the way: `unzip` exits non-zero on Spotify's `xpui.spa` after extracting everything; the Encore ids are not in the bundle (reported as not checked); some test ids are built from a template literal.
+- Not exercised yet: the daily cron itself and the ETag cache skip.
