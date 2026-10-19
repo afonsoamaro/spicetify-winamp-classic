@@ -626,7 +626,7 @@
 /* The header's buttons are keys, and so are the filter chips below it. */
 [id="Desktop_LeftSidebar_Id"] header button,
 [id="Desktop_LeftSidebar_Id"] [data-encore-id="chip"],
-[id="Desktop_LeftSidebar_Id"] [data-encore-id="chip"] > span {
+[id="Desktop_LeftSidebar_Id"] [data-encore-id="chip"] > span:not([data-encore-id="text"]) {
   background-color: var(--spice-button);
   box-shadow: var(--wa-raised);
   color: var(--spice-shadow);
@@ -944,6 +944,36 @@ a.marketplace-tabBar-headerItemLink.marketplace-tabBar-active {
   max-height: 32px;
 }
 
+/* The action row of an event page (Save, copy link, more) is not an action
+   bar and has no test id, so it is found by its buttons: a secondary one
+   followed by tertiary ones, outside any element with a test id. The three
+   keys share one height, the icon keys are squares, and Spotify's own outline
+   on Save goes, since the bevel is the border here. */
+.main-view-container div:not([data-testid]):has(> button[data-encore-id="buttonSecondary"] ~ button[data-encore-id="buttonTertiary"]) > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  height: 32px;
+  box-sizing: border-box;
+  border: 0;
+  background-color: var(--spice-button);
+  box-shadow: var(--wa-raised);
+  color: var(--spice-shadow);
+}
+
+.main-view-container div:not([data-testid]):has(> button[data-encore-id="buttonSecondary"] ~ button[data-encore-id="buttonTertiary"]) > button[data-encore-id="buttonTertiary"] {
+  width: 32px;
+  padding: 4px;
+}
+
+.main-view-container div:not([data-testid]):has(> button[data-encore-id="buttonSecondary"] ~ button[data-encore-id="buttonTertiary"]) > button[data-encore-id="buttonSecondary"],
+.main-view-container div:not([data-testid]):has(> button[data-encore-id="buttonSecondary"] ~ button[data-encore-id="buttonTertiary"]) > button[data-encore-id="buttonSecondary"] * {
+  font-family: var(--wa-font-pixel);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
 /* Section titles. The entity header is the name on a playlist, album or artist
    page; the headings on Home are plain h2s. Both take the pixel face and
    white, but neither gets a title-bar band: Home would turn into a stack of
@@ -1038,20 +1068,32 @@ a.marketplace-tabBar-headerItemLink.marketplace-tabBar-active {
   color: var(--spice-subtext);
 }
 
-/* The filter chips at the top of Home, same technique as the library's. */
+/* The filter chips at the top of Home, same technique as the library's, and
+   the genre tags on an artist or event header. A button chip wraps its label
+   in an inner span that Encore paints, so that span takes the key too; a link
+   chip holds the label in a text span of its own, which only takes the face,
+   or the key would be bevelled twice, one inside the other. */
+.main-view-container [data-encore-id="chip"],
+.main-view-container [data-encore-id="chip"] > span:not([data-encore-id="text"]) {
+  background-color: var(--spice-button);
+  box-shadow: var(--wa-raised);
+}
+
 .main-view-container [data-encore-id="chip"],
 .main-view-container [data-encore-id="chip"] > span {
   font-family: var(--wa-font-pixel);
   font-size: 11px;
   text-transform: uppercase;
   color: var(--spice-shadow);
-  background-color: var(--spice-button);
-  box-shadow: var(--wa-raised);
+}
+
+.main-view-container [data-encore-id="chip"]:hover,
+.main-view-container [data-encore-id="chip"] > span:not([data-encore-id="text"]):hover {
+  background-color: var(--wa-bevel-light);
 }
 
 .main-view-container [data-encore-id="chip"]:hover,
 .main-view-container [data-encore-id="chip"] > span:hover {
-  background-color: var(--wa-bevel-light);
   color: var(--spice-text);
 }
 
