@@ -14,8 +14,10 @@ on:
         type: boolean
         default: false
 
+# contents: write is for one file only, compat/spotify.json, the data of the
+# README's Spotify badge; the job never touches anything else in the tree.
 permissions:
-  contents: read
+  contents: write
   issues: write
 
 concurrency:
@@ -93,7 +95,7 @@ jobs:
           SPA: ${{ steps.spotify.outputs.spa }}
         run: |
           status=0
-          pnpm compat "$SPA" --version "$VERSION" --out "$RUNNER_TEMP/report.md" > /dev/null || status=$?
+          pnpm compat "$SPA" --version "$VERSION" --out "$RUNNER_TEMP/report.md" --badge compat/spotify.json > /dev/null || status=$?
           if [ "$status" -gt 1 ]; then exit "$status"; fi
           echo "missing=$status" >> "$GITHUB_OUTPUT"
 
@@ -126,6 +128,23 @@ jobs:
           for number in $(echo "$open" | jq -r '.[].number'); do
             gh issue close "$number" --comment "Superseded by $url for Spotify $VERSION."
           done
+
+      # The badge reads compat/spotify.json from the repo through shields.io.
+      # compat-check wrote it with the version and the result of this run; it is
+      # committed only when it changed, rebased over anything pushed meanwhile.
+      # A push made with the job's token does not start other workflows.
+      - name: Publish the badge data
+        if: steps.gate.outputs.run == 'true'
+        env:
+          VERSION: ${{ steps.spotify.outputs.version }}
+        run: |
+          git add compat/spotify.json
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: record Spotify $VERSION in the badge data"
+          git pull --rebase --quiet origin "$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"
 
       - name: Mark the build as checked
         if: steps.gate.outputs.run == 'true'

@@ -16,7 +16,7 @@ Spotify updates on its own and the theme found out each time from a screenshot (
   1. `HEAD https://download.scdn.co/SpotifyARM64.dmg`; the ETag is the change signal. Cached ETag equal: stop (no download).
   2. Changed: download (about 175 MB), `hdiutil attach` on a macOS runner, read `CFBundleShortVersionString`, unzip `xpui.spa`.
   3. Fetch `css-map.json` from the Spicetify repo, run `compat-check`.
-  4. Anchors missing: open an issue titled `Spotify <version>: anchors missing` with the report, labelled `spotify-compat`, one per version (an existing open issue for that version is updated, not duplicated; a new version supersedes and closes the open issues of older ones). Everything present: close the open compat issues, naming the version in the closing comment. The state lives in the issues and in the Actions cache (keyed by the ETag), not in a commit, so the workflow needs no write access to the code.
+  4. Anchors missing: open an issue titled `Spotify <version>: anchors missing` with the report, labelled `spotify-compat`, one per version (an existing open issue for that version is updated, not duplicated; a new version supersedes and closes the open issues of older ones). Everything present: close the open compat issues, naming the version in the closing comment. The state lives in the issues and in the Actions cache (keyed by the ETag). The one thing the job writes to the repo is `compat/spotify.json`, the data of the README's Spotify badge (a shields.io endpoint badge): `compat-check --badge` writes the checked version, in green, or `<version> broken` in red, and the job commits it as github-actions[bot] only when it changed. That is why the job has `contents: write`.
 - The Spotify client is downloaded only to read its bundle on an ephemeral runner; nothing from it is stored or published.
 - Third-party actions are pinned by SHA, first-party ones on the major. Permissions: `contents: read`, `issues: write`.
 
@@ -25,6 +25,7 @@ Spotify updates on its own and the theme found out each time from a screenshot (
 - The Markdown report is stable and short enough to read as an issue body.
 - The workflow tolerates what the real archive does: `unzip` exits non-zero on Spotify's `xpui.spa` after extracting everything (an absolute-path entry), so the extraction is judged by what came out, and an empty one fails instead of passing as clean.
 - README gets a short "Spotify updates" section: what the monitor does and how to run it locally.
+- The README's Spotify badge reads `compat/spotify.json`, so the version it shows is the one the check last ran on and no document has to be edited when Spotify releases.
 
 ## Acceptance Criteria
 - [x] `pnpm compat` reproduces the 1.3.5 findings locally (68 of 78 anchors missing before FN-21, all mapped classes; 11 Encore ids unchecked).
