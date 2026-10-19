@@ -20,7 +20,8 @@ spicetify watch -s  # re-applies color.ini, user.css and theme.js on save
 - `pnpm check` green before you open the pull request. CI runs the same command.
 - A screenshot in the description for anything visual. It is the fastest review there is.
 - Colours come from `color.ini` as `--spice-*` variables, and the values that are not Spicetify colours live in the `--wa-*` block at the top of `user.css`. A literal colour in a rule is a bug, not a style.
-- Prefer a hook Spotify is unlikely to rename: `data-encore-id`, `data-testid`, `aria-label`, or a `main-*` class. Generated class names change every release.
+- Anchor a selector on what Spotify keeps: `data-testid`, `data-encore-id`, ARIA attributes, roles, native elements or structure (`:has`, child combinators). Never on a `main-*` class: those names come from the Spicetify class map, which only covers the Spotify versions Spicetify has been updated for, and they vanished on 1.3.5. Hashed class names change every release. A test (`test/anchor-contract.test.js`) fails on both; a readable class that belongs to Spotify itself or to one of its libraries goes in the list at the top of that file, with the reason.
+- `pnpm compat <path to xpui or xpui.spa>` checks the anchors the theme needs against a Spotify bundle, and a daily workflow runs it against the newest release and opens an issue when one is missing.
 
 `user.css` is hand-written except between the generated markers, and `theme.js` is built from `src/` by `pnpm build`. Do not edit either generated block directly.
 
