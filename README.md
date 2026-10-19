@@ -4,7 +4,7 @@ Spotify wearing the Winamp 2.x face: bevelled gray panels, a green LED display t
 
 No bitmap from the original skin ships here. Every bevel, knob and LED is CSS, and the analyzer is a canvas.
 
-[![CI](https://github.com/afonsoamaro/spicetify-winamp-classic/actions/workflows/ci.yml/badge.svg)](https://github.com/afonsoamaro/spicetify-winamp-classic/actions/workflows/ci.yml) [![Stars](https://img.shields.io/github/stars/afonsoamaro/spicetify-winamp-classic?style=flat-square&logo=github&color=00b800&labelColor=14141c)](https://github.com/afonsoamaro/spicetify-winamp-classic/stargazers) [![License](https://img.shields.io/github/license/afonsoamaro/spicetify-winamp-classic?style=flat-square&color=00b800&labelColor=14141c)](https://github.com/afonsoamaro/spicetify-winamp-classic/blob/main/LICENSE) [![Spotify](https://img.shields.io/badge/Spotify-1.3.0-00b800?style=flat-square&labelColor=14141c)](https://spicetify.app/) [![Spicetify](https://img.shields.io/badge/Spicetify-2.45-00b800?style=flat-square&labelColor=14141c)](https://spicetify.app/)
+[![CI](https://github.com/afonsoamaro/spicetify-winamp-classic/actions/workflows/ci.yml/badge.svg)](https://github.com/afonsoamaro/spicetify-winamp-classic/actions/workflows/ci.yml) [![Stars](https://img.shields.io/github/stars/afonsoamaro/spicetify-winamp-classic?style=flat-square&logo=github&color=00b800&labelColor=14141c)](https://github.com/afonsoamaro/spicetify-winamp-classic/stargazers) [![License](https://img.shields.io/github/license/afonsoamaro/spicetify-winamp-classic?style=flat-square&color=00b800&labelColor=14141c)](https://github.com/afonsoamaro/spicetify-winamp-classic/blob/main/LICENSE) [![Spotify](https://img.shields.io/badge/Spotify-1.3.5-00b800?style=flat-square&labelColor=14141c)](https://spicetify.app/) [![Spicetify](https://img.shields.io/badge/Spicetify-2.45-00b800?style=flat-square&labelColor=14141c)](https://spicetify.app/)
 
 ![Home](https://raw.githubusercontent.com/afonsoamaro/spicetify-winamp-classic/main/docs/screenshots/home.png)
 
@@ -32,7 +32,7 @@ If the theme made you smile, [a star](https://github.com/afonsoamaro/spicetify-w
 
 ## Install
 
-From the Spicetify Marketplace, which is the easy path: open the Marketplace in Spotify, search for "Winamp Classic", click Install, reload when prompted. Tested on Spotify 1.3.0 with Spicetify 2.45.
+From the Spicetify Marketplace, which is the easy path: open the Marketplace in Spotify, search for "Winamp Classic", click Install, reload when prompted. Tested on Spotify 1.3.5 with Spicetify 2.45. Spicetify's own compatibility list stops at an older Spotify, which does not matter here: the theme no longer relies on Spicetify's class map, and a daily check against the newest Spotify opens an issue when something it needs goes away.
 
 The Marketplace only installs themes while `current_theme` in `config-xpui.ini` is set to `marketplace`. That is a Spicetify requirement for every theme, not just this one. If Spotify tells you to set it, run:
 
