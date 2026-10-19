@@ -15,7 +15,7 @@ Third-party .wsz skins, shade mode, equalizer, replacing the player with a compo
 
 ## Target environment
 
-Spicetify 2.45.0, Spotify 1.3.0.277 on macOS, Marketplace installed.
+Spicetify 2.45.0, Spotify 1.3.5.3058 on macOS, Marketplace installed. (Written against 1.3.0.277; moved to 1.3.5 after FN-21.)
 The Spicetify config already has `inject_css 1`, `inject_theme_js 1` and `replace_colors 1`.
 
 ## Repository structure

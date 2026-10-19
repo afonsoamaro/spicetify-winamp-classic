@@ -31,7 +31,7 @@ body:
     attributes:
       label: Spotify version
       description: Spotify menu, then About Spotify.
-      placeholder: 1.3.0.277
+      placeholder: 1.3.5.3058
     validations:
       required: true
   - type: input
@@ -39,7 +39,7 @@ body:
     attributes:
       label: Spicetify version
       description: Output of `spicetify -v`.
-      placeholder: 2.45.1
+      placeholder: 2.45.0
   - type: dropdown
     id: install
     attributes:
