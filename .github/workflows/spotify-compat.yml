@@ -36,6 +36,8 @@ jobs:
       issues: write
     outputs:
       run: ${{ steps.gate.outputs.run }}
+      version: ${{ steps.spotify.outputs.version }}
+      missing: ${{ steps.check.outputs.missing }}
     steps:
       # The ETag of the download changes with every release, so a HEAD request
       # is the whole "is there a new Spotify" check; the 175 MB download only
@@ -104,7 +106,7 @@ jobs:
           SPA: ${{ steps.spotify.outputs.spa }}
         run: |
           status=0
-          pnpm compat "$SPA" --version "$VERSION" --out "$RUNNER_TEMP/report.md" --badge compat/spotify.json > /dev/null || status=$?
+          pnpm compat "$SPA" --version "$VERSION" --out "$RUNNER_TEMP/report.md" > /dev/null || status=$?
           if [ "$status" -gt 1 ]; then exit "$status"; fi
           echo "missing=$status" >> "$GITHUB_OUTPUT"
 
@@ -138,27 +140,19 @@ jobs:
             gh issue close "$number" --comment "Superseded by $url for Spotify $VERSION."
           done
 
-      # compat-check wrote compat/spotify.json with the version and the result
-      # of this run. It leaves this job as an artifact, and the badge job below
-      # commits it.
-      - uses: actions/upload-artifact@v7
-        if: steps.gate.outputs.run == 'true'
-        with:
-          name: badge
-          path: compat/spotify.json
-          if-no-files-found: error
-
       - name: Mark the build as checked
         if: steps.gate.outputs.run == 'true'
         env:
           ETAG: ${{ steps.signal.outputs.etag }}
         run: echo "$ETAG" > .compat-seen
 
-  # The only job with write access, and it runs nothing from outside: no
-  # dependencies, no third-party actions, no Spotify client. It takes the badge
-  # data, refuses anything that is not that shape, and commits the one file when
-  # it changed, rebased over anything pushed meanwhile. A push made with the
-  # job's token does not start other workflows.
+  # The only job with write access, and it takes nothing but two plain values
+  # from the other one: the Spotify version and whether anchors were missing. It
+  # checks both against a strict pattern, builds the badge data itself with the
+  # repo's own code (no dependencies to install, no third-party actions, no file
+  # from the other job to trust or parse), and commits that one file when it
+  # changed, rebased over anything pushed meanwhile. A push made with the job's
+  # token does not start other workflows.
   badge:
     needs: compat
     if: needs.compat.outputs.run == 'true'
@@ -166,21 +160,27 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: write
+    env:
+      VERSION: ${{ needs.compat.outputs.version }}
+      MISSING: ${{ needs.compat.outputs.missing }}
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/download-artifact@v8
-        with:
-          name: badge
-          path: badge-artifact
+      - name: Write the badge data
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+(\.[0-9]+){2,3}$ ]] || { echo "unexpected version"; exit 1; }
+          [[ "$MISSING" =~ ^[01]$ ]] || { echo "unexpected result"; exit 1; }
+          node --input-type=module -e '
+            import { writeFileSync } from "node:fs";
+            import { badgeJson } from "./scripts/compat-check.js";
+            const [version, missing] = process.argv.slice(1);
+            writeFileSync("compat/spotify.json", JSON.stringify(badgeJson({ version, missing: Number(missing) }), null, 2) + "\n");
+          ' "$VERSION" "$MISSING"
 
       - name: Commit the badge data
         run: |
-          jq -e '.schemaVersion == 1 and .label == "Spotify" and (.message | test("^[0-9]+(\\.[0-9]+){2}( broken)?$"))' badge-artifact/spotify.json > /dev/null
-          cp badge-artifact/spotify.json compat/spotify.json
           git add compat/spotify.json
           if git diff --cached --quiet; then exit 0; fi
-          VERSION=$(jq -r '.message' compat/spotify.json)
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "chore: record Spotify $VERSION in the badge data"
