@@ -1508,3 +1508,36 @@ body [data-encore-id="cardSubtitle"] {
   width: 100%;
   height: 96px;
 }
+
+/* Visualizer in the expanded Now Playing view (FN-20): a toggle among the
+   header buttons, and a canvas that covers the view below the header. The
+   overlay lets clicks through so the header and the minimise key stay usable. */
+.wa-viz-toggle {
+  margin-right: 8px;
+  padding: 2px 8px;
+  border: 0;
+  background: var(--spice-main);
+  box-shadow: var(--wa-raised);
+  color: var(--spice-text);
+  font-family: var(--wa-font-pixel);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.wa-viz-toggle[aria-pressed="true"] {
+  box-shadow: var(--wa-sunken);
+}
+
+.wa-viz-fullscreen {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: var(--wa-display-bg);
+  pointer-events: none;
+}
+
+.wa-viz-fullscreen canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
