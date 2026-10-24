@@ -88,3 +88,26 @@ These were open in review and settled without the owner. Change any of them free
 
 ## Dependencies
 - FN-03 (synthetic spectrum), FN-09 (canvas rendering), FN-22 and FN-23 (compat check for the new anchors)
+
+## Spike results
+Measured on 2026-10-24 on Spotify 1.3.6.1921 with Spicetify 2.46.2, through the debug channel, with the theme applied in dev mode.
+
+**Fullscreen**
+- The player bar button (`[data-testid="fullscreen-mode-button"]`, label "Enter Full screen") opens an expanded Now Playing view inside the app window. It is not the browser Fullscreen API (`document.fullscreenElement` stays `null`) and the "Enter Full screen" button inside that view did not change that either.
+- The view has no `data-testid`, no role and no readable class anywhere in its chain. What it does have is a header row with the buttons "More options for ...", "Enter Full screen" and "Minimize Now Playing view" (`data-encore-id="buttonTertiary"`), and a large cover with `role="img"` and a label ending in "artwork".
+- `FULLSCREEN_ROOT`: the nearest ancestor of the minimise button that contains a `[role="img"]`. It measured 1664x809, the whole content area between the top bar and the player bar. `FULLSCREEN_TOGGLE_HOST`: the parent of the minimise button (the header's button group).
+- A canvas appended to that root survived a track change (`Spicetify.Player.next()`, 3.5 s later still connected, same root node).
+- Risk: the button labels are translated by Spotify, so a selector on the English text works only in English. Locale-independent hook found: the artwork's `role="img"` (no test id exists). Task 9 detects the view as a `[role="img"]` at least 400 px wide that is outside the player bar and outside the sidebar, and finds the button group through `data-encore-id="buttonTertiary"` in the same row as the cover's header. This is a heuristic and the task must test it against the fixture.
+
+**Right sidebar**
+- `SIDEBAR_COVER_ANCHOR`: the sidebar is `aside[aria-label="Now playing view"]` (label translated, so locale-dependent). There are only two `aside` elements in the page, the player bar (has `data-testid="now-playing-bar"`) and the sidebar, so `aside:not([data-testid])` is the locale-independent form.
+- Structure inside: a scroller (the first descendant `div` whose computed `overflow-y` is `auto` or `scroll`, 386x809) with one child, the content (386x2260, two children). The cover, or the video when the item has one, is the first block of the content, starting 64 px below the aside's top, because the header (title and its buttons, bottom at about 112 px) is an overlay.
+- A 120 px probe prepended to the content landed at the top, under the header overlay, and survived a track change. The panel therefore needs a top margin equal to the header's bottom minus the content's top, measured at mount.
+- The video case (the item playing then was a music video) uses the same content block; the panel prepends above it the same way.
+- Closed state: the `aside` stays in the DOM and slides off-screen (after hiding, x=1628 in a 1680 px viewport, 52 px visible). It is not removed. `isVisible()` must check the layout (visible width over 100 px), not presence.
+
+**Locale**
+- `Spicetify.Locale.getLocale()` returns `"en"` (Spotify's language setting). `document.documentElement.lang` was also `en`, `navigator.language` was `en-BR`. `LOCALE_SOURCE` is `Spicetify.Locale.getLocale()`, falling back to `document.documentElement.lang`.
+
+**Found on the way**
+- The player bar's widget test id is `now-playing-widget-v2` in 1.3.6. The display selector in `src/dom.js` still uses `now-playing-widget`; the screenshots show the display text styled, so it is matching somehow, but the compat check should be looked at in a separate issue.
