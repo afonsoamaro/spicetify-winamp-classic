@@ -5,6 +5,14 @@ import { SETTINGS_KEY } from '../src/visualizer-settings.js';
 import { startVisualizer } from '../src/visualizer-start.js';
 import { PLAYER_BAR_HTML, sidebarHtml } from './fixtures/sidebar.js';
 
+/** An open miniplayer window: its own document, a root div, and the API around it. */
+function openMiniplayer() {
+  const doc = document.implementation.createHTMLDocument('Spotify MiniPlayer');
+  doc.body.innerHTML = '<div class="root"><div>player</div></div>';
+  const win = { document: doc, addEventListener() {}, removeEventListener() {} };
+  return { doc, api: { window: win, addEventListener() {}, removeEventListener() {} } };
+}
+
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 /** @param {object} [saved] settings already in storage */
@@ -46,8 +54,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-/** @param {{ saved?: object }} [options] */
-function start({ saved } = {}) {
+/** @param {{ saved?: object, pip?: ReturnType<typeof openMiniplayer> }} [options] */
+function start({ saved, pip } = {}) {
   const player = fakePlayer();
   const menu = fakeMenu();
   const frames = { schedule: vi.fn(() => 1), cancel: vi.fn() };
@@ -63,6 +71,7 @@ function start({ saved } = {}) {
     isHidden: () => false,
     reducedMotion: () => false,
     onScreen: () => true,
+    pip: () => pip?.api,
   });
   started.push(visualizer);
   return { visualizer, player, menu, frames };
@@ -108,6 +117,22 @@ describe('startVisualizer', () => {
     expect(document.querySelector('.wa-viz-panel')).toBeNull();
     visualizer.store.set({ sidebar: true });
     expect(document.querySelectorAll('.wa-viz-panel')).toHaveLength(1);
+  });
+
+  it('draws behind the miniplayer while it is on, and takes the canvas away when its switch goes off', () => {
+    const pip = openMiniplayer();
+    const { visualizer } = start({ saved: { enabled: true }, pip });
+    expect(pip.doc.querySelectorAll('canvas.wa-viz-miniplayer')).toHaveLength(1);
+    visualizer.store.set({ miniplayer: false });
+    expect(pip.doc.querySelector('canvas.wa-viz-miniplayer')).toBeNull();
+    visualizer.store.set({ miniplayer: true });
+    expect(pip.doc.querySelectorAll('canvas.wa-viz-miniplayer')).toHaveLength(1);
+  });
+
+  it('is dormant in the miniplayer too while the master switch is off', () => {
+    const pip = openMiniplayer();
+    start({ pip });
+    expect(pip.doc.querySelector('canvas')).toBeNull();
   });
 
   it('stop removes the menu entry and stops listening', () => {

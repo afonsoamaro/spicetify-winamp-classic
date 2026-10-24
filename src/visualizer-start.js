@@ -8,6 +8,7 @@ import { LOG_PREFIX } from './dom.js';
 import { labelsFor } from './visualizer-i18n.js';
 import { createVisualizerLoop } from './visualizer-loop.js';
 import { createFullscreenSurface } from './visualizer-fullscreen-dom.js';
+import { createMiniplayerSurface } from './visualizer-miniplayer-dom.js';
 import { createSettingsStore } from './visualizer-settings.js';
 import { createSettingsWindow, registerProfileMenu } from './visualizer-settings-dom.js';
 import { createSidebarSurface } from './visualizer-sidebar-dom.js';
@@ -31,6 +32,7 @@ import { createSidebarSurface } from './visualizer-sidebar-dom.js';
  *   reducedMotion?: () => boolean,
  *   root?: Document,
  *   onScreen?: (aside: Element) => boolean,
+ *   pip?: Parameters<typeof createMiniplayerSurface>[0]['pip'],
  * }} [options]
  * @returns {{ store: ReturnType<typeof createSettingsStore>, stop(): void }}
  */
@@ -47,6 +49,7 @@ export function startVisualizer({
   reducedMotion,
   root = document,
   onScreen,
+  pip,
 } = {}) {
   const store = createSettingsStore({ storage });
   const labels = labelsFor(locale());
@@ -59,16 +62,41 @@ export function startVisualizer({
   let sidebar = null;
   /** @type {ReturnType<typeof createFullscreenSurface> | null} */
   let fullscreen = null;
+  /** @type {ReturnType<typeof createMiniplayerSurface> | null} */
+  let miniplayer = null;
   let sidebarMounted = false;
   let fullscreenMounted = false;
+  let miniplayerMounted = false;
+
+  // With Spotify in the background and the miniplayer open, the main window gets
+  // no animation frames, so the miniplayer's own window paces the loop instead.
+  /** @type {{ requestAnimationFrame(callback: () => void): number, cancelAnimationFrame(id: number): void }} */
+  let frameWindow = window;
+  const frameSchedule = (/** @type {() => void} */ callback) => {
+    const pipWindow = root.hidden ? miniplayer?.window() : null;
+    const paced = pipWindow && typeof pipWindow.requestAnimationFrame === 'function' && typeof pipWindow.cancelAnimationFrame === 'function';
+    frameWindow = paced ? /** @type {typeof frameWindow} */ (pipWindow) : window;
+    return /** @type {number} */ (frameWindow.requestAnimationFrame(callback));
+  };
+  const frameCancel = (/** @type {number} */ id) => frameWindow.cancelAnimationFrame(id);
+  const mainHidden = () => root.hidden && !miniplayer?.isOpen();
 
   const wake = () => loop?.wake();
 
   const enable = () => {
     if (loop) return;
-    loop = createVisualizerLoop({ player, getUri, schedule, cancel, rng, isHidden, reducedMotion });
+    loop = createVisualizerLoop({
+      player,
+      getUri,
+      schedule: schedule ?? frameSchedule,
+      cancel: cancel ?? frameCancel,
+      rng,
+      isHidden: isHidden ?? mainHidden,
+      reducedMotion,
+    });
     sidebar = createSidebarSurface({ store, loop, labels, root, onScreen });
     fullscreen = createFullscreenSurface({ store, loop, labels, root });
+    miniplayer = createMiniplayerSurface({ store, loop, pip });
     player().addEventListener('onplaypause', wake);
     player().addEventListener('songchange', wake);
     root.addEventListener('visibilitychange', wake);
@@ -78,8 +106,10 @@ export function startVisualizer({
     if (!loop) return;
     sidebar?.unmount();
     fullscreen?.unmount();
+    miniplayer?.unmount();
     sidebarMounted = false;
     fullscreenMounted = false;
+    miniplayerMounted = false;
     loop.stop();
     try {
       player().removeEventListener('onplaypause', wake);
@@ -91,6 +121,7 @@ export function startVisualizer({
     loop = null;
     sidebar = null;
     fullscreen = null;
+    miniplayer = null;
   };
 
   /** @param {import('./visualizer-settings.js').VisualizerSettings} settings */
@@ -106,6 +137,13 @@ export function startVisualizer({
     } else if (!settings.sidebar && sidebarMounted) {
       sidebar?.unmount();
       sidebarMounted = false;
+    }
+    if (settings.miniplayer && !miniplayerMounted) {
+      miniplayer?.mount();
+      miniplayerMounted = true;
+    } else if (!settings.miniplayer && miniplayerMounted) {
+      miniplayer?.unmount();
+      miniplayerMounted = false;
     }
     // The fullscreen surface follows its own switch inside; it only has to exist.
     if (!fullscreenMounted) {
