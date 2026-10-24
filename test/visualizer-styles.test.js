@@ -8,20 +8,27 @@ import { VIZ_COLOR_TOKENS, drawStyle, readVisualizerColors } from '../src/visual
 const COLORS = { low: '#0f0', mid: '#ff0', high: '#f00', accent: '#f90', back: '#000' };
 const SIZE = { w: 200, h: 100 };
 
-/** A 2D context stand-in that records every call and the fill state when it happened. */
+/** A 2D context stand-in that records every call. */
 function fakeContext() {
-  /** @type {{ name: string, args: number[] }[]} */
+  /** @type {{ name: string, args: unknown[] }[]} */
   const calls = [];
+  /** @param {string} name */
+  const rec = (name) => (/** @type {unknown[]} */ ...args) => void calls.push({ name, args });
   const ctx = {
     fillStyle: '',
     strokeStyle: '',
     lineWidth: 1,
     globalAlpha: 1,
+    clearRect: rec('clearRect'),
+    fillRect: rec('fillRect'),
+    beginPath: rec('beginPath'),
+    moveTo: rec('moveTo'),
+    lineTo: rec('lineTo'),
+    stroke: rec('stroke'),
+    arc: rec('arc'),
+    fill: rec('fill'),
   };
-  /** @param {string} name */
-  const record = (name) => (/** @type {number[]} */ ...args) => void calls.push({ name, args });
-  const methods = Object.fromEntries(['clearRect', 'fillRect', 'beginPath', 'moveTo', 'lineTo', 'stroke', 'arc', 'fill'].map((n) => [n, record(n)]));
-  return { ctx: Object.assign(ctx, methods), calls };
+  return { ctx, calls };
 }
 
 /** @param {{ name: string }[]} calls @param {string} name */
@@ -46,7 +53,8 @@ describe('bars', () => {
     drawStyle('bars', ctx, signalWith((s) => s.levels.fill(1)), SIZE, COLORS);
     const rects = calls.filter((c) => c.name === 'fillRect');
     expect(rects.length).toBeGreaterThanOrEqual(BAND_COUNT);
-    for (const { args: [x = 0, y = 0, w = 0, h = 0] } of rects) {
+    for (const { args } of rects) {
+      const [x = 0, y = 0, w = 0, h = 0] = /** @type {number[]} */ (args);
       expect(x).toBeGreaterThanOrEqual(0);
       expect(x + w).toBeLessThanOrEqual(SIZE.w);
       expect(y).toBeGreaterThanOrEqual(0);

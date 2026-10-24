@@ -58,6 +58,9 @@ function makeLoop(player, sched, extra = {}) {
 
 afterEach(() => vi.restoreAllMocks());
 
+/** @param {{ draw: unknown }} surface the arguments of every draw call */
+const drawCalls = (surface) => /** @type {import('vitest').Mock} */ (surface.draw).mock.calls;
+
 describe('createVisualizerLoop', () => {
   it('schedules nothing while no surface is registered', () => {
     const sched = fakeScheduler();
@@ -75,7 +78,7 @@ describe('createVisualizerLoop', () => {
     expect(loop.isRunning()).toBe(true);
     sched.runOne();
     expect(surface.draw).toHaveBeenCalledTimes(1);
-    expect(surface.draw.mock.calls[0]?.[0].levels).toHaveLength(32);
+    expect(drawCalls(surface)[0]?.[0].levels).toHaveLength(32);
     expect(loop.isRunning()).toBe(true);
   });
 
@@ -115,7 +118,7 @@ describe('createVisualizerLoop', () => {
     sched.runOne();
     sched.runOne();
     expect(gone.draw).toHaveBeenCalledTimes(1);
-    expect(other.draw.mock.calls.length).toBeGreaterThan(1);
+    expect(drawCalls(other).length).toBeGreaterThan(1);
     expect(() => off()).not.toThrow();
   });
 
