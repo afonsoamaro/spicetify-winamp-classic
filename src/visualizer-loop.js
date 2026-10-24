@@ -30,7 +30,7 @@ import { createSignal, isSilent, stepSignal } from './visualizer-signal.js';
  *   isHidden?: () => boolean,
  *   reducedMotion?: () => boolean,
  * }} options
- * @returns {{ register(surface: Surface): () => void, wake(): void, stop(): void, isRunning(): boolean }}
+ * @returns {{ register(surface: Surface): () => void, wake(): void, retarget(): void, stop(): void, isRunning(): boolean }}
  */
 export function createVisualizerLoop({
   player,
@@ -103,6 +103,15 @@ export function createVisualizerLoop({
       return () => void surfaces.delete(surface);
     },
     wake,
+    // Drops the pending frame and asks for a new one. The pending frame lives on
+    // one window; when the window that paces the loop changes (Spotify goes to
+    // the background, the miniplayer opens or closes) it may never run, and a
+    // plain wake() would see it as pending and do nothing.
+    retarget() {
+      if (pending !== null) cancel(pending);
+      pending = null;
+      wake();
+    },
     stop() {
       if (pending !== null) cancel(pending);
       pending = null;

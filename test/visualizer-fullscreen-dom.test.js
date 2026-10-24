@@ -52,7 +52,7 @@ afterEach(() => {
 
 /** @param {Partial<Parameters<typeof createFullscreenSurface>[0]>} options */
 function mountSurface(options) {
-  const surface = createFullscreenSurface({ store: fakeStore(), loop: fakeLoop(), labels, coverWidth: () => 557, ...options });
+  const surface = createFullscreenSurface({ store: fakeStore(), loop: fakeLoop(), labels, coverWidth: () => 557, throttleMs: 0, ...options });
   mounted.push(surface);
   surface.mount();
   return surface;
@@ -104,6 +104,34 @@ describe('createFullscreenSurface', () => {
     });
     mountSurface({});
     expect(toggle()?.parentElement?.id).toBe('group');
+  });
+
+  it('does not take an icon with role="img" for the cover', () => {
+    document.getElementById('view')?.querySelector('.body')?.remove();
+    document.getElementById('view')?.insertAdjacentHTML('beforeend', '<div><svg role="img" aria-label="icon"></svg></div>');
+    mountSurface({});
+    expect(toggle()).toBeNull();
+  });
+
+  it('searches the page at most a few times for a burst of changes while the view is closed', async () => {
+    document.body.innerHTML = OTHER_COVERS_HTML;
+    const search = vi.spyOn(document, 'querySelectorAll');
+    mountSurface({ throttleMs: 100 });
+    for (let i = 0; i < 12; i += 1) {
+      document.body.append(document.createElement('span'));
+      await tick();
+    }
+    const searches = search.mock.calls.filter(([selector]) => String(selector).includes('role="img"')).length;
+    // Unthrottled this was one search per change, 13 in all.
+    expect(searches).toBeLessThanOrEqual(5);
+  });
+
+  it('does not search the page again while its toggle is in place', async () => {
+    mountSurface({});
+    const search = vi.spyOn(document, 'querySelectorAll');
+    document.body.append(document.createElement('span'));
+    await tick();
+    expect(search.mock.calls.filter(([selector]) => String(selector).includes('role="img"'))).toHaveLength(0);
   });
 
   it('ignores a cover that is too small to be the view', () => {

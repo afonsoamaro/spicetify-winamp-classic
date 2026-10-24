@@ -135,6 +135,17 @@ describe('createMiniplayerSurface', () => {
     expect(surface.isOpen()).toBe(false);
   });
 
+  it('tells its owner when the miniplayer window appears and goes away', () => {
+    const pip = fakePip(false);
+    const onChange = vi.fn();
+    mountSurface(pip, { onChange });
+    pip.api.openNow();
+    expect(onChange).toHaveBeenCalledTimes(1);
+    pip.api.window = null;
+    pip.win.close();
+    expect(onChange).toHaveBeenCalledTimes(2);
+  });
+
   it('does nothing when the Picture-in-Picture API is missing', () => {
     const surface = createMiniplayerSurface({ store: fakeStore(), loop: fakeLoop(), pip: () => undefined, colorSource: () => document.documentElement });
     mounted.push(surface);

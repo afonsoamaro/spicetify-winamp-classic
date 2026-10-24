@@ -4,6 +4,7 @@
 // the video. It draws only while it is on, open and on screen.
 import { LOG_PREFIX } from './dom.js';
 import { drawStyle, readVisualizerColors } from './visualizer-styles.js';
+import { createThrottled } from './visualizer-throttle.js';
 
 export const SIDEBAR_PANEL_CLASS = 'wa-viz-panel';
 // The sidebar is the only ASIDE without a test id (the player bar is the
@@ -64,10 +65,11 @@ function headerOffset(aside, content) {
  *   labels: import('./visualizer-i18n.js').Labels,
  *   root?: Document,
  *   onScreen?: (aside: Element) => boolean,
+ *   throttleMs?: number,
  * }} options
  * @returns {{ mount(): void, unmount(): void }}
  */
-export function createSidebarSurface({ store, loop, labels, root = document, onScreen = asideOnScreen }) {
+export function createSidebarSurface({ store, loop, labels, root = document, onScreen = asideOnScreen, throttleMs = 120 }) {
   /** @type {HTMLElement | null} */
   let panel = null;
   /** @type {HTMLCanvasElement | null} */
@@ -76,6 +78,10 @@ export function createSidebarSurface({ store, loop, labels, root = document, onS
   let toggle = null;
   /** @type {MutationObserver | null} */
   let observer = null;
+  /** @type {IntersectionObserver | null} */
+  let sight = null;
+  /** @type {ReturnType<typeof createThrottled> | null} */
+  let watcher = null;
   /** @type {(() => void) | null} */
   let unsubscribe = null;
   /** @type {(() => void) | null} */
@@ -147,6 +153,7 @@ export function createSidebarSurface({ store, loop, labels, root = document, onS
       colors = readVisualizerColors(canvas);
     }
     unregister = loop.register(surface);
+    sight?.observe(panel);
     refresh();
   };
 
@@ -157,18 +164,28 @@ export function createSidebarSurface({ store, loop, labels, root = document, onS
         refresh();
         loop.wake();
       });
-      observer = new MutationObserver(() => {
-        const aside = root.querySelector(SIDEBAR_SELECTOR);
-        const content = aside ? findSidebarContent(aside) : null;
-        if (content && panel?.parentElement !== content) attach();
-      });
+      // While the panel is in the page nothing needs doing: if Spotify re-renders
+      // the sidebar the panel goes with it and stops being connected.
+      watcher = createThrottled(() => {
+        if (!panel?.isConnected) attach();
+      }, throttleMs);
+      observer = new MutationObserver(() => watcher?.call());
       observer.observe(root.body, { childList: true, subtree: true });
+      // The closed sidebar slides off-screen instead of leaving the page, so no
+      // DOM change tells when it comes back: seeing the panel again is the cue.
+      // A sliver of the panel stays inside the window while it is closed, so the
+      // default threshold (fully out of view to any of it in view) never fires.
+      if (typeof IntersectionObserver === 'function') sight = new IntersectionObserver(() => loop.wake(), { threshold: [0, 0.25, 0.5, 0.75, 1] });
       attach();
       if (!panel) console.warn(`${LOG_PREFIX} visualizer: sidebar not found, waiting for it`);
     },
     unmount() {
       observer?.disconnect();
       observer = null;
+      watcher?.cancel();
+      watcher = null;
+      sight?.disconnect();
+      sight = null;
       unsubscribe?.();
       unsubscribe = null;
       unregister?.();

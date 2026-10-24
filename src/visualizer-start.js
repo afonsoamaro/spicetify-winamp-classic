@@ -82,6 +82,7 @@ export function startVisualizer({
   const mainHidden = () => root.hidden && !miniplayer?.isOpen();
 
   const wake = () => loop?.wake();
+  const retarget = () => loop?.retarget();
 
   const enable = () => {
     if (loop) return;
@@ -96,10 +97,10 @@ export function startVisualizer({
     });
     sidebar = createSidebarSurface({ store, loop, labels, root, onScreen });
     fullscreen = createFullscreenSurface({ store, loop, labels, root });
-    miniplayer = createMiniplayerSurface({ store, loop, pip });
+    miniplayer = createMiniplayerSurface({ store, loop, pip, onChange: retarget });
     player().addEventListener('onplaypause', wake);
     player().addEventListener('songchange', wake);
-    root.addEventListener('visibilitychange', wake);
+    root.addEventListener('visibilitychange', retarget);
   };
 
   const disable = () => {
@@ -117,7 +118,7 @@ export function startVisualizer({
     } catch (err) {
       console.warn(`${LOG_PREFIX} visualizer: could not remove the Player listeners`, err);
     }
-    root.removeEventListener('visibilitychange', wake);
+    root.removeEventListener('visibilitychange', retarget);
     loop = null;
     sidebar = null;
     fullscreen = null;

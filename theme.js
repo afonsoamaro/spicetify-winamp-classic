@@ -702,7 +702,7 @@ function mount(injections, { root = document } = {}) {
  *   isHidden?: () => boolean,
  *   reducedMotion?: () => boolean,
  * }} options
- * @returns {{ register(surface: Surface): () => void, wake(): void, stop(): void, isRunning(): boolean }}
+ * @returns {{ register(surface: Surface): () => void, wake(): void, retarget(): void, stop(): void, isRunning(): boolean }}
  */
 function createVisualizerLoop({
   player,
@@ -775,6 +775,15 @@ function createVisualizerLoop({
       return () => void surfaces.delete(surface);
     },
     wake,
+    // Drops the pending frame and asks for a new one. The pending frame lives on
+    // one window; when the window that paces the loop changes (Spotify goes to
+    // the background, the miniplayer opens or closes) it may never run, and a
+    // plain wake() would see it as pending and do nothing.
+    retarget() {
+      if (pending !== null) cancel(pending);
+      pending = null;
+      wake();
+    },
     stop() {
       if (pending !== null) cancel(pending);
       pending = null;
@@ -873,6 +882,47 @@ function labelsFor(locale) {
   if (language === 'pt') return LABEL_SETS.pt;
   if (language === 'es') return LABEL_SETS.es;
   return LABEL_SETS.en;
+}
+
+// --- visualizer-throttle.js ---
+// @ts-check
+// A leading-and-trailing throttle for the observers that watch the whole page.
+// Spotify mutates its DOM constantly, and running a search on every batch is
+// layout work the user feels as jank, so a burst becomes one run now and one
+// at the end.
+
+/**
+ * @param {() => void} run
+ * @param {number} waitMs 0 or less runs on every call
+ * @returns {{ call(): void, cancel(): void }}
+ */
+function createThrottled(run, waitMs) {
+  /** @type {ReturnType<typeof setTimeout> | null} */
+  let timer = null;
+  let lastRun = -Infinity;
+
+  const fire = () => {
+    timer = null;
+    lastRun = Date.now();
+    run();
+  };
+
+  return {
+    call() {
+      if (waitMs <= 0) {
+        run();
+        return;
+      }
+      if (timer !== null) return;
+      const remaining = waitMs - (Date.now() - lastRun);
+      if (remaining <= 0) fire();
+      else timer = setTimeout(fire, remaining);
+    },
+    cancel() {
+      if (timer !== null) clearTimeout(timer);
+      timer = null;
+    },
+  };
 }
 
 // --- visualizer-settings-dom.js ---
@@ -1093,10 +1143,11 @@ function headerOffset(aside, content) {
  *   labels: import('./visualizer-i18n.js').Labels,
  *   root?: Document,
  *   onScreen?: (aside: Element) => boolean,
+ *   throttleMs?: number,
  * }} options
  * @returns {{ mount(): void, unmount(): void }}
  */
-function createSidebarSurface({ store, loop, labels, root = document, onScreen = asideOnScreen }) {
+function createSidebarSurface({ store, loop, labels, root = document, onScreen = asideOnScreen, throttleMs = 120 }) {
   /** @type {HTMLElement | null} */
   let panel = null;
   /** @type {HTMLCanvasElement | null} */
@@ -1105,6 +1156,10 @@ function createSidebarSurface({ store, loop, labels, root = document, onScreen =
   let toggle = null;
   /** @type {MutationObserver | null} */
   let observer = null;
+  /** @type {IntersectionObserver | null} */
+  let sight = null;
+  /** @type {ReturnType<typeof createThrottled> | null} */
+  let watcher = null;
   /** @type {(() => void) | null} */
   let unsubscribe = null;
   /** @type {(() => void) | null} */
@@ -1176,6 +1231,7 @@ function createSidebarSurface({ store, loop, labels, root = document, onScreen =
       colors = readVisualizerColors(canvas);
     }
     unregister = loop.register(surface);
+    sight?.observe(panel);
     refresh();
   };
 
@@ -1186,18 +1242,28 @@ function createSidebarSurface({ store, loop, labels, root = document, onScreen =
         refresh();
         loop.wake();
       });
-      observer = new MutationObserver(() => {
-        const aside = root.querySelector(SIDEBAR_SELECTOR);
-        const content = aside ? findSidebarContent(aside) : null;
-        if (content && panel?.parentElement !== content) attach();
-      });
+      // While the panel is in the page nothing needs doing: if Spotify re-renders
+      // the sidebar the panel goes with it and stops being connected.
+      watcher = createThrottled(() => {
+        if (!panel?.isConnected) attach();
+      }, throttleMs);
+      observer = new MutationObserver(() => watcher?.call());
       observer.observe(root.body, { childList: true, subtree: true });
+      // The closed sidebar slides off-screen instead of leaving the page, so no
+      // DOM change tells when it comes back: seeing the panel again is the cue.
+      // A sliver of the panel stays inside the window while it is closed, so the
+      // default threshold (fully out of view to any of it in view) never fires.
+      if (typeof IntersectionObserver === 'function') sight = new IntersectionObserver(() => loop.wake(), { threshold: [0, 0.25, 0.5, 0.75, 1] });
       attach();
       if (!panel) console.warn(`${LOG_PREFIX} visualizer: sidebar not found, waiting for it`);
     },
     unmount() {
       observer?.disconnect();
       observer = null;
+      watcher?.cancel();
+      watcher = null;
+      sight?.disconnect();
+      sight = null;
       unsubscribe?.();
       unsubscribe = null;
       unregister?.();
@@ -1242,7 +1308,8 @@ function measuredWidth(el) {
  * @returns {{ view: HTMLElement, host: HTMLElement } | null}
  */
 function findFullscreenView(root, coverWidth) {
-  const covers = [...root.querySelectorAll('[role="img"]')].filter((el) => {
+  // Encore's icons are SVGs with role="img" too, and there are hundreds of them.
+  const covers = [...root.querySelectorAll('[role="img"]:not(svg)')].filter((el) => {
     return !el.closest('aside') && coverWidth(el) >= MIN_COVER_W;
   });
   for (const cover of covers) {
@@ -1269,10 +1336,11 @@ function findFullscreenView(root, coverWidth) {
  *   labels: import('./visualizer-i18n.js').Labels,
  *   root?: Document,
  *   coverWidth?: (el: Element) => number,
+ *   throttleMs?: number,
  * }} options
  * @returns {{ mount(): void, unmount(): void }}
  */
-function createFullscreenSurface({ store, loop, labels, root = document, coverWidth = measuredWidth }) {
+function createFullscreenSurface({ store, loop, labels, root = document, coverWidth = measuredWidth, throttleMs = 120 }) {
   /** @type {HTMLButtonElement | null} */
   let toggle = null;
   /** @type {HTMLElement | null} */
@@ -1340,6 +1408,8 @@ function createFullscreenSurface({ store, loop, labels, root = document, coverWi
     unregister = loop.register(surface);
   };
 
+  const watcher = createThrottled(() => sync(), throttleMs);
+
   const removeAll = () => {
     active = false;
     hideOverlay();
@@ -1348,6 +1418,9 @@ function createFullscreenSurface({ store, loop, labels, root = document, coverWi
   };
 
   const sync = () => {
+    // The toggle lives inside the view, so while it is connected the view is
+    // still there and there is nothing to search for.
+    if (allowed() && toggle?.isConnected && (active ? overlay?.isConnected : !overlay)) return;
     const found = allowed() ? findFullscreenView(root, coverWidth) : null;
     if (!found) {
       removeAll();
@@ -1378,13 +1451,14 @@ function createFullscreenSurface({ store, loop, labels, root = document, coverWi
         sync();
         loop.wake();
       });
-      observer = new MutationObserver(sync);
+      observer = new MutationObserver(() => watcher.call());
       observer.observe(root.body, { childList: true, subtree: true });
       sync();
     },
     unmount() {
       observer?.disconnect();
       observer = null;
+      watcher.cancel();
       unsubscribe?.();
       unsubscribe = null;
       removeAll();
@@ -1428,6 +1502,7 @@ const MINIPLAYER_CANVAS_CLASS = 'wa-viz-miniplayer';
  *   loop: { register(surface: import('./visualizer-loop.js').Surface): () => void, wake(): void },
  *   pip?: () => PipApi | undefined,
  *   colorSource?: () => HTMLElement,
+ *   onChange?: () => void,
  * }} options
  * @returns {{ mount(): void, unmount(): void, isOpen(): boolean, window(): PipWindow | null }}
  */
@@ -1436,6 +1511,7 @@ function createMiniplayerSurface({
   loop,
   pip = () => /** @type {PipApi | undefined} */ (/** @type {any} */ (globalThis).documentPictureInPicture),
   colorSource = () => document.documentElement,
+  onChange = () => {},
 }) {
   /** @type {PipWindow | null} */
   let win = null;
@@ -1498,7 +1574,7 @@ function createMiniplayerSurface({
     unregister = loop.register(surface);
   };
 
-  const onPageHide = () => detach();
+  const onPageHide = () => detach(true);
 
   /** @param {PipWindow} next */
   const attach = (next) => {
@@ -1512,9 +1588,12 @@ function createMiniplayerSurface({
     observer.observe(win.document.body, { childList: true, subtree: true });
     place();
     loop.wake();
+    onChange();
   };
 
-  const detach = () => {
+  /** @param {boolean} [notify] tell the owner the window went away */
+  const detach = (notify = false) => {
+    const hadWindow = win !== null;
     observer?.disconnect();
     observer = null;
     win?.removeEventListener('pagehide', onPageHide);
@@ -1524,6 +1603,7 @@ function createMiniplayerSurface({
     canvas = null;
     colors = null;
     win = null;
+    if (notify && hadWindow) onChange();
   };
 
   /** @param {{ window: PipWindow }} event */
@@ -2014,6 +2094,7 @@ function startVisualizer({
   const mainHidden = () => root.hidden && !miniplayer?.isOpen();
 
   const wake = () => loop?.wake();
+  const retarget = () => loop?.retarget();
 
   const enable = () => {
     if (loop) return;
@@ -2028,10 +2109,10 @@ function startVisualizer({
     });
     sidebar = createSidebarSurface({ store, loop, labels, root, onScreen });
     fullscreen = createFullscreenSurface({ store, loop, labels, root });
-    miniplayer = createMiniplayerSurface({ store, loop, pip });
+    miniplayer = createMiniplayerSurface({ store, loop, pip, onChange: retarget });
     player().addEventListener('onplaypause', wake);
     player().addEventListener('songchange', wake);
-    root.addEventListener('visibilitychange', wake);
+    root.addEventListener('visibilitychange', retarget);
   };
 
   const disable = () => {
@@ -2049,7 +2130,7 @@ function startVisualizer({
     } catch (err) {
       console.warn(`${LOG_PREFIX} visualizer: could not remove the Player listeners`, err);
     }
-    root.removeEventListener('visibilitychange', wake);
+    root.removeEventListener('visibilitychange', retarget);
     loop = null;
     sidebar = null;
     fullscreen = null;

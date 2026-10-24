@@ -57,7 +57,7 @@ afterEach(() => {
 
 /** Mounts a surface that the next test will not see: every test cleans up after itself. */
 function mountSurface(/** @type {Parameters<typeof createSidebarSurface>[0]} */ options) {
-  const surface = createSidebarSurface(options);
+  const surface = createSidebarSurface({ throttleMs: 0, ...options });
   mounted.push(surface);
   surface.mount();
   return surface;
@@ -121,6 +121,39 @@ describe('createSidebarSurface', () => {
     const content = document.getElementById('content');
     expect(content?.firstElementChild).toBe(panel());
     expect(content?.children[1]?.querySelector('video')).not.toBeNull();
+  });
+
+  it('wakes the loop when the sidebar slides back into view', () => {
+    /** @type {(() => void) | null} */
+    let notify = null;
+    /** @type {IntersectionObserverInit | undefined} */
+    let options;
+    vi.stubGlobal('IntersectionObserver', class {
+      /** @param {() => void} callback @param {IntersectionObserverInit} [init] */
+      constructor(callback, init) {
+        notify = callback;
+        options = init;
+      }
+      observe() {}
+      disconnect() {}
+    });
+    const loop = fakeLoop();
+    mountSurface({ store: fakeStore(), loop, labels, onScreen: () => true });
+    loop.wake.mockClear();
+    /** @type {(() => void) | null} */ (notify)?.();
+    expect(loop.wake).toHaveBeenCalled();
+    // The closed sidebar keeps a sliver of the panel inside the window, so the panel never
+    // stops intersecting: only a threshold list reports it growing back.
+    expect(Array.isArray(options?.threshold) && options.threshold.length > 2).toBe(true);
+    vi.unstubAllGlobals();
+  });
+
+  it('does no layout work for changes elsewhere once the panel is in place', async () => {
+    mountSurface({ store: fakeStore(), loop: fakeLoop(), labels, onScreen: () => true });
+    const spy = vi.spyOn(window, 'getComputedStyle');
+    document.body.append(document.createElement('span'));
+    await tick();
+    expect(spy).not.toHaveBeenCalled();
   });
 
   it('unmount removes the panel, stops observing and unregisters', async () => {

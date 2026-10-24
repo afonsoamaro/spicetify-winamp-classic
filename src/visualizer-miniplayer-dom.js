@@ -34,6 +34,7 @@ export const MINIPLAYER_CANVAS_CLASS = 'wa-viz-miniplayer';
  *   loop: { register(surface: import('./visualizer-loop.js').Surface): () => void, wake(): void },
  *   pip?: () => PipApi | undefined,
  *   colorSource?: () => HTMLElement,
+ *   onChange?: () => void,
  * }} options
  * @returns {{ mount(): void, unmount(): void, isOpen(): boolean, window(): PipWindow | null }}
  */
@@ -42,6 +43,7 @@ export function createMiniplayerSurface({
   loop,
   pip = () => /** @type {PipApi | undefined} */ (/** @type {any} */ (globalThis).documentPictureInPicture),
   colorSource = () => document.documentElement,
+  onChange = () => {},
 }) {
   /** @type {PipWindow | null} */
   let win = null;
@@ -104,7 +106,7 @@ export function createMiniplayerSurface({
     unregister = loop.register(surface);
   };
 
-  const onPageHide = () => detach();
+  const onPageHide = () => detach(true);
 
   /** @param {PipWindow} next */
   const attach = (next) => {
@@ -118,9 +120,12 @@ export function createMiniplayerSurface({
     observer.observe(win.document.body, { childList: true, subtree: true });
     place();
     loop.wake();
+    onChange();
   };
 
-  const detach = () => {
+  /** @param {boolean} [notify] tell the owner the window went away */
+  const detach = (notify = false) => {
+    const hadWindow = win !== null;
     observer?.disconnect();
     observer = null;
     win?.removeEventListener('pagehide', onPageHide);
@@ -130,6 +135,7 @@ export function createMiniplayerSurface({
     canvas = null;
     colors = null;
     win = null;
+    if (notify && hadWindow) onChange();
   };
 
   /** @param {{ window: PipWindow }} event */

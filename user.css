@@ -1511,7 +1511,9 @@ body [data-encore-id="cardSubtitle"] {
 
 /* Visualizer in the expanded Now Playing view (FN-20): a toggle among the
    header buttons, and a canvas that covers the view below the header. The
-   overlay lets clicks through so the header and the minimise key stay usable. */
+   overlay starts below the header (so the toggle and the minimise key stay
+   usable) and takes the pointer itself, so a click or the wheel never reaches
+   the content it hides. */
 .wa-viz-toggle {
   margin-right: 8px;
   padding: 2px 8px;
@@ -1533,7 +1535,6 @@ body [data-encore-id="cardSubtitle"] {
   inset: 0;
   z-index: 1;
   background: var(--wa-display-bg);
-  pointer-events: none;
 }
 
 .wa-viz-fullscreen canvas {

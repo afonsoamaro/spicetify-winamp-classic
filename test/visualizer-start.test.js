@@ -135,6 +135,56 @@ describe('startVisualizer', () => {
     expect(pip.doc.querySelector('canvas')).toBeNull();
   });
 
+  it('re-paces the loop onto the miniplayer window when Spotify goes to the background, and back again', () => {
+    const mainRaf = vi.fn(() => 1);
+    const mainCancel = vi.fn();
+    vi.stubGlobal('requestAnimationFrame', mainRaf);
+    vi.stubGlobal('cancelAnimationFrame', mainCancel);
+    let hidden = false;
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden });
+    /** @type {Map<string, () => void>} */
+    const pageEvents = new Map();
+    const pipDoc = document.implementation.createHTMLDocument('Spotify MiniPlayer');
+    pipDoc.body.innerHTML = '<div class="root"><div>player</div></div>';
+    const pipWindow = {
+      document: pipDoc,
+      requestAnimationFrame: vi.fn(() => 2),
+      cancelAnimationFrame: vi.fn(),
+      addEventListener: (/** @type {string} */ type, /** @type {() => void} */ cb) => void pageEvents.set(type, cb),
+      removeEventListener: (/** @type {string} */ type) => void pageEvents.delete(type),
+    };
+    const visualizer = startVisualizer({
+      storage: fakeStorage({ enabled: true }),
+      player: () => fakePlayer(),
+      getUri: () => 'spotify:track:a',
+      locale: () => 'en',
+      MenuItem: fakeMenu().FakeItem,
+      reducedMotion: () => false,
+      onScreen: () => true,
+      pip: () => ({ window: pipWindow, addEventListener() {}, removeEventListener() {} }),
+    });
+    started.push(visualizer);
+    try {
+      expect(mainRaf).toHaveBeenCalled();
+      // Spotify goes to the background with the miniplayer open: no frames reach the main window.
+      hidden = true;
+      document.dispatchEvent(new Event('visibilitychange'));
+      expect(mainCancel).toHaveBeenCalledWith(1);
+      expect(pipWindow.requestAnimationFrame).toHaveBeenCalled();
+      // The miniplayer closes while the main window is still hidden: nothing is left to draw for.
+      pageEvents.get('pagehide')?.();
+      expect(pipWindow.cancelAnimationFrame).toHaveBeenCalledWith(2);
+      // Back in the foreground: frames come back on the main window.
+      const before = mainRaf.mock.calls.length;
+      hidden = false;
+      document.dispatchEvent(new Event('visibilitychange'));
+      expect(mainRaf.mock.calls.length).toBeGreaterThan(before);
+    } finally {
+      Reflect.deleteProperty(document, 'hidden');
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('stop removes the menu entry and stops listening', () => {
     const { visualizer, menu, player } = start({ saved: { enabled: true } });
     visualizer.stop();

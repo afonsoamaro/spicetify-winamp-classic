@@ -147,6 +147,18 @@ describe('createVisualizerLoop', () => {
     expect(loop.isRunning()).toBe(false);
   });
 
+  it('retarget drops the pending frame and schedules a fresh one, so a frame stuck on the wrong window cannot wedge the loop', () => {
+    const sched = fakeScheduler();
+    const cancel = vi.fn((/** @type {number} */ id) => sched.cancel(id));
+    const loop = makeLoop(fakePlayer(), sched, { cancel });
+    loop.register(fakeSurface());
+    expect(sched.size).toBe(1);
+    loop.retarget();
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(sched.size).toBe(1);
+    expect(loop.isRunning()).toBe(true);
+  });
+
   it('stop cancels the pending frame', () => {
     const sched = fakeScheduler();
     const loop = makeLoop(fakePlayer(), sched);

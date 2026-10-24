@@ -50,14 +50,12 @@ describe('stepSignal', () => {
       { uri: 'spotify:track:a', progressMs: -5 },
     ]) {
       const signal = createSignal();
-      const rng = Math.random;
+      let ok = true;
       for (let i = 0; i < 500; i += 1) {
-        stepSignal(signal, { ...input, playing: true, rng });
-        expect(allFinite(signal)).toBe(true);
-        expect(signal.levels.every((v) => v >= 0 && v <= 1)).toBe(true);
-        expect(signal.wave.every((v) => v >= -1 && v <= 1)).toBe(true);
-        expect(signal.beat >= 0 && signal.beat <= 1).toBe(true);
+        stepSignal(signal, { ...input, playing: true, rng: Math.random });
+        ok &&= allFinite(signal) && signal.levels.every((v) => v >= 0 && v <= 1) && signal.wave.every((v) => v >= -1 && v <= 1) && signal.beat >= 0 && signal.beat <= 1;
       }
+      expect(ok, `uri ${input.uri}, progress ${input.progressMs}`).toBe(true);
     }
   });
 

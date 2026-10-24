@@ -5,6 +5,7 @@
 // cover (a role="img" outside the player bar and the sidebar) and the header
 // by the Encore buttons that sit before it.
 import { drawStyle, readVisualizerColors } from './visualizer-styles.js';
+import { createThrottled } from './visualizer-throttle.js';
 
 export const FULLSCREEN_TOGGLE_CLASS = 'wa-viz-toggle';
 export const FULLSCREEN_OVERLAY_CLASS = 'wa-viz-fullscreen';
@@ -29,7 +30,8 @@ function measuredWidth(el) {
  * @returns {{ view: HTMLElement, host: HTMLElement } | null}
  */
 function findFullscreenView(root, coverWidth) {
-  const covers = [...root.querySelectorAll('[role="img"]')].filter((el) => {
+  // Encore's icons are SVGs with role="img" too, and there are hundreds of them.
+  const covers = [...root.querySelectorAll('[role="img"]:not(svg)')].filter((el) => {
     return !el.closest('aside') && coverWidth(el) >= MIN_COVER_W;
   });
   for (const cover of covers) {
@@ -56,10 +58,11 @@ function findFullscreenView(root, coverWidth) {
  *   labels: import('./visualizer-i18n.js').Labels,
  *   root?: Document,
  *   coverWidth?: (el: Element) => number,
+ *   throttleMs?: number,
  * }} options
  * @returns {{ mount(): void, unmount(): void }}
  */
-export function createFullscreenSurface({ store, loop, labels, root = document, coverWidth = measuredWidth }) {
+export function createFullscreenSurface({ store, loop, labels, root = document, coverWidth = measuredWidth, throttleMs = 120 }) {
   /** @type {HTMLButtonElement | null} */
   let toggle = null;
   /** @type {HTMLElement | null} */
@@ -127,6 +130,8 @@ export function createFullscreenSurface({ store, loop, labels, root = document, 
     unregister = loop.register(surface);
   };
 
+  const watcher = createThrottled(() => sync(), throttleMs);
+
   const removeAll = () => {
     active = false;
     hideOverlay();
@@ -135,6 +140,9 @@ export function createFullscreenSurface({ store, loop, labels, root = document, 
   };
 
   const sync = () => {
+    // The toggle lives inside the view, so while it is connected the view is
+    // still there and there is nothing to search for.
+    if (allowed() && toggle?.isConnected && (active ? overlay?.isConnected : !overlay)) return;
     const found = allowed() ? findFullscreenView(root, coverWidth) : null;
     if (!found) {
       removeAll();
@@ -165,13 +173,14 @@ export function createFullscreenSurface({ store, loop, labels, root = document, 
         sync();
         loop.wake();
       });
-      observer = new MutationObserver(sync);
+      observer = new MutationObserver(() => watcher.call());
       observer.observe(root.body, { childList: true, subtree: true });
       sync();
     },
     unmount() {
       observer?.disconnect();
       observer = null;
+      watcher.cancel();
       unsubscribe?.();
       unsubscribe = null;
       removeAll();
