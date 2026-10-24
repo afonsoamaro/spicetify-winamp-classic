@@ -54,6 +54,18 @@ export function normalizeSettings(raw) {
  */
 
 /**
+ * @param {Storage} storage
+ * @returns {unknown} the parsed value, or null when it is missing or not JSON
+ */
+function readStored(storage) {
+  try {
+    return JSON.parse(storage.get(SETTINGS_KEY) ?? 'null');
+  } catch {
+    return null;
+  }
+}
+
+/**
  * @param {{ storage: Storage }} options
  * @returns {{
  *   get(): VisualizerSettings,
@@ -62,14 +74,7 @@ export function normalizeSettings(raw) {
  * }}
  */
 export function createSettingsStore({ storage }) {
-  /** @type {unknown} */
-  let stored = null;
-  try {
-    stored = JSON.parse(storage.get(SETTINGS_KEY) ?? 'null');
-  } catch {
-    stored = null;
-  }
-  let current = normalizeSettings(stored);
+  let current = normalizeSettings(readStored(storage));
   /** @type {Set<(settings: VisualizerSettings) => void>} */
   const listeners = new Set();
 
