@@ -39,7 +39,7 @@ Source: `SPECS.md`. Spicetify theme that recreates the Winamp 2.x look with CSS,
 | FN-17 | Colour scheme fallback for a Marketplace install over another theme | ✅ done (Sep 21), verified live via CDP | FN-06 |
 | FN-18 | Minor fixes: pixel face leftovers and the shortcut Pause key | ✅ done (Sep 21), verified live via CDP | FN-13, FN-12 |
 | FN-19 | Marketplace tab bar as keys | ✅ done (Sep 30), verified live via CDP | PP-04, PP-05 |
-| FN-20 | Visualizer with selectable styles | 🧠 brainstorming (Sep 30), discovery pending | FN-03, FN-04, FN-09 |
+| FN-20 | Visualizer with selectable styles | ✅ done (Oct 24): sidebar, fullscreen, miniplayer and the settings window, verified live | FN-03, FN-09, FN-22, FN-23 |
 | FN-21 | Spotify 1.3.5 compatibility | ✅ done (Oct 18), `pnpm compat` 0 of 21 anchors missing on 1.3.5.3058, verified live; a few states unconfirmed, listed in the issue | FN-07, FN-08, FN-22 |
 | FN-22 | Spotify compatibility monitor in CI | ✅ done (Oct 19), verified on GitHub: opened, updated and closed #42; the daily cron and the ETag cache skip are not exercised yet | FN-00b |
 | FN-23 | Test that keeps the theme on stable anchors | ✅ done (Oct 19), fails on mapped or hashed classes | FN-21, FN-22 |

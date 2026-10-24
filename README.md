@@ -12,6 +12,7 @@ No bitmap from the original skin ships here. Every bevel, knob and LED is CSS, a
 
 - [What you get](#what-you-get)
 - [Install](#install)
+- [Visualizer](#visualizer)
 - [More screenshots](#more-screenshots)
 - [Ideas, bugs and questions](#ideas-bugs-and-questions)
 - [After Spotify updates](#after-spotify-updates)
@@ -51,6 +52,15 @@ spicetify apply
 ```
 
 On Windows the themes folder is `%appdata%\spicetify\Themes`.
+
+## Visualizer
+
+An optional visualizer, off by default. Turn it on from the **Visualizer** entry in your profile menu (the avatar at the top right): a small settings window opens, and everything is configured there.
+
+- **Styles:** bars, oscilloscope and glow. One choice applies everywhere.
+- **Where it shows:** a panel above the cover in the right sidebar (it has its own show/hide key), a toggle in the expanded Now Playing view that covers it with the visualizer, and the background of the miniplayer. Each place has its own switch in the settings window.
+- **The signal is simulated.** Spotify gives a page no way to hear what is playing, so the visualizer moves with the play state and a tempo taken from the track, not with the sound. It is cheap on purpose: with the switch off nothing runs, and it only draws while a surface is on screen and music is playing.
+- The settings window is available in English, Brazilian Portuguese and Spanish, following Spotify's language.
 
 ## More screenshots
 
