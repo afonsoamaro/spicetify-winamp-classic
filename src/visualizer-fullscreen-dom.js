@@ -18,20 +18,33 @@ function measuredWidth(el) {
 }
 
 /**
- * The expanded view: the nearest ancestor of its big cover that holds the
- * header buttons.
+ * The expanded view and its header. From the big cover, go up until an
+ * ancestor holds an Encore button that is not in the branch already climbed
+ * and sits above the cover: that is the header row, and the ancestor is the
+ * view. Buttons of the content itself (a "Show all" row far below) are inside
+ * the branch or below the cover, so they never qualify; a first-in-document
+ * rule would trip on them.
  * @param {Document} root
  * @param {(el: Element) => number} coverWidth
- * @returns {HTMLElement | null}
+ * @returns {{ view: HTMLElement, host: HTMLElement } | null}
  */
 function findFullscreenView(root, coverWidth) {
   const covers = [...root.querySelectorAll('[role="img"]')].filter((el) => {
     return !el.closest('aside') && coverWidth(el) >= MIN_COVER_W;
   });
   for (const cover of covers) {
+    const coverTop = cover.getBoundingClientRect().top;
+    let climbed = cover;
     let ancestor = cover.parentElement;
-    while (ancestor && !ancestor.querySelector(HEADER_BUTTON)) ancestor = ancestor.parentElement;
-    if (ancestor) return ancestor;
+    while (ancestor) {
+      const branch = climbed;
+      const header = [...ancestor.querySelectorAll(HEADER_BUTTON)].find((button) => {
+        return !branch.contains(button) && button.getBoundingClientRect().top <= coverTop;
+      });
+      if (header?.parentElement) return { view: ancestor, host: header.parentElement };
+      climbed = ancestor;
+      ancestor = ancestor.parentElement;
+    }
   }
   return null;
 }
@@ -99,15 +112,17 @@ export function createFullscreenSurface({ store, loop, labels, root = document, 
   /** @param {HTMLElement} view @param {HTMLElement} host */
   const showOverlay = (view, host) => {
     if (overlay?.isConnected) return;
-    if (getComputedStyle(view).position === 'static') view.style.position = 'relative';
+    const frame = view;
+    if (getComputedStyle(frame).position === 'static') frame.style.position = 'relative';
     overlay = root.createElement('div');
     overlay.className = FULLSCREEN_OVERLAY_CLASS;
     // Starts below the header so the toggle and the minimise key stay reachable.
-    overlay.style.top = `${Math.max(0, host.getBoundingClientRect().bottom - view.getBoundingClientRect().top)}px`;
+    const offset = Math.max(0, host.getBoundingClientRect().bottom - frame.getBoundingClientRect().top);
+    overlay.style.top = `${offset}px`;
     canvas = root.createElement('canvas');
     canvas.setAttribute('aria-hidden', 'true');
     overlay.append(canvas);
-    view.append(overlay);
+    frame.append(overlay);
     colors = readVisualizerColors(canvas);
     unregister = loop.register(surface);
   };
@@ -120,12 +135,12 @@ export function createFullscreenSurface({ store, loop, labels, root = document, 
   };
 
   const sync = () => {
-    const view = allowed() ? findFullscreenView(root, coverWidth) : null;
-    const host = view?.querySelector(HEADER_BUTTON)?.parentElement ?? null;
-    if (!view || !host) {
+    const found = allowed() ? findFullscreenView(root, coverWidth) : null;
+    if (!found) {
       removeAll();
       return;
     }
+    const { view, host } = found;
     if (!toggle?.isConnected) {
       toggle = root.createElement('button');
       toggle.type = 'button';
@@ -139,7 +154,7 @@ export function createFullscreenSurface({ store, loop, labels, root = document, 
       host.prepend(toggle);
     }
     toggle.setAttribute('aria-pressed', String(active));
-    if (active) showOverlay(view, host);
+    if (active) showOverlay(view, toggle.parentElement ?? host);
     else hideOverlay();
   };
 

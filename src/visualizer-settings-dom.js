@@ -10,11 +10,12 @@ const SETTINGS_TITLE_ID = 'wa-viz-settings-title';
 /** @type {Record<typeof STYLE_IDS[number], 'styleBars' | 'styleScope' | 'styleGlow'>} */
 const STYLE_LABEL_KEYS = { bars: 'styleBars', scope: 'styleScope', glow: 'styleGlow' };
 
+// The miniplayer switch joins this list if its surface ships; until then a
+// control that does nothing would only mislead.
 /** @type {ReadonlyArray<readonly ['fullscreen' | 'sidebar' | 'miniplayer', 'surfaceFullscreen' | 'surfaceSidebar' | 'surfaceMiniplayer']>} */
 const SURFACE_FIELDS = [
   ['fullscreen', 'surfaceFullscreen'],
   ['sidebar', 'surfaceSidebar'],
-  ['miniplayer', 'surfaceMiniplayer'],
 ];
 
 /**

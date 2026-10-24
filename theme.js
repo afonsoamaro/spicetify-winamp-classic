@@ -174,6 +174,341 @@ function isIdle(state) {
   return state.values.every((v) => v === 0) && state.peaks.every((p) => p === 0);
 }
 
+// --- visualizer-settings.js ---
+// @ts-check
+// Settings of the visualizer. Pure, no DOM: the profile menu window and the
+// surfaces read and change them through the store, so one change reaches all.
+
+const SETTINGS_KEY = 'winamp-classic:visualizer';
+
+const STYLE_IDS = /** @type {const} */ (['bars', 'scope', 'glow']);
+
+/**
+ * @typedef {typeof STYLE_IDS[number]} StyleId
+ * @typedef {{
+ *   enabled: boolean,
+ *   style: StyleId,
+ *   fullscreen: boolean,
+ *   sidebar: boolean,
+ *   sidebarOpen: boolean,
+ *   miniplayer: boolean,
+ * }} VisualizerSettings
+ */
+
+/** @type {VisualizerSettings} */
+const DEFAULTS = {
+  enabled: false,
+  style: 'bars',
+  fullscreen: true,
+  sidebar: true,
+  sidebarOpen: true,
+  miniplayer: true,
+};
+
+/**
+ * Turns whatever was stored into valid settings, field by field: a bad value
+ * costs only that field, never the rest.
+ * @param {unknown} raw
+ * @returns {VisualizerSettings}
+ */
+function normalizeSettings(raw) {
+  const source = raw !== null && typeof raw === 'object' ? /** @type {Record<string, unknown>} */ (raw) : {};
+  /** @param {'enabled' | 'fullscreen' | 'sidebar' | 'sidebarOpen' | 'miniplayer'} key */
+  const flag = (key) => (typeof source[key] === 'boolean' ? /** @type {boolean} */ (source[key]) : DEFAULTS[key]);
+  const style = STYLE_IDS.find((id) => id === source.style) ?? DEFAULTS.style;
+  return {
+    enabled: flag('enabled'),
+    style,
+    fullscreen: flag('fullscreen'),
+    sidebar: flag('sidebar'),
+    sidebarOpen: flag('sidebarOpen'),
+    miniplayer: flag('miniplayer'),
+  };
+}
+
+/**
+ * @typedef {{ get(key: string): string | null, set(key: string, value: string): void }} Storage
+ */
+
+/**
+ * @param {Storage} storage
+ * @returns {unknown} the parsed value, or null when it is missing or not JSON
+ */
+function readStored(storage) {
+  try {
+    return JSON.parse(storage.get(SETTINGS_KEY) ?? 'null');
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @param {{ storage: Storage }} options
+ * @returns {{
+ *   get(): VisualizerSettings,
+ *   set(patch: Partial<VisualizerSettings>): void,
+ *   subscribe(listener: (settings: VisualizerSettings) => void): () => void,
+ * }}
+ */
+function createSettingsStore({ storage }) {
+  let current = normalizeSettings(readStored(storage));
+  /** @type {Set<(settings: VisualizerSettings) => void>} */
+  const listeners = new Set();
+
+  return {
+    get: () => ({ ...current }),
+    set(patch) {
+      current = normalizeSettings({ ...current, ...patch });
+      try {
+        storage.set(SETTINGS_KEY, JSON.stringify(current));
+      } catch {
+        // Storage can be full or blocked; the change still holds in memory.
+      }
+      for (const listener of listeners) listener({ ...current });
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => void listeners.delete(listener);
+    },
+  };
+}
+
+// --- visualizer-signal.js ---
+// @ts-check
+// The synthetic signal behind every visualizer style. Pure, no DOM. It is not
+// the playing audio (Spotify gives the page no way to hear it): a tempo taken
+// from the track id gives a beat, and smoothed random targets give the bands,
+// in the same spirit as the display spectrum in spectrum.js.
+
+const BAND_COUNT = 32;
+const WAVE_SAMPLES = 64;
+
+// Used when there is no track uri to take a tempo from.
+const DEFAULT_BPM = 120;
+const MIN_BPM = 80;
+const BPM_SPAN = 71;
+// How fast the beat envelope falls inside one beat period.
+const BEAT_FALL = 5;
+// Per-step factors for the paused decay of the beat and the waveform.
+const BEAT_RELEASE = 0.85;
+const WAVE_RELEASE = 0.8;
+// Below this a decaying value snaps to exactly 0, so silence is reachable.
+const FLOOR = 0.002;
+
+/**
+ * levels: 0..1 per band. wave: -1..1 samples of a waveform. beat: 0..1,
+ * 1 on the beat. targets: what each band is chasing, internal to stepSignal.
+ * @typedef {{ levels: number[], wave: number[], beat: number, targets: number[] }} Signal
+ */
+
+/**
+ * A tempo between 80 and 150 BPM derived from the track uri, so the same
+ * track always beats the same way.
+ * @param {string | undefined} uri
+ * @returns {number}
+ */
+function bpmForTrack(uri) {
+  if (!uri) return DEFAULT_BPM;
+  let hash = 0;
+  for (let i = 0; i < uri.length; i += 1) hash = (hash * 31 + uri.charCodeAt(i)) >>> 0;
+  return MIN_BPM + (hash % BPM_SPAN);
+}
+
+/** @returns {Signal} */
+function createSignal() {
+  return {
+    levels: new Array(BAND_COUNT).fill(0),
+    wave: new Array(WAVE_SAMPLES).fill(0),
+    beat: 0,
+    targets: new Array(BAND_COUNT).fill(0),
+  };
+}
+
+/**
+ * Advances the signal by one frame, in place.
+ * @param {Signal} signal
+ * @param {{ uri?: string, progressMs: number, playing: boolean, rng: () => number }} input
+ * @returns {Signal}
+ */
+function stepSignal(signal, { uri, progressMs, playing, rng }) {
+  const progress = Number.isFinite(progressMs) && progressMs > 0 ? progressMs : 0;
+  const period = 60000 / bpmForTrack(uri);
+  const phase = (progress % period) / period;
+
+  if (playing) {
+    signal.beat = Math.exp(-BEAT_FALL * phase);
+  } else {
+    signal.beat = signal.beat * BEAT_RELEASE < FLOOR ? 0 : signal.beat * BEAT_RELEASE;
+  }
+
+  for (let i = 0; i < BAND_COUNT; i += 1) {
+    // Low bands carry the beat, high bands sit lower.
+    const tilt = 1 - 0.5 * (i / (BAND_COUNT - 1));
+    const lift = i < BAND_COUNT / 3 ? 0.55 + 0.45 * signal.beat : 1;
+    const target = playing ? Math.min(1, (SMOOTHING * (signal.targets[i] ?? 0) + (1 - SMOOTHING) * rng()) * tilt * lift * 1.4) : 0;
+    signal.targets[i] = target;
+    const level = signal.levels[i] ?? 0;
+    signal.levels[i] = target > level ? target : Math.max(0, level - DECAY);
+  }
+
+  const seconds = progress / 1000;
+  const amplitude = 0.25 + 0.6 * signal.beat;
+  for (let i = 0; i < WAVE_SAMPLES; i += 1) {
+    if (playing) {
+      const x = i / WAVE_SAMPLES;
+      const carrier = 0.7 * Math.sin(2 * Math.PI * (2 * x + seconds)) + 0.3 * Math.sin(2 * Math.PI * (5 * x + 1.3 * seconds));
+      const value = amplitude * carrier + 0.08 * (rng() - 0.5);
+      signal.wave[i] = Math.max(-1, Math.min(1, value));
+    } else {
+      const released = (signal.wave[i] ?? 0) * WAVE_RELEASE;
+      signal.wave[i] = Math.abs(released) < FLOOR ? 0 : released;
+    }
+  }
+  return signal;
+}
+
+/**
+ * True when nothing is left to animate.
+ * @param {Signal} signal
+ * @returns {boolean}
+ */
+function isSilent(signal) {
+  return signal.beat === 0 && signal.levels.every((v) => v === 0) && signal.wave.every((v) => v === 0);
+}
+
+// --- visualizer-styles.js ---
+// @ts-check
+// How each visualizer style paints one frame of the signal. Pure drawing on a
+// 2D context, no DOM and no scheduling: the loop decides when, the surfaces
+// decide where.
+
+// Theme token per colour, with the scheme's own value as the fallback when
+// the token cannot be read (a detached canvas, or a test without the sheet).
+const VIZ_COLOR_TOKENS = /** @type {const} */ ({
+  low: ['--spice-text', '#00ff00'],
+  mid: ['--wa-vol-mid', '#ffff00'],
+  high: ['--spice-notification-error', '#c60000'],
+  accent: ['--spice-misc', '#ff9900'],
+  back: ['--spice-main', '#000000'],
+});
+
+/** @typedef {Record<keyof typeof VIZ_COLOR_TOKENS, string>} VizColors */
+
+/**
+ * The slice of CanvasRenderingContext2D the styles use, so tests can pass a fake.
+ * @typedef {Pick<CanvasRenderingContext2D,
+ *   'clearRect' | 'fillRect' | 'beginPath' | 'moveTo' | 'lineTo' | 'stroke' | 'arc' | 'fill' |
+ *   'fillStyle' | 'strokeStyle' | 'lineWidth' | 'globalAlpha'>} DrawContext
+ */
+
+/**
+ * @param {HTMLElement} el
+ * @returns {VizColors}
+ */
+function readVisualizerColors(el) {
+  const style = getComputedStyle(el);
+  const entries = Object.entries(VIZ_COLOR_TOKENS).map(([name, [token, fallback]]) => [name, style.getPropertyValue(token).trim() || fallback]);
+  return /** @type {VizColors} */ (Object.fromEntries(entries));
+}
+
+/** @param {number} value @returns {number} */
+function unit(value) {
+  return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
+}
+
+/**
+ * Winamp-style columns: each band is a bar split into a low, a mid and a high
+ * colour by height.
+ * @type {StyleDraw}
+ */
+function drawBars(ctx, signal, { w, h }, colors) {
+  const slot = w / BAND_COUNT;
+  const barW = Math.max(1, slot - 1);
+  for (let i = 0; i < BAND_COUNT; i += 1) {
+    const x = i * slot;
+    const total = unit(signal.levels[i] ?? 0) * h;
+    if (total <= 0) continue;
+    const parts = /** @type {const} */ ([
+      [0, 0.5, colors.low],
+      [0.5, 0.8, colors.mid],
+      [0.8, 1, colors.high],
+    ]);
+    for (const [from, to, color] of parts) {
+      const top = Math.min(total, to * h);
+      const bottom = from * h;
+      if (top <= bottom) continue;
+      ctx.fillStyle = color;
+      ctx.fillRect(x, h - top, barW, top - bottom);
+    }
+  }
+}
+
+/** The oscilloscope: one line through the waveform samples. @type {StyleDraw} */
+function drawScope(ctx, signal, { w, h }, colors) {
+  ctx.strokeStyle = colors.low;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < WAVE_SAMPLES; i += 1) {
+    const x = (i / (WAVE_SAMPLES - 1)) * w;
+    const y = h / 2 - Math.max(-1, Math.min(1, Number.isFinite(signal.wave[i]) ? (signal.wave[i] ?? 0) : 0)) * (h / 2);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+}
+
+/** A soft pulse on the beat with a ring of dots that follow the bands. @type {StyleDraw} */
+function drawGlow(ctx, signal, { w, h }, colors) {
+  const cx = w / 2;
+  const cy = h / 2;
+  const reach = Math.min(w, h) / 2;
+  const beat = unit(signal.beat);
+  if (beat > 0) {
+    ctx.fillStyle = colors.accent;
+    ctx.globalAlpha = 0.15 + 0.5 * beat;
+    ctx.beginPath();
+    ctx.arc(cx, cy, reach * (0.25 + 0.5 * beat), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = colors.low;
+  for (let i = 0; i < BAND_COUNT; i += 1) {
+    const level = unit(signal.levels[i] ?? 0);
+    if (level <= 0) continue;
+    const angle = (i / BAND_COUNT) * Math.PI * 2;
+    const radius = reach * (0.45 + 0.5 * level);
+    ctx.globalAlpha = 0.35 + 0.65 * level;
+    ctx.beginPath();
+    ctx.arc(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius, 2 + 3 * level, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/**
+ * @callback StyleDraw
+ * @param {DrawContext} ctx
+ * @param {import('./visualizer-signal.js').Signal} signal
+ * @param {{ w: number, h: number }} size
+ * @param {VizColors} colors
+ * @returns {void}
+ */
+
+/** @type {Record<string, StyleDraw>} */
+const STYLE_DRAWERS = { bars: drawBars, scope: drawScope, glow: drawGlow };
+
+/**
+ * Clears the canvas and paints the style. An unknown id paints bars.
+ * @param {string} id
+ * @param {DrawContext} ctx
+ * @param {import('./visualizer-signal.js').Signal} signal
+ * @param {{ w: number, h: number }} size
+ * @param {VizColors} colors
+ */
+function drawStyle(id, ctx, signal, size, colors) {
+  ctx.clearRect(0, 0, size.w, size.h);
+  (STYLE_DRAWERS[id] ?? drawBars)(ctx, signal, size, colors);
+}
+
 // --- dom.js ---
 // @ts-check
 // The one module that touches the DOM and the Spicetify globals. The other
@@ -312,6 +647,728 @@ function mount(injections, { root = document } = {}) {
   if (!display) console.warn(`${LOG_PREFIX} display not found, waiting for it`);
 
   return { remount: sync, disconnect: () => observer.disconnect() };
+}
+
+// --- visualizer-loop.js ---
+// @ts-check
+// The one animation loop every visualizer surface shares. It steps the
+// synthetic signal once per frame and hands it to each visible surface, and it
+// only runs while there is something to show: a visible surface, a visible
+// window, and music playing or a signal still fading out.
+
+/**
+ * Something that shows the visualizer: a canvas on a Spotify surface.
+ * @typedef {object} Surface
+ * @property {string} name
+ * @property {() => boolean} isVisible whether it is on screen and switched on
+ * @property {() => boolean} isConnected false once Spotify detached its canvas
+ * @property {(signal: import('./visualizer-signal.js').Signal) => void} draw
+ */
+
+/**
+ * The slice of Spicetify.Player the loop uses, so tests can pass a fake.
+ * @typedef {{ isPlaying(): boolean, getProgress(): number }} LoopPlayer
+ */
+
+/**
+ * @param {{
+ *   player: () => LoopPlayer,
+ *   getUri: () => string | undefined,
+ *   schedule?: (callback: () => void) => number,
+ *   cancel?: (id: number) => void,
+ *   rng?: () => number,
+ *   isHidden?: () => boolean,
+ *   reducedMotion?: () => boolean,
+ * }} options
+ * @returns {{ register(surface: Surface): () => void, wake(): void, stop(): void, isRunning(): boolean }}
+ */
+function createVisualizerLoop({
+  player,
+  getUri,
+  schedule = (callback) => requestAnimationFrame(callback),
+  cancel = (id) => cancelAnimationFrame(id),
+  rng = Math.random,
+  isHidden = () => typeof document !== 'undefined' && document.hidden,
+  reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches,
+}) {
+  const signal = createSignal();
+  /** @type {Set<Surface>} */
+  const surfaces = new Set();
+  /** @type {number | null} */
+  let pending = null;
+
+  // origin._state sits behind a getter that can be undefined for a moment.
+  const playing = () => {
+    try {
+      return player().isPlaying();
+    } catch {
+      return false;
+    }
+  };
+
+  const progress = () => {
+    try {
+      return player().getProgress();
+    } catch {
+      return 0;
+    }
+  };
+
+  const anyVisible = () => [...surfaces].some((surface) => surface.isConnected() && surface.isVisible());
+
+  const frame = () => {
+    pending = null;
+    for (const surface of [...surfaces]) {
+      if (!surface.isConnected()) surfaces.delete(surface);
+    }
+    stepSignal(signal, { uri: getUri(), progressMs: progress(), playing: playing(), rng });
+    for (const surface of [...surfaces]) {
+      if (!surface.isVisible()) continue;
+      try {
+        surface.draw(signal);
+      } catch (err) {
+        console.warn(`${LOG_PREFIX} visualizer: ${surface.name} failed to draw, dropping it`, err);
+        surfaces.delete(surface);
+      }
+    }
+    if (!reducedMotion() && shouldRun()) pending = schedule(frame);
+  };
+
+  const shouldRun = () => !isHidden() && anyVisible() && (playing() || !isSilent(signal));
+
+  const wake = () => {
+    if (pending !== null) return;
+    if (reducedMotion()) {
+      // A still picture: one frame per wake, no continuation.
+      if (!isHidden() && anyVisible()) frame();
+      return;
+    }
+    if (shouldRun()) pending = schedule(frame);
+  };
+
+  return {
+    register(surface) {
+      surfaces.add(surface);
+      wake();
+      return () => void surfaces.delete(surface);
+    },
+    wake,
+    stop() {
+      if (pending !== null) cancel(pending);
+      pending = null;
+    },
+    isRunning: () => pending !== null,
+  };
+}
+
+// --- visualizer-i18n.js ---
+// @ts-check
+// Interface labels of the visualizer, in the three languages the portfolio
+// ships. Pure data: which locale to use is decided where the labels are read.
+
+const LABEL_KEYS = /** @type {const} */ ([
+  'menuTitle',
+  'windowTitle',
+  'enabled',
+  'style',
+  'styleBars',
+  'styleScope',
+  'styleGlow',
+  'surfaceFullscreen',
+  'surfaceSidebar',
+  'surfaceMiniplayer',
+  'panelShow',
+  'panelHide',
+  'close',
+  'fullscreenToggle',
+  'signalNote',
+]);
+
+/** @typedef {Record<typeof LABEL_KEYS[number], string>} Labels */
+
+/** @type {Record<'en' | 'pt' | 'es', Labels>} */
+const LABEL_SETS = {
+  en: {
+    menuTitle: 'Visualizer',
+    windowTitle: 'Visualizer settings',
+    enabled: 'Visualizer on',
+    style: 'Style',
+    styleBars: 'Bars',
+    styleScope: 'Oscilloscope',
+    styleGlow: 'Glow',
+    surfaceFullscreen: 'Fullscreen',
+    surfaceSidebar: 'Right sidebar',
+    surfaceMiniplayer: 'Miniplayer background',
+    panelShow: 'Show visualizer',
+    panelHide: 'Hide visualizer',
+    close: 'Close',
+    fullscreenToggle: 'Visualizer',
+    signalNote: 'Simulated signal, not the audio that is playing.',
+  },
+  pt: {
+    menuTitle: 'Visualizador',
+    windowTitle: 'Configurações do visualizador',
+    enabled: 'Visualizador ativado',
+    style: 'Estilo',
+    styleBars: 'Barras',
+    styleScope: 'Osciloscópio',
+    styleGlow: 'Brilho',
+    surfaceFullscreen: 'Tela cheia',
+    surfaceSidebar: 'Barra lateral direita',
+    surfaceMiniplayer: 'Fundo do miniplayer',
+    panelShow: 'Mostrar visualizador',
+    panelHide: 'Ocultar visualizador',
+    close: 'Fechar',
+    fullscreenToggle: 'Visualizador',
+    signalNote: 'Sinal simulado, não o áudio que está tocando.',
+  },
+  es: {
+    menuTitle: 'Visualizador',
+    windowTitle: 'Ajustes del visualizador',
+    enabled: 'Visualizador activado',
+    style: 'Estilo',
+    styleBars: 'Barras',
+    styleScope: 'Osciloscopio',
+    styleGlow: 'Brillo',
+    surfaceFullscreen: 'Pantalla completa',
+    surfaceSidebar: 'Barra lateral derecha',
+    surfaceMiniplayer: 'Fondo del miniplayer',
+    panelShow: 'Mostrar visualizador',
+    panelHide: 'Ocultar visualizador',
+    close: 'Cerrar',
+    fullscreenToggle: 'Visualizador',
+    signalNote: 'Señal simulada, no el audio que se está reproduciendo.',
+  },
+};
+
+/**
+ * Labels for a locale such as `pt-BR`, `es-MX` or `en`; anything else gets English.
+ * @param {string | undefined} locale
+ * @returns {Labels}
+ */
+function labelsFor(locale) {
+  const language = (locale ?? '').toLowerCase().split(/[-_]/)[0];
+  if (language === 'pt') return LABEL_SETS.pt;
+  if (language === 'es') return LABEL_SETS.es;
+  return LABEL_SETS.en;
+}
+
+// --- visualizer-settings-dom.js ---
+// @ts-check
+// The one place where the visualizer is configured: a small non-blocking
+// dialog opened from an entry in Spotify's profile menu. It only reads and
+// writes the settings store, so a change reaches every surface at once.
+
+const SETTINGS_WINDOW_CLASS = 'wa-viz-settings';
+const SETTINGS_TITLE_ID = 'wa-viz-settings-title';
+
+/** @type {Record<typeof STYLE_IDS[number], 'styleBars' | 'styleScope' | 'styleGlow'>} */
+const STYLE_LABEL_KEYS = { bars: 'styleBars', scope: 'styleScope', glow: 'styleGlow' };
+
+// The miniplayer switch joins this list if its surface ships; until then a
+// control that does nothing would only mislead.
+/** @type {ReadonlyArray<readonly ['fullscreen' | 'sidebar' | 'miniplayer', 'surfaceFullscreen' | 'surfaceSidebar' | 'surfaceMiniplayer']>} */
+const SURFACE_FIELDS = [
+  ['fullscreen', 'surfaceFullscreen'],
+  ['sidebar', 'surfaceSidebar'],
+];
+
+/**
+ * The slice of the settings store the window uses.
+ * @typedef {{
+ *   get(): import('./visualizer-settings.js').VisualizerSettings,
+ *   set(patch: Partial<import('./visualizer-settings.js').VisualizerSettings>): void,
+ *   subscribe(listener: (s: import('./visualizer-settings.js').VisualizerSettings) => void): () => void,
+ * }} SettingsStoreLike
+ */
+
+/**
+ * @param {{ store: SettingsStoreLike, labels: import('./visualizer-i18n.js').Labels, doc?: Document }} options
+ * @returns {{ open(): void, close(): void, isOpen(): boolean }}
+ */
+function createSettingsWindow({ store, labels, doc = document }) {
+  /** @type {HTMLElement | null} */
+  let dialog = null;
+  /** @type {HTMLElement | null} */
+  let previousFocus = null;
+  /** @type {(() => void) | null} */
+  let unsubscribe = null;
+
+  /**
+   * A labelled input whose text is the label's only text.
+   * @param {'checkbox' | 'radio'} type
+   * @param {string} name
+   * @param {string} text
+   * @param {() => void} onChange
+   */
+  const field = (type, name, text, onChange) => {
+    const label = doc.createElement('label');
+    const input = doc.createElement('input');
+    input.type = type;
+    input.name = name;
+    input.addEventListener('change', onChange);
+    label.append(input, text);
+    return { label, input };
+  };
+
+  const close = () => {
+    unsubscribe?.();
+    unsubscribe = null;
+    dialog?.remove();
+    dialog = null;
+    previousFocus?.focus();
+    previousFocus = null;
+  };
+
+  const open = () => {
+    if (dialog) {
+      dialog.focus();
+      return;
+    }
+    previousFocus = doc.activeElement instanceof HTMLElement ? doc.activeElement : null;
+
+    const el = doc.createElement('div');
+    el.className = SETTINGS_WINDOW_CLASS;
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'false');
+    el.setAttribute('aria-labelledby', SETTINGS_TITLE_ID);
+    el.tabIndex = -1;
+    el.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') close();
+    });
+
+    const title = doc.createElement('h2');
+    title.id = SETTINGS_TITLE_ID;
+    title.textContent = labels.windowTitle;
+
+    const enabled = field('checkbox', 'enabled', labels.enabled, () => store.set({ enabled: enabled.input.checked }));
+
+    const styles = doc.createElement('fieldset');
+    const legend = doc.createElement('legend');
+    legend.textContent = labels.style;
+    styles.append(legend);
+    const radios = STYLE_IDS.map((id) => {
+      const radio = field('radio', 'style', labels[STYLE_LABEL_KEYS[id]], () => store.set({ style: id }));
+      radio.input.value = id;
+      styles.append(radio.label);
+      return radio.input;
+    });
+
+    const surfaces = SURFACE_FIELDS.map(([key, labelKey]) => {
+      const surface = field('checkbox', key, labels[labelKey], () => store.set({ [key]: surface.input.checked }));
+      return { key, input: surface.input, label: surface.label };
+    });
+
+    const note = doc.createElement('p');
+    note.textContent = labels.signalNote;
+
+    const closeButton = doc.createElement('button');
+    closeButton.type = 'button';
+    closeButton.textContent = labels.close;
+    closeButton.addEventListener('click', close);
+
+    el.append(title, enabled.label, styles, ...surfaces.map((s) => s.label), note, closeButton);
+
+    /** @param {import('./visualizer-settings.js').VisualizerSettings} settings */
+    const sync = (settings) => {
+      enabled.input.checked = settings.enabled;
+      for (const radio of radios) radio.checked = radio.value === settings.style;
+      for (const surface of surfaces) surface.input.checked = settings[surface.key];
+    };
+    sync(store.get());
+    unsubscribe = store.subscribe(sync);
+
+    doc.body.append(el);
+    dialog = el;
+    el.focus();
+  };
+
+  return { open, close, isOpen: () => dialog !== null };
+}
+
+/**
+ * The profile menu entry that opens the window. Its tick follows the master
+ * switch.
+ * @param {{
+ *   store: SettingsStoreLike,
+ *   labels: import('./visualizer-i18n.js').Labels,
+ *   settingsWindow: { open(): void },
+ *   MenuItem?: new (name: string, isEnabled: boolean, onClick: () => void) => { register(): void, deregister(): void, setState(on: boolean): void },
+ * }} options
+ * @returns {() => void} removes the entry
+ */
+function registerProfileMenu({ store, labels, settingsWindow, MenuItem = Spicetify.Menu.Item }) {
+  const item = new MenuItem(labels.menuTitle, store.get().enabled, () => settingsWindow.open());
+  item.register();
+  const unsubscribe = store.subscribe((settings) => item.setState(settings.enabled));
+  return () => {
+    unsubscribe();
+    item.deregister();
+  };
+}
+
+// --- visualizer-sidebar-dom.js ---
+// @ts-check
+// The visualizer panel of the right sidebar: a header with a show/hide button
+// and a canvas, placed first in the Now Playing sidebar, above the cover or
+// the video. It draws only while it is on, open and on screen.
+
+const SIDEBAR_PANEL_CLASS = 'wa-viz-panel';
+// The sidebar is the only ASIDE without a test id (the player bar is the
+// other, and has one). Its aria-label is translated by Spotify, so the
+// selector does not use it.
+const SIDEBAR_SELECTOR = 'aside:not([data-testid])';
+// Height of the drawing area, in CSS pixels.
+const PANEL_CANVAS_H = 96;
+// Below this many visible pixels a sidebar slid off-screen counts as closed.
+const MIN_VISIBLE_W = 100;
+
+/**
+ * The scroller is the first descendant that scrolls vertically; the panel goes
+ * first in its only child, the content.
+ * @param {Element} aside
+ * @returns {HTMLElement | null}
+ */
+function findSidebarContent(aside) {
+  const scroller = [...aside.querySelectorAll('div')].find((div) => {
+    const overflow = getComputedStyle(div).overflowY;
+    return overflow === 'auto' || overflow === 'scroll';
+  });
+  return /** @type {HTMLElement | null} */ (scroller?.firstElementChild ?? null);
+}
+
+/**
+ * Spotify keeps the closed sidebar in the page and slides it off-screen, so
+ * presence says nothing: what counts is how much of it is inside the window.
+ * @param {Element} aside
+ * @returns {boolean}
+ */
+function asideOnScreen(aside) {
+  const rect = aside.getBoundingClientRect();
+  return Math.min(rect.right, innerWidth) - Math.max(rect.left, 0) > MIN_VISIBLE_W;
+}
+
+/**
+ * The header of the sidebar floats over the top of the content, so the panel
+ * starts below it: how far its lowest button reaches into the content.
+ * @param {Element} aside
+ * @param {Element} content
+ * @returns {number}
+ */
+function headerOffset(aside, content) {
+  const top = aside.getBoundingClientRect().top;
+  const contentTop = content.getBoundingClientRect().top;
+  const bottoms = [...aside.querySelectorAll('button')]
+    .map((button) => button.getBoundingClientRect())
+    .filter((rect) => rect.height > 0 && rect.top < top + 80)
+    .map((rect) => rect.bottom);
+  return Math.max(0, Math.max(0, ...bottoms) - contentTop);
+}
+
+/**
+ * @param {{
+ *   store: import('./visualizer-settings-dom.js').SettingsStoreLike,
+ *   loop: { register(surface: import('./visualizer-loop.js').Surface): () => void, wake(): void },
+ *   labels: import('./visualizer-i18n.js').Labels,
+ *   root?: Document,
+ *   onScreen?: (aside: Element) => boolean,
+ * }} options
+ * @returns {{ mount(): void, unmount(): void }}
+ */
+function createSidebarSurface({ store, loop, labels, root = document, onScreen = asideOnScreen }) {
+  /** @type {HTMLElement | null} */
+  let panel = null;
+  /** @type {HTMLCanvasElement | null} */
+  let canvas = null;
+  /** @type {HTMLButtonElement | null} */
+  let toggle = null;
+  /** @type {MutationObserver | null} */
+  let observer = null;
+  /** @type {(() => void) | null} */
+  let unsubscribe = null;
+  /** @type {(() => void) | null} */
+  let unregister = null;
+  /** @type {import('./visualizer-styles.js').VizColors | null} */
+  let colors = null;
+
+  /** @returns {boolean} */
+  const settingsOn = () => {
+    const settings = store.get();
+    return settings.enabled && settings.sidebar && settings.sidebarOpen;
+  };
+
+  /** @type {import('./visualizer-loop.js').Surface} */
+  const surface = {
+    name: 'sidebar',
+    isConnected: () => canvas?.isConnected === true,
+    isVisible() {
+      const aside = root.querySelector(SIDEBAR_SELECTOR);
+      return settingsOn() && canvas?.isConnected === true && aside !== null && onScreen(aside);
+    },
+    draw(signal) {
+      if (!canvas || !colors) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      const dpr = globalThis.devicePixelRatio || 1;
+      const w = canvas.clientWidth || canvas.width / dpr;
+      if (canvas.width !== Math.round(w * dpr)) canvas.width = Math.round(w * dpr);
+      if (canvas.height !== Math.round(PANEL_CANVAS_H * dpr)) canvas.height = Math.round(PANEL_CANVAS_H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawStyle(store.get().style, ctx, signal, { w, h: PANEL_CANVAS_H }, colors);
+    },
+  };
+
+  const build = () => {
+    panel = root.createElement('div');
+    panel.className = SIDEBAR_PANEL_CLASS;
+    const header = root.createElement('div');
+    const title = root.createElement('span');
+    title.textContent = labels.menuTitle;
+    toggle = root.createElement('button');
+    toggle.type = 'button';
+    toggle.addEventListener('click', () => store.set({ sidebarOpen: !store.get().sidebarOpen }));
+    header.append(title, toggle);
+    canvas = root.createElement('canvas');
+    canvas.setAttribute('aria-hidden', 'true');
+    canvas.height = PANEL_CANVAS_H;
+    panel.append(header, canvas);
+  };
+
+  const refresh = () => {
+    if (!toggle || !canvas) return;
+    const open = store.get().sidebarOpen;
+    toggle.textContent = open ? labels.panelHide : labels.panelShow;
+    toggle.setAttribute('aria-expanded', String(open));
+    canvas.hidden = !open;
+  };
+
+  /** Puts the panel in the sidebar content and registers it, when both exist. */
+  const attach = () => {
+    const aside = root.querySelector(SIDEBAR_SELECTOR);
+    const content = aside ? findSidebarContent(aside) : null;
+    if (!aside || !content) return;
+    if (!panel) build();
+    if (!panel || !canvas) return;
+    if (content.firstElementChild !== panel) {
+      panel.style.marginTop = `${headerOffset(aside, content)}px`;
+      content.prepend(panel);
+      colors = readVisualizerColors(canvas);
+    }
+    unregister = loop.register(surface);
+    refresh();
+  };
+
+  return {
+    mount() {
+      if (observer) return;
+      unsubscribe = store.subscribe(() => {
+        refresh();
+        loop.wake();
+      });
+      observer = new MutationObserver(() => {
+        const aside = root.querySelector(SIDEBAR_SELECTOR);
+        const content = aside ? findSidebarContent(aside) : null;
+        if (content && panel?.parentElement !== content) attach();
+      });
+      observer.observe(root.body, { childList: true, subtree: true });
+      attach();
+      if (!panel) console.warn(`${LOG_PREFIX} visualizer: sidebar not found, waiting for it`);
+    },
+    unmount() {
+      observer?.disconnect();
+      observer = null;
+      unsubscribe?.();
+      unsubscribe = null;
+      unregister?.();
+      unregister = null;
+      panel?.remove();
+      panel = null;
+      canvas = null;
+      toggle = null;
+      colors = null;
+    },
+  };
+}
+
+// --- visualizer-fullscreen-dom.js ---
+// @ts-check
+// The visualizer in Spotify's expanded Now Playing view: a toggle in the
+// header's button group that covers the view with the visualizer, and back.
+// The view has no test id, role or readable class, so it is found by its big
+// cover (a role="img" outside the player bar and the sidebar) and the header
+// by the Encore buttons that sit before it.
+
+const FULLSCREEN_TOGGLE_CLASS = 'wa-viz-toggle';
+const FULLSCREEN_OVERLAY_CLASS = 'wa-viz-fullscreen';
+// A cover narrower than this is the player bar's or a card's, not the view's.
+const MIN_COVER_W = 400;
+const HEADER_BUTTON = 'button[data-encore-id="buttonTertiary"]';
+
+/** @param {Element} el @returns {number} */
+function measuredWidth(el) {
+  return el.getBoundingClientRect().width;
+}
+
+/**
+ * The expanded view and its header. From the big cover, go up until an
+ * ancestor holds an Encore button that is not in the branch already climbed
+ * and sits above the cover: that is the header row, and the ancestor is the
+ * view. Buttons of the content itself (a "Show all" row far below) are inside
+ * the branch or below the cover, so they never qualify; a first-in-document
+ * rule would trip on them.
+ * @param {Document} root
+ * @param {(el: Element) => number} coverWidth
+ * @returns {{ view: HTMLElement, host: HTMLElement } | null}
+ */
+function findFullscreenView(root, coverWidth) {
+  const covers = [...root.querySelectorAll('[role="img"]')].filter((el) => {
+    return !el.closest('aside') && coverWidth(el) >= MIN_COVER_W;
+  });
+  for (const cover of covers) {
+    const coverTop = cover.getBoundingClientRect().top;
+    let climbed = cover;
+    let ancestor = cover.parentElement;
+    while (ancestor) {
+      const branch = climbed;
+      const header = [...ancestor.querySelectorAll(HEADER_BUTTON)].find((button) => {
+        return !branch.contains(button) && button.getBoundingClientRect().top <= coverTop;
+      });
+      if (header?.parentElement) return { view: ancestor, host: header.parentElement };
+      climbed = ancestor;
+      ancestor = ancestor.parentElement;
+    }
+  }
+  return null;
+}
+
+/**
+ * @param {{
+ *   store: import('./visualizer-settings-dom.js').SettingsStoreLike,
+ *   loop: { register(surface: import('./visualizer-loop.js').Surface): () => void, wake(): void },
+ *   labels: import('./visualizer-i18n.js').Labels,
+ *   root?: Document,
+ *   coverWidth?: (el: Element) => number,
+ * }} options
+ * @returns {{ mount(): void, unmount(): void }}
+ */
+function createFullscreenSurface({ store, loop, labels, root = document, coverWidth = measuredWidth }) {
+  /** @type {HTMLButtonElement | null} */
+  let toggle = null;
+  /** @type {HTMLElement | null} */
+  let overlay = null;
+  /** @type {HTMLCanvasElement | null} */
+  let canvas = null;
+  /** @type {MutationObserver | null} */
+  let observer = null;
+  /** @type {(() => void) | null} */
+  let unsubscribe = null;
+  /** @type {(() => void) | null} */
+  let unregister = null;
+  /** @type {import('./visualizer-styles.js').VizColors | null} */
+  let colors = null;
+  let active = false;
+
+  const allowed = () => {
+    const settings = store.get();
+    return settings.enabled && settings.fullscreen;
+  };
+
+  /** @type {import('./visualizer-loop.js').Surface} */
+  const surface = {
+    name: 'fullscreen',
+    isConnected: () => canvas?.isConnected === true,
+    isVisible: () => active && allowed() && canvas?.isConnected === true,
+    draw(signal) {
+      if (!canvas || !colors) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      const dpr = globalThis.devicePixelRatio || 1;
+      const w = canvas.clientWidth || 1;
+      const h = canvas.clientHeight || 1;
+      if (canvas.width !== Math.round(w * dpr)) canvas.width = Math.round(w * dpr);
+      if (canvas.height !== Math.round(h * dpr)) canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawStyle(store.get().style, ctx, signal, { w, h }, colors);
+    },
+  };
+
+  const hideOverlay = () => {
+    unregister?.();
+    unregister = null;
+    overlay?.remove();
+    overlay = null;
+    canvas = null;
+    colors = null;
+  };
+
+  /** @param {HTMLElement} view @param {HTMLElement} host */
+  const showOverlay = (view, host) => {
+    if (overlay?.isConnected) return;
+    const frame = view;
+    if (getComputedStyle(frame).position === 'static') frame.style.position = 'relative';
+    overlay = root.createElement('div');
+    overlay.className = FULLSCREEN_OVERLAY_CLASS;
+    // Starts below the header so the toggle and the minimise key stay reachable.
+    const offset = Math.max(0, host.getBoundingClientRect().bottom - frame.getBoundingClientRect().top);
+    overlay.style.top = `${offset}px`;
+    canvas = root.createElement('canvas');
+    canvas.setAttribute('aria-hidden', 'true');
+    overlay.append(canvas);
+    frame.append(overlay);
+    colors = readVisualizerColors(canvas);
+    unregister = loop.register(surface);
+  };
+
+  const removeAll = () => {
+    active = false;
+    hideOverlay();
+    toggle?.remove();
+    toggle = null;
+  };
+
+  const sync = () => {
+    const found = allowed() ? findFullscreenView(root, coverWidth) : null;
+    if (!found) {
+      removeAll();
+      return;
+    }
+    const { view, host } = found;
+    if (!toggle?.isConnected) {
+      toggle = root.createElement('button');
+      toggle.type = 'button';
+      toggle.className = FULLSCREEN_TOGGLE_CLASS;
+      toggle.textContent = labels.fullscreenToggle;
+      toggle.addEventListener('click', () => {
+        active = !active;
+        sync();
+        loop.wake();
+      });
+      host.prepend(toggle);
+    }
+    toggle.setAttribute('aria-pressed', String(active));
+    if (active) showOverlay(view, toggle.parentElement ?? host);
+    else hideOverlay();
+  };
+
+  return {
+    mount() {
+      if (observer) return;
+      unsubscribe = store.subscribe(() => {
+        sync();
+        loop.wake();
+      });
+      observer = new MutationObserver(sync);
+      observer.observe(root.body, { childList: true, subtree: true });
+      sync();
+    },
+    unmount() {
+      observer?.disconnect();
+      observer = null;
+      unsubscribe?.();
+      unsubscribe = null;
+      removeAll();
+    },
+  };
 }
 
 // --- marquee-dom.js ---
@@ -702,6 +1759,131 @@ function createTitlebarInjection() {
   };
 }
 
+// --- visualizer-start.js ---
+// @ts-check
+// Starts the visualizer. The profile menu entry always exists, because it is
+// how the visualizer is turned on. Everything else (the loop, the surfaces,
+// the Player and window listeners) is created only while the master switch is
+// on and dropped when it goes off, so a visualizer nobody enabled costs
+// nothing at run time.
+
+/**
+ * Everything is injectable so tests run without Spotify; the defaults read the
+ * Spicetify globals when they are called.
+ * @param {{
+ *   storage?: import('./visualizer-settings.js').Storage,
+ *   player?: () => import('./visualizer-loop.js').LoopPlayer & {
+ *     addEventListener(type: string, callback: () => void): void,
+ *     removeEventListener(type: string, callback: () => void): void,
+ *   },
+ *   getUri?: () => string | undefined,
+ *   locale?: () => string | undefined,
+ *   MenuItem?: Parameters<typeof registerProfileMenu>[0]['MenuItem'],
+ *   schedule?: (callback: () => void) => number,
+ *   cancel?: (id: number) => void,
+ *   rng?: () => number,
+ *   isHidden?: () => boolean,
+ *   reducedMotion?: () => boolean,
+ *   root?: Document,
+ *   onScreen?: (aside: Element) => boolean,
+ * }} [options]
+ * @returns {{ store: ReturnType<typeof createSettingsStore>, stop(): void }}
+ */
+function startVisualizer({
+  storage = Spicetify.LocalStorage,
+  player = () => Spicetify.Player,
+  getUri = () => Spicetify.Player.data?.item?.uri,
+  locale = () => Spicetify.Locale?.getLocale?.() || document.documentElement.lang,
+  MenuItem,
+  schedule,
+  cancel,
+  rng,
+  isHidden,
+  reducedMotion,
+  root = document,
+  onScreen,
+} = {}) {
+  const store = createSettingsStore({ storage });
+  const labels = labelsFor(locale());
+  const settingsWindow = createSettingsWindow({ store, labels, doc: root });
+  const removeMenu = registerProfileMenu({ store, labels, settingsWindow, MenuItem });
+
+  /** @type {ReturnType<typeof createVisualizerLoop> | null} */
+  let loop = null;
+  /** @type {ReturnType<typeof createSidebarSurface> | null} */
+  let sidebar = null;
+  /** @type {ReturnType<typeof createFullscreenSurface> | null} */
+  let fullscreen = null;
+  let sidebarMounted = false;
+  let fullscreenMounted = false;
+
+  const wake = () => loop?.wake();
+
+  const enable = () => {
+    if (loop) return;
+    loop = createVisualizerLoop({ player, getUri, schedule, cancel, rng, isHidden, reducedMotion });
+    sidebar = createSidebarSurface({ store, loop, labels, root, onScreen });
+    fullscreen = createFullscreenSurface({ store, loop, labels, root });
+    player().addEventListener('onplaypause', wake);
+    player().addEventListener('songchange', wake);
+    root.addEventListener('visibilitychange', wake);
+  };
+
+  const disable = () => {
+    if (!loop) return;
+    sidebar?.unmount();
+    fullscreen?.unmount();
+    sidebarMounted = false;
+    fullscreenMounted = false;
+    loop.stop();
+    try {
+      player().removeEventListener('onplaypause', wake);
+      player().removeEventListener('songchange', wake);
+    } catch (err) {
+      console.warn(`${LOG_PREFIX} visualizer: could not remove the Player listeners`, err);
+    }
+    root.removeEventListener('visibilitychange', wake);
+    loop = null;
+    sidebar = null;
+    fullscreen = null;
+  };
+
+  /** @param {import('./visualizer-settings.js').VisualizerSettings} settings */
+  const reconcile = (settings) => {
+    if (!settings.enabled) {
+      disable();
+      return;
+    }
+    enable();
+    if (settings.sidebar && !sidebarMounted) {
+      sidebar?.mount();
+      sidebarMounted = true;
+    } else if (!settings.sidebar && sidebarMounted) {
+      sidebar?.unmount();
+      sidebarMounted = false;
+    }
+    // The fullscreen surface follows its own switch inside; it only has to exist.
+    if (!fullscreenMounted) {
+      fullscreen?.mount();
+      fullscreenMounted = true;
+    }
+    loop?.wake();
+  };
+
+  reconcile(store.get());
+  const unsubscribe = store.subscribe(reconcile);
+
+  return {
+    store,
+    stop() {
+      unsubscribe();
+      disable();
+      removeMenu();
+      settingsWindow.close();
+    },
+  };
+}
+
 // --- index.js ---
 // @ts-check
 // Entry point of the theme extension. After `pnpm build` this becomes the
@@ -720,6 +1902,11 @@ async function main() {
     return;
   }
   mount(INJECTIONS);
+  try {
+    startVisualizer();
+  } catch (err) {
+    console.warn(`${LOG_PREFIX} visualizer did not start:`, err);
+  }
   console.log(`${LOG_PREFIX} mounted`);
 }
 

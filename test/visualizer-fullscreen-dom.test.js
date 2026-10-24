@@ -94,6 +94,18 @@ describe('createFullscreenSurface', () => {
     expect(toggle()).toBeNull();
   });
 
+  it('finds the header even when the content has Encore buttons of its own, above or below in the document', () => {
+    const view = /** @type {HTMLElement} */ (document.getElementById('view'));
+    view.insertAdjacentHTML('afterbegin', '<div id="lower"><button data-encore-id="buttonTertiary">Show all</button></div>');
+    view.querySelector('.body')?.insertAdjacentHTML('beforeend', '<div id="inside"><button data-encore-id="buttonTertiary">Credits</button></div>');
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(/** @this {HTMLElement} */ function () {
+      const top = this.closest('#lower, #inside') ? 800 : 80;
+      return /** @type {DOMRect} */ ({ top, bottom: top + 32, left: 0, right: 0, width: 0, height: 32, x: 0, y: top, toJSON: () => ({}) });
+    });
+    mountSurface({});
+    expect(toggle()?.parentElement?.id).toBe('group');
+  });
+
   it('ignores a cover that is too small to be the view', () => {
     mountSurface({ coverWidth: () => 120 });
     expect(toggle()).toBeNull();

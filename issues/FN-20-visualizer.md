@@ -4,7 +4,7 @@
 Functional (feature)
 
 ## Status
-Design agreed with the owner on 2026-10-23. Not planned or started. Parts marked "to verify" need a spike on the real client before the plan can rely on them.
+Implemented on 2026-10-24 for the sidebar, the fullscreen view and the central window; the miniplayer is the conditional follow-up and is not done. Design agreed with the owner on 2026-10-23.
 
 ## Description
 A visualizer in the spirit of Winamp's, modernised, with several styles to pick from. It shows up on three existing Spotify surfaces and has one central place to configure it. The small spectrum analyser in the display (FN-03) stays as it is.
@@ -77,14 +77,14 @@ These were open in review and settled without the owner. Change any of them free
 - README documents the visualizer, how to turn it on, and the fact that the signal is synthetic.
 
 ## Acceptance Criteria
-- [ ] Profile menu has a visualizer entry that opens the settings window; changing the style updates every visible surface without reloading.
-- [ ] Fullscreen toggle switches between Spotify's view and the visualizer.
+- [x] Profile menu has a visualizer entry that opens the settings window; changing the style updates every visible surface without reloading.
+- [x] Fullscreen toggle switches between Spotify's view and the visualizer.
 - [ ] Miniplayer (conditional follow-up): the option replaces the background with the visualizer, or the spike result is recorded and the surface moves to its own issue. Not required to close this issue.
-- [ ] Sidebar window can be shown and hidden; hidden means no rendering work (verified by the loop stopping).
-- [ ] With the master switch off, no animation loop runs, no canvas or listener is created and nothing is fetched. The code ships inside `theme.js` and stays dormant (see Decisions made by the design author).
-- [ ] Reduced motion honoured.
-- [ ] Labels present in the three languages.
-- [ ] `pnpm check` green, including the new tests, and the new anchors covered by the compat check.
+- [x] Sidebar window can be shown and hidden; hidden means no rendering work (verified by the loop stopping).
+- [x] With the master switch off, no animation loop runs, no canvas or listener is created and nothing is fetched. The code ships inside `theme.js` and stays dormant (see Decisions made by the design author).
+- [x] Reduced motion honoured.
+- [x] Labels present in the three languages.
+- [x] `pnpm check` green, including the new tests, and the new anchors covered by the compat check.
 
 ## Dependencies
 - FN-03 (synthetic spectrum), FN-09 (canvas rendering), FN-22 and FN-23 (compat check for the new anchors)
@@ -111,3 +111,12 @@ Measured on 2026-10-24 on Spotify 1.3.6.1921 with Spicetify 2.46.2, through the 
 
 **Found on the way**
 - The player bar's widget test id is `now-playing-widget-v2` in 1.3.6. The display selector in `src/dom.js` still uses `now-playing-widget`; the screenshots show the display text styled, so it is matching somehow, but the compat check should be looked at in a separate issue.
+
+## Verification (2026-10-24, Spotify 1.3.6.1921, theme in dev mode)
+- Profile menu: the "Visualizer" entry is there and opens the settings window, styled with the theme tokens.
+- Sidebar panel: bars drawn in the scheme's colours above the cover, 5 consecutive samples all different (animated); oscilloscope and glow also draw. The hide key and the sunken/raised states follow the store (hide covered by the unit test, not clicked on the real client).
+- Fullscreen: the toggle sits in the header button group and the canvas covers the view below the header (1664x761, painting every frame). Two things the spike did not predict and the tests now pin: the content has Encore buttons of its own ("Show all", "Credits"), so the header is the group above the cover reached while climbing from it, not the first Encore button; and the overlay lives in the non-scrolling view.
+- Dormancy: with the master switch off the page holds 0 `wa-viz` panel, toggle or overlay elements (1 on, 0 off, 1 on again); the loop's own test asserts no frame, no listener and no network.
+- Labels were looked at in English only; the three languages are covered by the unit test.
+- `pnpm check`: lint, typecheck, 192 tests and build green. The compat check reports 0 of 21 anchors missing; the visualizer adds no `data-testid` anchor, its hooks are structural (`aside:not([data-testid])`, a large `role="img"`, Encore buttons), which the compat check cannot see, so they are covered by the fixtures and by this manual pass.
+- Open polish: in fullscreen the 32 bars are very wide and tall; a denser band count or capped height may look better.
