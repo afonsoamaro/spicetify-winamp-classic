@@ -61,6 +61,20 @@ describe('stepSignal', () => {
     }
   });
 
+  it('has no step where the beat boost ends, a third of the way up the bands', () => {
+    const sums = new Array(BAND_COUNT).fill(0);
+    const signal = createSignal();
+    const rng = seeded(7);
+    for (let i = 0; i < 400; i += 1) {
+      stepSignal(signal, { uri: 'spotify:track:a', progressMs: i * 33, playing: true, rng });
+      signal.levels.forEach((v, band) => (sums[band] += v));
+    }
+    const edge = Math.round(BAND_COUNT / 3);
+    const mean = (/** @type {number} */ from, /** @type {number} */ to) => sums.slice(from, to).reduce((a, b) => a + b, 0) / (to - from) / 400;
+    // A hard edge here showed as a vertical line across the fullscreen bars.
+    expect(Math.abs(mean(edge, edge + 8) - mean(edge - 8, edge))).toBeLessThan(0.05);
+  });
+
   it('has the declared sizes', () => {
     const signal = createSignal();
     expect(signal.levels).toHaveLength(BAND_COUNT);

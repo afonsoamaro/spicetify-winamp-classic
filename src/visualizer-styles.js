@@ -38,26 +38,45 @@ function unit(value) {
   return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
 }
 
+// About one bar per this many CSS pixels, so a wide canvas gets thin bars
+// instead of the same few stretched.
+const BAR_TARGET_W = 6;
+const MIN_BARS = 16;
+
 /**
- * Winamp-style columns: each band is a bar split into a low, a mid and a high
- * colour by height.
+ * How many bars fit a canvas of this width, one signal band each at most.
+ * @param {number} width in CSS pixels
+ * @returns {number}
+ */
+export function barCountFor(width) {
+  return Math.min(BAND_COUNT, Math.max(MIN_BARS, Math.round(width / BAR_TARGET_W)));
+}
+
+/**
+ * Winamp-style columns: each bar is the average of its slice of bands and is
+ * split into a low, a mid and a high colour by height.
  * @type {StyleDraw}
  */
 function drawBars(ctx, signal, { w, h }, colors) {
-  const slot = w / BAND_COUNT;
+  const count = barCountFor(w);
+  const slot = w / count;
   const barW = Math.max(1, slot - 1);
-  for (let i = 0; i < BAND_COUNT; i += 1) {
+  for (let i = 0; i < count; i += 1) {
+    const from = Math.floor((i * BAND_COUNT) / count);
+    const to = Math.max(from + 1, Math.floor(((i + 1) * BAND_COUNT) / count));
+    let sum = 0;
+    for (let band = from; band < to; band += 1) sum += unit(signal.levels[band] ?? 0);
     const x = i * slot;
-    const total = unit(signal.levels[i] ?? 0) * h;
+    const total = (sum / (to - from)) * h;
     if (total <= 0) continue;
     const parts = /** @type {const} */ ([
       [0, 0.5, colors.low],
       [0.5, 0.8, colors.mid],
       [0.8, 1, colors.high],
     ]);
-    for (const [from, to, color] of parts) {
-      const top = Math.min(total, to * h);
-      const bottom = from * h;
+    for (const [low, high, color] of parts) {
+      const top = Math.min(total, high * h);
+      const bottom = low * h;
       if (top <= bottom) continue;
       ctx.fillStyle = color;
       ctx.fillRect(x, h - top, barW, top - bottom);
@@ -93,10 +112,11 @@ function drawGlow(ctx, signal, { w, h }, colors) {
     ctx.fill();
   }
   ctx.fillStyle = colors.low;
-  for (let i = 0; i < BAND_COUNT; i += 1) {
-    const level = unit(signal.levels[i] ?? 0);
+  const dots = 32;
+  for (let d = 0; d < dots; d += 1) {
+    const level = unit(signal.levels[Math.floor((d * BAND_COUNT) / dots)] ?? 0);
     if (level <= 0) continue;
-    const angle = (i / BAND_COUNT) * Math.PI * 2;
+    const angle = (d / dots) * Math.PI * 2;
     const radius = reach * (0.45 + 0.5 * level);
     ctx.globalAlpha = 0.35 + 0.65 * level;
     ctx.beginPath();

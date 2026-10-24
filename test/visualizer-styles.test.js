@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { BAND_COUNT, WAVE_SAMPLES, createSignal } from '../src/visualizer-signal.js';
 import { STYLE_IDS } from '../src/visualizer-settings.js';
-import { VIZ_COLOR_TOKENS, drawStyle, readVisualizerColors } from '../src/visualizer-styles.js';
+import { VIZ_COLOR_TOKENS, barCountFor, drawStyle, readVisualizerColors } from '../src/visualizer-styles.js';
 
 const COLORS = { low: '#0f0', mid: '#ff0', high: '#f00', accent: '#f90', back: '#000' };
 const SIZE = { w: 200, h: 100 };
@@ -52,7 +52,7 @@ describe('bars', () => {
     const { ctx, calls } = fakeContext();
     drawStyle('bars', ctx, signalWith((s) => s.levels.fill(1)), SIZE, COLORS);
     const rects = calls.filter((c) => c.name === 'fillRect');
-    expect(rects.length).toBeGreaterThanOrEqual(BAND_COUNT);
+    expect(rects.length).toBeGreaterThanOrEqual(barCountFor(SIZE.w));
     for (const { args } of rects) {
       const [x = 0, y = 0, w = 0, h = 0] = /** @type {number[]} */ (args);
       expect(x).toBeGreaterThanOrEqual(0);
@@ -60,6 +60,26 @@ describe('bars', () => {
       expect(y).toBeGreaterThanOrEqual(0);
       expect(y + h).toBeLessThanOrEqual(SIZE.h + 0.0001);
     }
+  });
+});
+
+describe('bar granularity', () => {
+  it('uses about one bar per 6 px, between 16 and one per signal band', () => {
+    expect(barCountFor(322)).toBe(54);
+    expect(barCountFor(10)).toBe(16);
+    expect(barCountFor(100000)).toBe(BAND_COUNT);
+  });
+
+  it('draws thin bars on a wide canvas, not the same few stretched', () => {
+    const wide = { w: 1600, h: 100 };
+    const narrow = fakeContext();
+    const big = fakeContext();
+    const full = signalWith((s) => s.levels.fill(1));
+    drawStyle('bars', narrow.ctx, full, SIZE, COLORS);
+    drawStyle('bars', big.ctx, full, wide, COLORS);
+    const widths = big.calls.filter((c) => c.name === 'fillRect').map((c) => /** @type {number[]} */ (c.args)[2] ?? 0);
+    expect(widths.length).toBeGreaterThan(narrow.calls.filter((c) => c.name === 'fillRect').length);
+    expect(Math.max(...widths)).toBeLessThanOrEqual(7);
   });
 });
 

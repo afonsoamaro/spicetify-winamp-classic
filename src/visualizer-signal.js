@@ -5,7 +5,8 @@
 // in the same spirit as the display spectrum in spectrum.js.
 import { DECAY, SMOOTHING } from './spectrum.js';
 
-export const BAND_COUNT = 32;
+// Enough bands for a full-width bar every few pixels; narrower canvases take fewer.
+export const BAND_COUNT = 256;
 export const WAVE_SAMPLES = 64;
 
 // Used when there is no track uri to take a tempo from.
@@ -67,9 +68,10 @@ export function stepSignal(signal, { uri, progressMs, playing, rng }) {
   }
 
   for (let i = 0; i < BAND_COUNT; i += 1) {
-    // Low bands carry the beat, high bands sit lower.
+    // Low bands carry the beat, high bands sit lower. The beat boost fades
+    // out over the first third of the bands instead of stopping at a line.
     const tilt = 1 - 0.5 * (i / (BAND_COUNT - 1));
-    const lift = i < BAND_COUNT / 3 ? 0.55 + 0.45 * signal.beat : 1;
+    const lift = 0.8 + 0.5 * signal.beat * Math.max(0, 1 - i / (BAND_COUNT / 3));
     const target = playing ? Math.min(1, (SMOOTHING * (signal.targets[i] ?? 0) + (1 - SMOOTHING) * rng()) * tilt * lift * 1.4) : 0;
     signal.targets[i] = target;
     const level = signal.levels[i] ?? 0;

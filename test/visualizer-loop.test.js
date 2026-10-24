@@ -1,6 +1,7 @@
 // @ts-check
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createVisualizerLoop } from '../src/visualizer-loop.js';
+import { BAND_COUNT } from '../src/visualizer-signal.js';
 
 /** Frame queue standing in for requestAnimationFrame. */
 function fakeScheduler() {
@@ -78,7 +79,7 @@ describe('createVisualizerLoop', () => {
     expect(loop.isRunning()).toBe(true);
     sched.runOne();
     expect(surface.draw).toHaveBeenCalledTimes(1);
-    expect(drawCalls(surface)[0]?.[0].levels).toHaveLength(32);
+    expect(drawCalls(surface)[0]?.[0].levels).toHaveLength(BAND_COUNT);
     expect(loop.isRunning()).toBe(true);
   });
 
