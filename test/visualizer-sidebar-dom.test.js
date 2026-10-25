@@ -1,5 +1,7 @@
 /** @vitest-environment jsdom */
 // @ts-check
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { labelsFor } from '../src/visualizer-i18n.js';
 import { DEFAULTS } from '../src/visualizer-settings.js';
@@ -81,6 +83,16 @@ describe('createSidebarSurface', () => {
     panel()?.querySelector('button')?.click();
     expect(store.set).toHaveBeenCalledWith({ sidebarOpen: false });
     expect(surface.isVisible()).toBe(false);
+  });
+
+  it('has a stylesheet rule that takes a hidden canvas out of the layout', () => {
+    // The panel sets `display: block` on its canvas, and an author rule beats the browser's own
+    // `[hidden] { display: none }`: without a rule of its own the "hidden" canvas stayed on screen,
+    // frozen, and the show/hide key only started and stopped the animation. jsdom does not
+    // reproduce that cascade, so the rule itself is what the test pins.
+    const css = readFileSync(path.resolve(import.meta.dirname, '../user.css'), 'utf8');
+    const rule = css.match(/\.wa-viz-panel canvas\[hidden\]\s*\{([^}]*)\}/);
+    expect(rule?.[1]).toMatch(/display:\s*none/);
   });
 
   it('is not visible when the master switch or the surface is off, or the sidebar is closed', () => {

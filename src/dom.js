@@ -20,11 +20,12 @@ export const LOG_PREFIX = '[winamp-classic]';
 //
 // Spotify 1.3.5 dropped the readable class names (they came from the Spicetify
 // class map, which does not cover every Spotify version), so this hangs on what
-// Spotify keeps: the now-playing-widget test id and the shape of the widget. The
+// Spotify keeps: the now-playing-widget test id (`-v2` since 1.3.6, and both ids are
+// still in the bundle, so the theme names both) and the shape of the widget. The
 // widget holds the cover (it has a test id), the text block and the action
 // buttons; the text block is the child with neither a test id nor a button.
 export const DISPLAY_SELECTOR =
-  '[data-testid="now-playing-bar"] [data-testid="now-playing-widget"] > div:not([data-testid], :has(button))';
+  '[data-testid="now-playing-bar"] :is([data-testid="now-playing-widget"], [data-testid="now-playing-widget-v2"]) > div:not([data-testid], :has(button))';
 
 // The stable parent of the bar. Spotify remounts the bar inside it in some
 // flows, so this is what the observer watches.

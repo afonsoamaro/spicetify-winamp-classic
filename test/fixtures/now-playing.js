@@ -12,6 +12,19 @@ export const WIDGET_HTML =
   '<div class="uUCH"><button data-encore-id="buttonTertiary"></button></div>' +
   '</div>';
 
+/**
+ * The same widget as Spotify 1.3.6 renders it: its test id carries a `-v2`, the
+ * cover container keeps a test id, the text block still has none, and the
+ * action buttons come last. The old id still exists in Spotify's bundle (behind
+ * a flag), so a theme has to know both.
+ */
+export const WIDGET_V2_HTML =
+  '<div data-testid="now-playing-widget-v2" role="region">' +
+  '<div data-testid="cover-art-container"><button data-testid="cover-art-button"></button></div>' +
+  '<div class="hL0b"><div class="bXWo"><span>title</span></div><div class="rxts"><span>artist</span></div></div>' +
+  '<div class="uUCH"><button data-encore-id="buttonTertiary"></button></div>' +
+  '</div>';
+
 /** @param {string} [inner] markup inside the inner bar, after the left column */
 export function barHtml(inner = '') {
   return `<aside data-testid="now-playing-bar"><div class="dhrE"><div class="GT3b">${inner}</div></div></aside>`;

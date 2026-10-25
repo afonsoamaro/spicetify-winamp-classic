@@ -2,7 +2,9 @@
 // @ts-check
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LOG_PREFIX, cleanupInjections, findDisplay, mount, runInjections, waitForSpicetify } from '../src/dom.js';
-import { BAR_WITH_WIDGET_HTML, appendWidget, barHtml, displayInDocument, innerBarInDocument } from './fixtures/now-playing.js';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { BAR_WITH_WIDGET_HTML, WIDGET_V2_HTML, appendWidget, barHtml, displayInDocument, innerBarInDocument } from './fixtures/now-playing.js';
 
 /** Builds the bar with a display inside and returns the display. */
 function makeBar() {
@@ -75,6 +77,23 @@ describe('findDisplay', () => {
     expect(findDisplay(document)).toBeNull();
     const display = makeBar();
     expect(findDisplay(document)).toBe(display);
+  });
+
+  it('finds the display in the 1.3.6 widget, whose test id carries a -v2', () => {
+    document.body.innerHTML = barHtml(WIDGET_V2_HTML);
+    const text = document.querySelector('[data-testid="now-playing-widget-v2"] > div:not([data-testid], :has(button))');
+    expect(text).not.toBeNull();
+    expect(findDisplay(document)).toBe(text);
+  });
+
+  it('names both widget ids wherever the stylesheet and the script name one', () => {
+    const root = path.resolve(import.meta.dirname, '..');
+    for (const file of ['user.css', 'src/dom.js']) {
+      const text = readFileSync(path.join(root, file), 'utf8');
+      const old = (text.match(/data-testid="now-playing-widget"\]/g) ?? []).length;
+      const v2 = (text.match(/data-testid="now-playing-widget-v2"\]/g) ?? []).length;
+      expect({ file, old: old > 0, same: v2 === old }).toEqual({ file, old: true, same: true });
+    }
   });
 });
 
