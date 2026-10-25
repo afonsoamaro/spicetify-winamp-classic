@@ -209,7 +209,7 @@
    the analyser canvas, so the text never runs underneath it; the display is
    the canvas's containing block, so position is set here rather than left to
    Spotify's own rule. */
-[data-testid="now-playing-bar"] > div [data-testid="now-playing-widget"] > div:not([data-testid], :has(button)) {
+[data-testid="now-playing-bar"] > div :is([data-testid="now-playing-widget"], [data-testid="now-playing-widget-v2"]) > div:not([data-testid], :has(button)) {
   position: relative;
   flex: 1 1 auto;
   min-width: 0;
@@ -222,7 +222,7 @@
    1.3.5, so the text inside the display takes the pixel face as a whole and
    its first block, the title, takes the lit colour. The artist keeps the muted
    colour Spotify already gives it. */
-[data-testid="now-playing-bar"] > div [data-testid="now-playing-widget"] > div:not([data-testid], :has(button)) :is(span, a) {
+[data-testid="now-playing-bar"] > div :is([data-testid="now-playing-widget"], [data-testid="now-playing-widget-v2"]) > div:not([data-testid], :has(button)) :is(span, a) {
   font-family: var(--wa-font-pixel);
   font-size: 11px;
   text-transform: uppercase;
@@ -230,7 +230,7 @@
   letter-spacing: 0;
 }
 
-[data-testid="now-playing-bar"] > div [data-testid="now-playing-widget"] > div:not([data-testid], :has(button)) > :first-child :is(span, a) {
+[data-testid="now-playing-bar"] > div :is([data-testid="now-playing-widget"], [data-testid="now-playing-widget-v2"]) > div:not([data-testid], :has(button)) > :first-child :is(span, a) {
   color: var(--spice-text);
 }
 
@@ -252,12 +252,12 @@
   color: var(--spice-text);
 }
 
-[data-testid="now-playing-bar"] > div [data-testid="now-playing-widget"] > div:not([data-testid], :has(button)):has(> .wa-marquee) {
+[data-testid="now-playing-bar"] > div :is([data-testid="now-playing-widget"], [data-testid="now-playing-widget-v2"]) > div:not([data-testid], :has(button)):has(> .wa-marquee) {
   display: flex;
   align-items: center;
 }
 
-[data-testid="now-playing-bar"] > div [data-testid="now-playing-widget"] > div:not([data-testid], :has(button)):has(> .wa-marquee) > :not(.wa-marquee, .wa-spectrum) {
+[data-testid="now-playing-bar"] > div :is([data-testid="now-playing-widget"], [data-testid="now-playing-widget-v2"]) > div:not([data-testid], :has(button)):has(> .wa-marquee) > :not(.wa-marquee, .wa-spectrum) {
   display: none;
 }
 
@@ -1507,6 +1507,11 @@ body [data-encore-id="cardSubtitle"] {
   display: block;
   width: 100%;
   height: 96px;
+}
+
+/* The display above beats the browser's [hidden] rule, so a hidden canvas needs its own. */
+.wa-viz-panel canvas[hidden] {
+  display: none;
 }
 
 /* Visualizer in the expanded Now Playing view (FN-20): a toggle among the
