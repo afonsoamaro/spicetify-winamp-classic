@@ -132,13 +132,25 @@ function createState(bars = BARS) {
  * @returns {SpectrumState}
  */
 function nextFrame(state, rng, playing) {
-  const { values, targets, peaks, holds } = state;
+  const { values, targets } = state;
   for (let i = 0; i < values.length; i += 1) {
     const target = playing ? SMOOTHING * (targets[i] ?? 0) + (1 - SMOOTHING) * rng() : 0;
     targets[i] = target;
     const value = values[i] ?? 0;
     values[i] = target > value ? target : Math.max(0, value - DECAY);
+  }
+  trackPeaks(state);
+  return state;
+}
 
+/**
+ * Moves the peak of every bar for one frame: it rides on the bar, holds for
+ * PEAK_HOLD frames once the bar drops under it, then falls. Takes only what it
+ * reads, so any list of values can have peaks, not just a spectrum's own.
+ * @param {{ values: number[], peaks: number[], holds: number[] }} state
+ */
+function trackPeaks({ values, peaks, holds }) {
+  for (let i = 0; i < values.length; i += 1) {
     const current = values[i] ?? 0;
     const peak = peaks[i] ?? 0;
     if (current >= peak) {
@@ -150,7 +162,6 @@ function nextFrame(state, rng, playing) {
       peaks[i] = Math.max(0, peak - PEAK_FALL);
     }
   }
-  return state;
 }
 
 /**
@@ -276,9 +287,10 @@ function createSettingsStore({ storage }) {
 // --- visualizer-signal.js ---
 // @ts-check
 // The synthetic signal behind every visualizer style. Pure, no DOM. It is not
-// the playing audio (Spotify gives the page no way to hear it): a tempo taken
-// from the track id gives a beat, and smoothed random targets give the bands,
-// in the same spirit as the display spectrum in spectrum.js.
+// the playing audio (Spotify gives the page no way to hear it): the bars come
+// from the same generator as the display spectrum in spectrum.js, so the big
+// one is as lively as the small one, and a tempo taken from the track id gives
+// the beat that the oscilloscope and the glow follow.
 
 // Enough bands for a full-width bar every few pixels; narrower canvases take fewer.
 const BAND_COUNT = 256;
@@ -295,11 +307,27 @@ const BEAT_RELEASE = 0.85;
 const WAVE_RELEASE = 0.8;
 // Below this a decaying value snaps to exactly 0, so silence is reachable.
 const FLOOR = 0.002;
+// A band is its place on a broad curve (as many bars as the small spectrum,
+// interpolated between neighbours) plus a jitter of its own, each swinging
+// around the middle. The two spreads add up to more than 1 so the mix is as
+// lively as one generator on its own would be.
+const COARSE_SPREAD = 0.8;
+const FINE_SPREAD = 0.9;
 
 /**
- * levels: 0..1 per band. wave: -1..1 samples of a waveform. beat: 0..1,
- * 1 on the beat. targets: what each band is chasing, internal to stepSignal.
- * @typedef {{ levels: number[], wave: number[], beat: number, targets: number[] }} Signal
+ * levels: 0..1 per band. peaks: the held peak of each band. wave: -1..1 samples
+ * of a waveform. beat: 0..1, 1 on the beat. coarse and fine are the two
+ * spectrum states the levels are mixed from, holds the peak timers; all three
+ * are internal to stepSignal.
+ * @typedef {{
+ *   levels: number[],
+ *   peaks: number[],
+ *   wave: number[],
+ *   beat: number,
+ *   coarse: import('./spectrum.js').SpectrumState,
+ *   fine: import('./spectrum.js').SpectrumState,
+ *   holds: number[],
+ * }} Signal
  */
 
 /**
@@ -319,9 +347,12 @@ function bpmForTrack(uri) {
 function createSignal() {
   return {
     levels: new Array(BAND_COUNT).fill(0),
+    peaks: new Array(BAND_COUNT).fill(0),
     wave: new Array(WAVE_SAMPLES).fill(0),
     beat: 0,
-    targets: new Array(BAND_COUNT).fill(0),
+    coarse: createState(BARS),
+    fine: createState(BAND_COUNT),
+    holds: new Array(BAND_COUNT).fill(0),
   };
 }
 
@@ -342,16 +373,22 @@ function stepSignal(signal, { uri, progressMs, playing, rng }) {
     signal.beat = signal.beat * BEAT_RELEASE < FLOOR ? 0 : signal.beat * BEAT_RELEASE;
   }
 
+  nextFrame(signal.coarse, rng, playing);
+  nextFrame(signal.fine, rng, playing);
   for (let i = 0; i < BAND_COUNT; i += 1) {
-    // Low bands carry the beat, high bands sit lower. The beat boost fades
-    // out over the first third of the bands instead of stopping at a line.
-    const tilt = 1 - 0.5 * (i / (BAND_COUNT - 1));
-    const lift = 0.8 + 0.5 * signal.beat * Math.max(0, 1 - i / (BAND_COUNT / 3));
-    const target = playing ? Math.min(1, (SMOOTHING * (signal.targets[i] ?? 0) + (1 - SMOOTHING) * rng()) * tilt * lift * 1.4) : 0;
-    signal.targets[i] = target;
-    const level = signal.levels[i] ?? 0;
-    signal.levels[i] = target > level ? target : Math.max(0, level - DECAY);
+    if (playing) {
+      const at = (i / (BAND_COUNT - 1)) * (BARS - 1);
+      const low = Math.floor(at);
+      const high = Math.min(BARS - 1, low + 1);
+      const across = at - low;
+      const broad = (signal.coarse.values[low] ?? 0) * (1 - across) + (signal.coarse.values[high] ?? 0) * across;
+      const mixed = 0.5 + COARSE_SPREAD * (broad - 0.5) + FINE_SPREAD * ((signal.fine.values[i] ?? 0) - 0.5);
+      signal.levels[i] = Math.min(1, Math.max(0, mixed));
+    } else {
+      signal.levels[i] = Math.max(0, (signal.levels[i] ?? 0) - DECAY);
+    }
   }
+  trackPeaks({ values: signal.levels, peaks: signal.peaks, holds: signal.holds });
 
   const seconds = progress / 1000;
   const amplitude = 0.25 + 0.6 * signal.beat;
@@ -375,7 +412,7 @@ function stepSignal(signal, { uri, progressMs, playing, rng }) {
  * @returns {boolean}
  */
 function isSilent(signal) {
-  return signal.beat === 0 && signal.levels.every((v) => v === 0) && signal.wave.every((v) => v === 0);
+  return signal.beat === 0 && signal.levels.every((v) => v === 0) && signal.peaks.every((p) => p === 0) && signal.wave.every((v) => v === 0);
 }
 
 // --- visualizer-styles.js ---
@@ -392,6 +429,7 @@ const VIZ_COLOR_TOKENS = /** @type {const} */ ({
   high: ['--spice-notification-error', '#c60000'],
   accent: ['--spice-misc', '#ff9900'],
   back: ['--spice-main', '#000000'],
+  peak: ['--wa-bevel-light', '#5a5a6e'],
 });
 
 /** @typedef {Record<keyof typeof VIZ_COLOR_TOKENS, string>} VizColors */
@@ -432,9 +470,15 @@ function barCountFor(width) {
   return Math.min(BAND_COUNT, Math.max(MIN_BARS, Math.round(width / BAR_TARGET_W)));
 }
 
+// The four colour bands of a bar, bottom to top, the same as the display spectrum's.
+const BAR_BANDS = /** @type {const} */ (['low', 'mid', 'accent', 'high']);
+// Thickness of the peak cap, in CSS pixels.
+const PEAK_CAP_H = 2;
+
 /**
- * Winamp-style columns: each bar is the average of its slice of bands and is
- * split into a low, a mid and a high colour by height.
+ * Winamp-style columns, painted like the display spectrum: each bar reads one
+ * band (not an average, which would iron the randomness out), is split into four
+ * colour bands by height and wears the held peak as a cap.
  * @type {StyleDraw}
  */
 function drawBars(ctx, signal, { w, h }, colors) {
@@ -442,24 +486,20 @@ function drawBars(ctx, signal, { w, h }, colors) {
   const slot = w / count;
   const barW = Math.max(1, slot - 1);
   for (let i = 0; i < count; i += 1) {
-    const from = Math.floor((i * BAND_COUNT) / count);
-    const to = Math.max(from + 1, Math.floor(((i + 1) * BAND_COUNT) / count));
-    let sum = 0;
-    for (let band = from; band < to; band += 1) sum += unit(signal.levels[band] ?? 0);
+    const band = Math.floor((i * BAND_COUNT) / count);
     const x = i * slot;
-    const total = (sum / (to - from)) * h;
-    if (total <= 0) continue;
-    const parts = /** @type {const} */ ([
-      [0, 0.5, colors.low],
-      [0.5, 0.8, colors.mid],
-      [0.8, 1, colors.high],
-    ]);
-    for (const [low, high, color] of parts) {
-      const top = Math.min(total, high * h);
-      const bottom = low * h;
-      if (top <= bottom) continue;
-      ctx.fillStyle = color;
+    const total = unit(signal.levels[band] ?? 0) * h;
+    for (let k = 0; k < BAR_BANDS.length && total > 0; k += 1) {
+      const bottom = (k / BAR_BANDS.length) * h;
+      const top = Math.min(total, ((k + 1) / BAR_BANDS.length) * h);
+      if (top <= bottom) break;
+      ctx.fillStyle = colors[BAR_BANDS[k] ?? 'low'];
       ctx.fillRect(x, h - top, barW, top - bottom);
+    }
+    const peak = unit(signal.peaks[band] ?? 0) * h;
+    if (peak > 0) {
+      ctx.fillStyle = colors.peak;
+      ctx.fillRect(x, Math.min(h - PEAK_CAP_H, Math.max(0, h - peak)), barW, PEAK_CAP_H);
     }
   }
 }
@@ -1331,6 +1371,71 @@ function findFullscreenView(root, coverWidth) {
 }
 
 /**
+ * The overlay covers what lies between the header and the player bar. The view
+ * can fill the whole window with both inside it, so it cannot simply fill the
+ * view: it starts where the header ends, so the toggle and the minimise key stay
+ * reachable, and ends where the player bar begins, so the controls stay usable.
+ * @param {HTMLElement} overlay
+ * @param {HTMLElement} view
+ * @param {HTMLElement} header
+ * @param {Document} root
+ */
+function placeOverlay(overlay, view, header, root = document) {
+  const viewBox = view.getBoundingClientRect();
+  const top = Math.max(0, header.getBoundingClientRect().bottom - viewBox.top);
+  const bar = root.querySelector('[data-testid="now-playing-bar"]');
+  const bottom = bar ? Math.max(0, viewBox.bottom - bar.getBoundingClientRect().top + TITLE_ROOM) : 0;
+  overlay.style.top = `${top}px`;
+  overlay.style.bottom = `${bottom}px`;
+}
+
+// The track title sits just above the player bar; the overlay stops short of it.
+const TITLE_ROOM = 16;
+const SVG_NS = 'http://www.w3.org/2000/svg';
+// Four bars of different heights in a 16x16 box, drawn with the current colour.
+const BARS_ICON_PATH = 'M1 14V9h2.5v5H1zm4 0V3h2.5v11H5zm4 0V6h2.5v8H9zm4 0V8h2.5v6H13z';
+
+/**
+ * The toggle, made as one more button of the group it joins: it takes the
+ * neighbour's classes, role and Encore id, so Spotify's own stylesheet dresses
+ * it (size, colours, the checked state) and the theme's rules for those keys
+ * apply to it without a single rule of its own. It is an icon with a label for
+ * assistive technology, like the others.
+ * @param {Document} root
+ * @param {HTMLElement} host the button group
+ * @param {string} label
+ * @returns {HTMLButtonElement}
+ */
+function buildToggle(root, host, label) {
+  const sample = host.querySelector('button');
+  const button = root.createElement('button');
+  button.type = 'button';
+  button.className = [sample?.className, FULLSCREEN_TOGGLE_CLASS].filter(Boolean).join(' ');
+  button.setAttribute('role', sample?.getAttribute('role') ?? 'switch');
+  const encoreId = sample?.getAttribute('data-encore-id');
+  if (encoreId) button.setAttribute('data-encore-id', encoreId);
+  button.setAttribute('aria-label', label);
+  button.title = label;
+
+  // Clone the neighbour's icon shell so the size and the classes match, then swap the drawing.
+  const sampleWrapper = sample?.querySelector('span');
+  const sampleIcon = sample?.querySelector('svg');
+  const wrapper = /** @type {HTMLElement} */ (sampleWrapper ? sampleWrapper.cloneNode(false) : root.createElement('span'));
+  wrapper.setAttribute('aria-hidden', 'true');
+  const icon = /** @type {SVGElement} */ (sampleIcon ? sampleIcon.cloneNode(false) : root.createElementNS(SVG_NS, 'svg'));
+  if (!sampleIcon) icon.setAttribute('viewBox', '0 0 16 16');
+  icon.setAttribute('role', 'img');
+  icon.setAttribute('aria-hidden', 'true');
+  icon.setAttribute('fill', 'currentColor');
+  const path = root.createElementNS(SVG_NS, 'path');
+  path.setAttribute('d', BARS_ICON_PATH);
+  icon.append(path);
+  wrapper.append(icon);
+  button.append(wrapper);
+  return button;
+}
+
+/**
  * @param {{
  *   store: import('./visualizer-settings-dom.js').SettingsStoreLike,
  *   loop: { register(surface: import('./visualizer-loop.js').Surface): () => void, wake(): void },
@@ -1357,6 +1462,10 @@ function createFullscreenSurface({ store, loop, labels, root = document, coverWi
   /** @type {import('./visualizer-styles.js').VizColors | null} */
   let colors = null;
   let active = false;
+  /** @type {HTMLElement | null} */
+  let group = null;
+  /** @type {{ frame: HTMLElement, header: HTMLElement } | null} */
+  let anchor = null;
 
   const allowed = () => {
     const settings = store.get();
@@ -1383,6 +1492,7 @@ function createFullscreenSurface({ store, loop, labels, root = document, coverWi
   };
 
   const hideOverlay = () => {
+    anchor = null;
     unregister?.();
     unregister = null;
     overlay?.remove();
@@ -1398,9 +1508,8 @@ function createFullscreenSurface({ store, loop, labels, root = document, coverWi
     if (getComputedStyle(frame).position === 'static') frame.style.position = 'relative';
     overlay = root.createElement('div');
     overlay.className = FULLSCREEN_OVERLAY_CLASS;
-    // Starts below the header so the toggle and the minimise key stay reachable.
-    const offset = Math.max(0, host.getBoundingClientRect().bottom - frame.getBoundingClientRect().top);
-    overlay.style.top = `${offset}px`;
+    anchor = { frame, header: host };
+    placeOverlay(overlay, frame, host, root);
     canvas = root.createElement('canvas');
     canvas.setAttribute('aria-hidden', 'true');
     overlay.append(canvas);
@@ -1409,11 +1518,28 @@ function createFullscreenSurface({ store, loop, labels, root = document, coverWi
     unregister = loop.register(surface);
   };
 
+  // The overlay's limits are pixels measured from the layout, so a new window size moves them.
+  const onResize = () => {
+    if (overlay && anchor) placeOverlay(overlay, anchor.frame, anchor.header, root);
+  };
+
   const watcher = createThrottled(() => sync(), throttleMs);
+
+  // Picking another display mode from the same group ends this one, as it does
+  // for the others in the group.
+  /** @param {Event} event */
+  const onGroupClick = (event) => {
+    if (!active || !(event.target instanceof Element) || event.target.closest('button') === toggle) return;
+    active = false;
+    sync();
+    loop.wake();
+  };
 
   const removeAll = () => {
     active = false;
     hideOverlay();
+    group?.removeEventListener('click', onGroupClick);
+    group = null;
     toggle?.remove();
     toggle = null;
   };
@@ -1429,18 +1555,18 @@ function createFullscreenSurface({ store, loop, labels, root = document, coverWi
     }
     const { view, host } = found;
     if (!toggle?.isConnected) {
-      toggle = root.createElement('button');
-      toggle.type = 'button';
-      toggle.className = FULLSCREEN_TOGGLE_CLASS;
-      toggle.textContent = labels.fullscreenToggle;
+      group?.removeEventListener('click', onGroupClick);
+      toggle = buildToggle(root, host, labels.fullscreenToggle);
       toggle.addEventListener('click', () => {
         active = !active;
         sync();
         loop.wake();
       });
-      host.prepend(toggle);
+      group = host;
+      group.addEventListener('click', onGroupClick);
+      host.append(toggle);
     }
-    toggle.setAttribute('aria-pressed', String(active));
+    toggle.setAttribute('aria-checked', String(active));
     if (active) showOverlay(view, toggle.parentElement ?? host);
     else hideOverlay();
   };
@@ -1454,12 +1580,14 @@ function createFullscreenSurface({ store, loop, labels, root = document, coverWi
       });
       observer = new MutationObserver(() => watcher.call());
       observer.observe(root.body, { childList: true, subtree: true });
+      root.defaultView?.addEventListener('resize', onResize);
       sync();
     },
     unmount() {
       observer?.disconnect();
       observer = null;
       watcher.cancel();
+      root.defaultView?.removeEventListener('resize', onResize);
       unsubscribe?.();
       unsubscribe = null;
       removeAll();

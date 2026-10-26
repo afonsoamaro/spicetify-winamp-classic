@@ -12,6 +12,7 @@ export const VIZ_COLOR_TOKENS = /** @type {const} */ ({
   high: ['--spice-notification-error', '#c60000'],
   accent: ['--spice-misc', '#ff9900'],
   back: ['--spice-main', '#000000'],
+  peak: ['--wa-bevel-light', '#5a5a6e'],
 });
 
 /** @typedef {Record<keyof typeof VIZ_COLOR_TOKENS, string>} VizColors */
@@ -52,9 +53,15 @@ export function barCountFor(width) {
   return Math.min(BAND_COUNT, Math.max(MIN_BARS, Math.round(width / BAR_TARGET_W)));
 }
 
+// The four colour bands of a bar, bottom to top, the same as the display spectrum's.
+const BAR_BANDS = /** @type {const} */ (['low', 'mid', 'accent', 'high']);
+// Thickness of the peak cap, in CSS pixels.
+const PEAK_CAP_H = 2;
+
 /**
- * Winamp-style columns: each bar is the average of its slice of bands and is
- * split into a low, a mid and a high colour by height.
+ * Winamp-style columns, painted like the display spectrum: each bar reads one
+ * band (not an average, which would iron the randomness out), is split into four
+ * colour bands by height and wears the held peak as a cap.
  * @type {StyleDraw}
  */
 function drawBars(ctx, signal, { w, h }, colors) {
@@ -62,24 +69,20 @@ function drawBars(ctx, signal, { w, h }, colors) {
   const slot = w / count;
   const barW = Math.max(1, slot - 1);
   for (let i = 0; i < count; i += 1) {
-    const from = Math.floor((i * BAND_COUNT) / count);
-    const to = Math.max(from + 1, Math.floor(((i + 1) * BAND_COUNT) / count));
-    let sum = 0;
-    for (let band = from; band < to; band += 1) sum += unit(signal.levels[band] ?? 0);
+    const band = Math.floor((i * BAND_COUNT) / count);
     const x = i * slot;
-    const total = (sum / (to - from)) * h;
-    if (total <= 0) continue;
-    const parts = /** @type {const} */ ([
-      [0, 0.5, colors.low],
-      [0.5, 0.8, colors.mid],
-      [0.8, 1, colors.high],
-    ]);
-    for (const [low, high, color] of parts) {
-      const top = Math.min(total, high * h);
-      const bottom = low * h;
-      if (top <= bottom) continue;
-      ctx.fillStyle = color;
+    const total = unit(signal.levels[band] ?? 0) * h;
+    for (let k = 0; k < BAR_BANDS.length && total > 0; k += 1) {
+      const bottom = (k / BAR_BANDS.length) * h;
+      const top = Math.min(total, ((k + 1) / BAR_BANDS.length) * h);
+      if (top <= bottom) break;
+      ctx.fillStyle = colors[BAR_BANDS[k] ?? 'low'];
       ctx.fillRect(x, h - top, barW, top - bottom);
+    }
+    const peak = unit(signal.peaks[band] ?? 0) * h;
+    if (peak > 0) {
+      ctx.fillStyle = colors.peak;
+      ctx.fillRect(x, Math.min(h - PEAK_CAP_H, Math.max(0, h - peak)), barW, PEAK_CAP_H);
     }
   }
 }

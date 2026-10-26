@@ -5,12 +5,20 @@
 // big cover with role="img". The player bar and the sidebar carry covers of
 // their own, which must never be taken for the view.
 
+// The header buttons are radio-like icon buttons: Spotify's own classes, a role,
+// aria-checked, the Encore id, and an icon in a span. The toggle borrows all of it.
+const ICON = '<span aria-hidden="true" class="icon-wrap"><svg data-encore-id="icon" role="img" aria-hidden="true" class="icon-cls" viewBox="0 0 16 16" width="16" height="16"><path d="M0 0z"></path></svg></span>';
+
+/** @param {string} label @param {boolean} checked */
+const headerButton = (label, checked) =>
+  `<button class="btn-cls btn-tertiary" role="radio" value="${label}" aria-checked="${checked}" aria-label="${label}" data-encore-id="buttonTertiary">${ICON}</button>`;
+
 export const FULLSCREEN_VIEW_HTML =
   '<div id="view">' +
   '<div class="hdr"><div id="group">' +
-  '<button data-encore-id="buttonTertiary" aria-label="More options">m</button>' +
-  '<button data-encore-id="buttonTertiary" aria-label="Enter Full screen">f</button>' +
-  '<button data-encore-id="buttonTertiary" aria-label="Minimize Now Playing view">x</button>' +
+  headerButton('Show artwork', true) +
+  headerButton('Show lyrics', false) +
+  headerButton('More options', false) +
   '</div></div>' +
   '<div class="body"><div class="cover" role="img" aria-label="Track artwork"></div></div>' +
   '</div>';

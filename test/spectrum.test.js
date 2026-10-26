@@ -1,6 +1,6 @@
 // @ts-check
 import { describe, expect, it } from 'vitest';
-import { BARS, DECAY, PEAK_FALL, PEAK_HOLD, SMOOTHING, colorForRow, createState, isIdle, nextFrame } from '../src/spectrum.js';
+import { BARS, DECAY, PEAK_FALL, PEAK_HOLD, SMOOTHING, colorForRow, createState, isIdle, nextFrame, trackPeaks } from '../src/spectrum.js';
 
 const one = () => 1;
 const zero = () => 0;
@@ -82,6 +82,20 @@ describe('nextFrame', () => {
   it('returns the same state object', () => {
     const state = createState(1);
     expect(nextFrame(state, one, true)).toBe(state);
+  });
+});
+
+describe('trackPeaks', () => {
+  it('does for any list of values what nextFrame does for its own: ride, hold, then fall', () => {
+    const state = { values: [0.8, 0.2], peaks: [0, 0], holds: [0, 0] };
+    trackPeaks(state);
+    expect(state.peaks).toEqual([0.8, 0.2]);
+    expect(state.holds).toEqual([PEAK_HOLD, PEAK_HOLD]);
+    state.values[0] = 0.1;
+    for (let i = 0; i < PEAK_HOLD; i += 1) trackPeaks(state);
+    expect(state.peaks[0]).toBeCloseTo(0.8, 10);
+    trackPeaks(state);
+    expect(state.peaks[0]).toBeCloseTo(0.8 - PEAK_FALL, 10);
   });
 });
 

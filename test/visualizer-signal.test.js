@@ -1,5 +1,6 @@
 // @ts-check
 import { describe, expect, it } from 'vitest';
+import { BARS, PEAK_FALL } from '../src/spectrum.js';
 import { BAND_COUNT, WAVE_SAMPLES, bpmForTrack, createSignal, isSilent, stepSignal } from '../src/visualizer-signal.js';
 
 /** Small deterministic generator so runs can be compared. @param {number} seed */
@@ -59,18 +60,83 @@ describe('stepSignal', () => {
     }
   });
 
-  it('has no step where the beat boost ends, a third of the way up the bands', () => {
-    const sums = new Array(BAND_COUNT).fill(0);
+  /** Runs a seeded signal and returns each band's series of levels over the frames. @param {number} frames */
+  function bandSeries(frames) {
     const signal = createSignal();
-    const rng = seeded(7);
-    for (let i = 0; i < 400; i += 1) {
+    const rng = seeded(11);
+    /** @type {number[][]} */
+    const series = Array.from({ length: BAND_COUNT }, () => []);
+    for (let i = 0; i < frames; i += 1) {
       stepSignal(signal, { uri: 'spotify:track:a', progressMs: i * 33, playing: true, rng });
-      signal.levels.forEach((v, band) => (sums[band] += v));
+      signal.levels.forEach((v, band) => series[band]?.push(v));
     }
-    const edge = Math.round(BAND_COUNT / 3);
-    const mean = (/** @type {number} */ from, /** @type {number} */ to) => sums.slice(from, to).reduce((a, b) => a + b, 0) / (to - from) / 400;
-    // A hard edge here showed as a vertical line across the fullscreen bars.
-    expect(Math.abs(mean(edge, edge + 8) - mean(edge - 8, edge))).toBeLessThan(0.05);
+    return series;
+  }
+
+  /** @param {number[]} a @param {number[]} b */
+  function correlation(a, b) {
+    const mean = (/** @type {number[]} */ xs) => xs.reduce((x, y) => x + y, 0) / xs.length;
+    const ma = mean(a);
+    const mb = mean(b);
+    let cov = 0;
+    let va = 0;
+    let vb = 0;
+    for (let i = 0; i < a.length; i += 1) {
+      const da = (a[i] ?? 0) - ma;
+      const db = (b[i] ?? 0) - mb;
+      cov += da * db;
+      va += da * da;
+      vb += db * db;
+    }
+    return cov / Math.sqrt(va * vb);
+  }
+
+  it('is as lively as the display spectrum: no band is pinned and the bars differ from each other', () => {
+    const series = bandSeries(400);
+    const means = series.map((s) => s.reduce((a, b) => a + b, 0) / s.length);
+    // No repeated profile: the average height of a band does not slope from one end to the other.
+    const first = means.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+    const last = means.slice(-32).reduce((a, b) => a + b, 0) / 32;
+    expect(Math.abs(first - last)).toBeLessThan(0.05);
+    // Within one frame the bars spread out, as the 19 bars of the small analyser do.
+    let spread = 0;
+    for (let f = 0; f < 400; f += 1) {
+      const frame = series.map((s) => s[f] ?? 0);
+      const m = frame.reduce((a, b) => a + b, 0) / frame.length;
+      spread += Math.sqrt(frame.reduce((a, b) => a + (b - m) ** 2, 0) / frame.length);
+    }
+    expect(spread / 400).toBeGreaterThan(0.12);
+  });
+
+  it('is organic: a bar follows its neighbours more than it follows a bar far away', () => {
+    const series = bandSeries(600);
+    let near = 0;
+    let far = 0;
+    let n = 0;
+    for (let band = 0; band + 80 < BAND_COUNT; band += 4) {
+      near += correlation(series[band] ?? [], series[band + 1] ?? []);
+      far += correlation(series[band] ?? [], series[band + 80] ?? []);
+      n += 1;
+    }
+    expect(near / n - far / n).toBeGreaterThan(0.1);
+  });
+
+  it('builds its broad shape from as many bars as the display spectrum has', () => {
+    expect(BARS).toBe(19);
+    expect(createSignal().peaks).toHaveLength(BAND_COUNT);
+  });
+
+  it('keeps a peak per band that holds above a falling bar, then falls', () => {
+    const signal = createSignal();
+    const rng = seeded(5);
+    for (let i = 0; i < 40; i += 1) stepSignal(signal, { uri: 'spotify:track:a', progressMs: i * 33, playing: true, rng });
+    // A falling peak can sit up to PEAK_FALL under its bar for one frame, as in the display spectrum.
+    expect(signal.peaks.every((p, i) => p >= (signal.levels[i] ?? 0) - PEAK_FALL)).toBe(true);
+    const before = [...signal.peaks];
+    for (let i = 0; i < 5; i += 1) stepSignal(signal, { uri: 'spotify:track:a', progressMs: 2000, playing: false, rng });
+    // Right after the music stops the bars are falling but the peaks are still held.
+    expect(signal.peaks.every((p, i) => p >= (signal.levels[i] ?? 0) - PEAK_FALL && p <= (before[i] ?? 0) + 1e-9)).toBe(true);
+    expect(signal.peaks.some((p, i) => p > (signal.levels[i] ?? 0))).toBe(true);
   });
 
   it('has the declared sizes', () => {

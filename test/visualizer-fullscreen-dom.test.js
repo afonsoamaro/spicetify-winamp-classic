@@ -70,7 +70,75 @@ describe('createFullscreenSurface', () => {
     mountSurface({});
     expect(document.querySelectorAll('.wa-viz-toggle')).toHaveLength(1);
     expect(toggle()?.parentElement?.id).toBe('group');
-    expect(toggle()?.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle()?.getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('looks like its neighbours: their classes, role and Encore id, an icon and no text', () => {
+    mountSurface({});
+    const mine = /** @type {HTMLElement} */ (toggle());
+    const sibling = /** @type {HTMLElement} */ (document.querySelector('#group button[aria-label="Show artwork"]'));
+    for (const name of sibling.className.split(' ')) expect(mine.classList.contains(name)).toBe(true);
+    expect(mine.getAttribute('role')).toBe('radio');
+    expect(mine.getAttribute('data-encore-id')).toBe('buttonTertiary');
+    expect(mine.getAttribute('aria-label')).toBe(labels.fullscreenToggle);
+    expect(mine.textContent).toBe('');
+    const icon = mine.querySelector('svg');
+    expect(icon?.getAttribute('class')).toBe('icon-cls');
+    expect(icon?.parentElement?.className).toBe('icon-wrap');
+  });
+
+  it('takes the size of the neighbours icon, not its own', () => {
+    mountSurface({});
+    const icon = toggle()?.querySelector('svg');
+    expect(icon?.getAttribute('width')).toBe('16');
+    expect(icon?.getAttribute('height')).toBe('16');
+    expect(icon?.querySelector('path')?.getAttribute('d')).not.toBe('M0 0z');
+  });
+
+  it('covers only the space between the header and the player bar', () => {
+    // The view can fill the whole window, with the header at the top and the player bar
+    // at the bottom inside it: the overlay must leave both alone.
+    const rects = new Map([
+      ['view', { top: 8, bottom: 953 }],
+      ['group', { top: 24, bottom: 64 }],
+      ['bar', { top: 875, bottom: 953 }],
+    ]);
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(/** @this {HTMLElement} */ function () {
+      const key = this.id === 'view' ? 'view' : this.id === 'group' || this.closest('#group') ? 'group' : this.matches('[data-testid="now-playing-bar"]') ? 'bar' : null;
+      const r = (key && rects.get(key)) || { top: 100, bottom: 130 };
+      return /** @type {DOMRect} */ ({ top: r.top, bottom: r.bottom, left: 0, right: 0, width: 0, height: r.bottom - r.top, x: 0, y: r.top, toJSON: () => ({}) });
+    });
+    mountSurface({});
+    /** @type {HTMLElement} */ (toggle()).click();
+    const ov = /** @type {HTMLElement} */ (overlay());
+    expect(ov.style.top).toBe('56px');
+    // 78 px of player bar plus 16 px of room for the track title that sits right above it.
+    expect(ov.style.bottom).toBe('94px');
+  });
+
+  it('moves the overlay with the layout when the window is resized', () => {
+    let barTop = 875;
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(/** @this {HTMLElement} */ function () {
+      const isBar = this.matches('[data-testid="now-playing-bar"]');
+      const top = isBar ? barTop : 8;
+      const bottom = isBar ? barTop + 78 : 953;
+      return /** @type {DOMRect} */ ({ top, bottom, left: 0, right: 0, width: 0, height: bottom - top, x: 0, y: top, toJSON: () => ({}) });
+    });
+    mountSurface({});
+    /** @type {HTMLElement} */ (toggle()).click();
+    expect(/** @type {HTMLElement} */ (overlay()).style.bottom).toBe('94px');
+    barTop = 800;
+    window.dispatchEvent(new Event('resize'));
+    expect(/** @type {HTMLElement} */ (overlay()).style.bottom).toBe('169px');
+  });
+
+  it('is turned off when another display mode is picked from the same group', () => {
+    mountSurface({});
+    /** @type {HTMLElement} */ (toggle()).click();
+    expect(overlay()).not.toBeNull();
+    /** @type {HTMLElement} */ (document.querySelector('#group button[aria-label="Show lyrics"]')).click();
+    expect(overlay()).toBeNull();
+    expect(toggle()?.getAttribute('aria-checked')).toBe('false');
   });
 
   it('shows and hides the visualizer with the toggle', () => {
@@ -79,12 +147,12 @@ describe('createFullscreenSurface', () => {
     const press = () => /** @type {HTMLElement} */ (toggle()).click();
     press();
     expect(overlay()).not.toBeNull();
-    expect(toggle()?.getAttribute('aria-pressed')).toBe('true');
+    expect(toggle()?.getAttribute('aria-checked')).toBe('true');
     const surface = /** @type {import('../src/visualizer-loop.js').Surface} */ (loop.surfaces.at(-1));
     expect(surface.isVisible()).toBe(true);
     press();
     expect(overlay()).toBeNull();
-    expect(toggle()?.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle()?.getAttribute('aria-checked')).toBe('false');
     expect(loop.unregister).toHaveBeenCalled();
   });
 
