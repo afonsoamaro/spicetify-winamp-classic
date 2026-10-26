@@ -43,13 +43,25 @@ export function createState(bars = BARS) {
  * @returns {SpectrumState}
  */
 export function nextFrame(state, rng, playing) {
-  const { values, targets, peaks, holds } = state;
+  const { values, targets } = state;
   for (let i = 0; i < values.length; i += 1) {
     const target = playing ? SMOOTHING * (targets[i] ?? 0) + (1 - SMOOTHING) * rng() : 0;
     targets[i] = target;
     const value = values[i] ?? 0;
     values[i] = target > value ? target : Math.max(0, value - DECAY);
+  }
+  trackPeaks(state);
+  return state;
+}
 
+/**
+ * Moves the peak of every bar for one frame: it rides on the bar, holds for
+ * PEAK_HOLD frames once the bar drops under it, then falls. Takes only what it
+ * reads, so any list of values can have peaks, not just a spectrum's own.
+ * @param {{ values: number[], peaks: number[], holds: number[] }} state
+ */
+export function trackPeaks({ values, peaks, holds }) {
+  for (let i = 0; i < values.length; i += 1) {
     const current = values[i] ?? 0;
     const peak = peaks[i] ?? 0;
     if (current >= peak) {
@@ -61,7 +73,6 @@ export function nextFrame(state, rng, playing) {
       peaks[i] = Math.max(0, peak - PEAK_FALL);
     }
   }
-  return state;
 }
 
 /**

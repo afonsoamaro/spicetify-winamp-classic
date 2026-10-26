@@ -1,9 +1,10 @@
 // @ts-check
 // The synthetic signal behind every visualizer style. Pure, no DOM. It is not
-// the playing audio (Spotify gives the page no way to hear it): a tempo taken
-// from the track id gives a beat, and smoothed random targets give the bands,
-// in the same spirit as the display spectrum in spectrum.js.
-import { DECAY, SMOOTHING } from './spectrum.js';
+// the playing audio (Spotify gives the page no way to hear it): the bars come
+// from the same generator as the display spectrum in spectrum.js, so the big
+// one is as lively as the small one, and a tempo taken from the track id gives
+// the beat that the oscilloscope and the glow follow.
+import { BARS, DECAY, createState, nextFrame, trackPeaks } from './spectrum.js';
 
 // Enough bands for a full-width bar every few pixels; narrower canvases take fewer.
 export const BAND_COUNT = 256;
@@ -20,11 +21,27 @@ const BEAT_RELEASE = 0.85;
 const WAVE_RELEASE = 0.8;
 // Below this a decaying value snaps to exactly 0, so silence is reachable.
 const FLOOR = 0.002;
+// A band is its place on a broad curve (as many bars as the small spectrum,
+// interpolated between neighbours) plus a jitter of its own, each swinging
+// around the middle. The two spreads add up to more than 1 so the mix is as
+// lively as one generator on its own would be.
+const COARSE_SPREAD = 0.8;
+const FINE_SPREAD = 0.9;
 
 /**
- * levels: 0..1 per band. wave: -1..1 samples of a waveform. beat: 0..1,
- * 1 on the beat. targets: what each band is chasing, internal to stepSignal.
- * @typedef {{ levels: number[], wave: number[], beat: number, targets: number[] }} Signal
+ * levels: 0..1 per band. peaks: the held peak of each band. wave: -1..1 samples
+ * of a waveform. beat: 0..1, 1 on the beat. coarse and fine are the two
+ * spectrum states the levels are mixed from, holds the peak timers; all three
+ * are internal to stepSignal.
+ * @typedef {{
+ *   levels: number[],
+ *   peaks: number[],
+ *   wave: number[],
+ *   beat: number,
+ *   coarse: import('./spectrum.js').SpectrumState,
+ *   fine: import('./spectrum.js').SpectrumState,
+ *   holds: number[],
+ * }} Signal
  */
 
 /**
@@ -44,9 +61,12 @@ export function bpmForTrack(uri) {
 export function createSignal() {
   return {
     levels: new Array(BAND_COUNT).fill(0),
+    peaks: new Array(BAND_COUNT).fill(0),
     wave: new Array(WAVE_SAMPLES).fill(0),
     beat: 0,
-    targets: new Array(BAND_COUNT).fill(0),
+    coarse: createState(BARS),
+    fine: createState(BAND_COUNT),
+    holds: new Array(BAND_COUNT).fill(0),
   };
 }
 
@@ -67,16 +87,22 @@ export function stepSignal(signal, { uri, progressMs, playing, rng }) {
     signal.beat = signal.beat * BEAT_RELEASE < FLOOR ? 0 : signal.beat * BEAT_RELEASE;
   }
 
+  nextFrame(signal.coarse, rng, playing);
+  nextFrame(signal.fine, rng, playing);
   for (let i = 0; i < BAND_COUNT; i += 1) {
-    // Low bands carry the beat, high bands sit lower. The beat boost fades
-    // out over the first third of the bands instead of stopping at a line.
-    const tilt = 1 - 0.5 * (i / (BAND_COUNT - 1));
-    const lift = 0.8 + 0.5 * signal.beat * Math.max(0, 1 - i / (BAND_COUNT / 3));
-    const target = playing ? Math.min(1, (SMOOTHING * (signal.targets[i] ?? 0) + (1 - SMOOTHING) * rng()) * tilt * lift * 1.4) : 0;
-    signal.targets[i] = target;
-    const level = signal.levels[i] ?? 0;
-    signal.levels[i] = target > level ? target : Math.max(0, level - DECAY);
+    if (playing) {
+      const at = (i / (BAND_COUNT - 1)) * (BARS - 1);
+      const low = Math.floor(at);
+      const high = Math.min(BARS - 1, low + 1);
+      const across = at - low;
+      const broad = (signal.coarse.values[low] ?? 0) * (1 - across) + (signal.coarse.values[high] ?? 0) * across;
+      const mixed = 0.5 + COARSE_SPREAD * (broad - 0.5) + FINE_SPREAD * ((signal.fine.values[i] ?? 0) - 0.5);
+      signal.levels[i] = Math.min(1, Math.max(0, mixed));
+    } else {
+      signal.levels[i] = Math.max(0, (signal.levels[i] ?? 0) - DECAY);
+    }
   }
+  trackPeaks({ values: signal.levels, peaks: signal.peaks, holds: signal.holds });
 
   const seconds = progress / 1000;
   const amplitude = 0.25 + 0.6 * signal.beat;
@@ -100,5 +126,5 @@ export function stepSignal(signal, { uri, progressMs, playing, rng }) {
  * @returns {boolean}
  */
 export function isSilent(signal) {
-  return signal.beat === 0 && signal.levels.every((v) => v === 0) && signal.wave.every((v) => v === 0);
+  return signal.beat === 0 && signal.levels.every((v) => v === 0) && signal.peaks.every((p) => p === 0) && signal.wave.every((v) => v === 0);
 }

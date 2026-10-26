@@ -52,6 +52,71 @@ function findFullscreenView(root, coverWidth) {
 }
 
 /**
+ * The overlay covers what lies between the header and the player bar. The view
+ * can fill the whole window with both inside it, so it cannot simply fill the
+ * view: it starts where the header ends, so the toggle and the minimise key stay
+ * reachable, and ends where the player bar begins, so the controls stay usable.
+ * @param {HTMLElement} overlay
+ * @param {HTMLElement} view
+ * @param {HTMLElement} header
+ * @param {Document} root
+ */
+function placeOverlay(overlay, view, header, root = document) {
+  const viewBox = view.getBoundingClientRect();
+  const top = Math.max(0, header.getBoundingClientRect().bottom - viewBox.top);
+  const bar = root.querySelector('[data-testid="now-playing-bar"]');
+  const bottom = bar ? Math.max(0, viewBox.bottom - bar.getBoundingClientRect().top + TITLE_ROOM) : 0;
+  overlay.style.top = `${top}px`;
+  overlay.style.bottom = `${bottom}px`;
+}
+
+// The track title sits just above the player bar; the overlay stops short of it.
+const TITLE_ROOM = 16;
+const SVG_NS = 'http://www.w3.org/2000/svg';
+// Four bars of different heights in a 16x16 box, drawn with the current colour.
+const BARS_ICON_PATH = 'M1 14V9h2.5v5H1zm4 0V3h2.5v11H5zm4 0V6h2.5v8H9zm4 0V8h2.5v6H13z';
+
+/**
+ * The toggle, made as one more button of the group it joins: it takes the
+ * neighbour's classes, role and Encore id, so Spotify's own stylesheet dresses
+ * it (size, colours, the checked state) and the theme's rules for those keys
+ * apply to it without a single rule of its own. It is an icon with a label for
+ * assistive technology, like the others.
+ * @param {Document} root
+ * @param {HTMLElement} host the button group
+ * @param {string} label
+ * @returns {HTMLButtonElement}
+ */
+function buildToggle(root, host, label) {
+  const sample = host.querySelector('button');
+  const button = root.createElement('button');
+  button.type = 'button';
+  button.className = [sample?.className, FULLSCREEN_TOGGLE_CLASS].filter(Boolean).join(' ');
+  button.setAttribute('role', sample?.getAttribute('role') ?? 'switch');
+  const encoreId = sample?.getAttribute('data-encore-id');
+  if (encoreId) button.setAttribute('data-encore-id', encoreId);
+  button.setAttribute('aria-label', label);
+  button.title = label;
+
+  // Clone the neighbour's icon shell so the size and the classes match, then swap the drawing.
+  const sampleWrapper = sample?.querySelector('span');
+  const sampleIcon = sample?.querySelector('svg');
+  const wrapper = /** @type {HTMLElement} */ (sampleWrapper ? sampleWrapper.cloneNode(false) : root.createElement('span'));
+  wrapper.setAttribute('aria-hidden', 'true');
+  const icon = /** @type {SVGElement} */ (sampleIcon ? sampleIcon.cloneNode(false) : root.createElementNS(SVG_NS, 'svg'));
+  if (!sampleIcon) icon.setAttribute('viewBox', '0 0 16 16');
+  icon.setAttribute('role', 'img');
+  icon.setAttribute('aria-hidden', 'true');
+  icon.setAttribute('fill', 'currentColor');
+  const path = root.createElementNS(SVG_NS, 'path');
+  path.setAttribute('d', BARS_ICON_PATH);
+  icon.append(path);
+  wrapper.append(icon);
+  button.append(wrapper);
+  return button;
+}
+
+/**
  * @param {{
  *   store: import('./visualizer-settings-dom.js').SettingsStoreLike,
  *   loop: { register(surface: import('./visualizer-loop.js').Surface): () => void, wake(): void },
@@ -78,6 +143,10 @@ export function createFullscreenSurface({ store, loop, labels, root = document, 
   /** @type {import('./visualizer-styles.js').VizColors | null} */
   let colors = null;
   let active = false;
+  /** @type {HTMLElement | null} */
+  let group = null;
+  /** @type {{ frame: HTMLElement, header: HTMLElement } | null} */
+  let anchor = null;
 
   const allowed = () => {
     const settings = store.get();
@@ -104,6 +173,7 @@ export function createFullscreenSurface({ store, loop, labels, root = document, 
   };
 
   const hideOverlay = () => {
+    anchor = null;
     unregister?.();
     unregister = null;
     overlay?.remove();
@@ -119,9 +189,8 @@ export function createFullscreenSurface({ store, loop, labels, root = document, 
     if (getComputedStyle(frame).position === 'static') frame.style.position = 'relative';
     overlay = root.createElement('div');
     overlay.className = FULLSCREEN_OVERLAY_CLASS;
-    // Starts below the header so the toggle and the minimise key stay reachable.
-    const offset = Math.max(0, host.getBoundingClientRect().bottom - frame.getBoundingClientRect().top);
-    overlay.style.top = `${offset}px`;
+    anchor = { frame, header: host };
+    placeOverlay(overlay, frame, host, root);
     canvas = root.createElement('canvas');
     canvas.setAttribute('aria-hidden', 'true');
     overlay.append(canvas);
@@ -130,11 +199,28 @@ export function createFullscreenSurface({ store, loop, labels, root = document, 
     unregister = loop.register(surface);
   };
 
+  // The overlay's limits are pixels measured from the layout, so a new window size moves them.
+  const onResize = () => {
+    if (overlay && anchor) placeOverlay(overlay, anchor.frame, anchor.header, root);
+  };
+
   const watcher = createThrottled(() => sync(), throttleMs);
+
+  // Picking another display mode from the same group ends this one, as it does
+  // for the others in the group.
+  /** @param {Event} event */
+  const onGroupClick = (event) => {
+    if (!active || !(event.target instanceof Element) || event.target.closest('button') === toggle) return;
+    active = false;
+    sync();
+    loop.wake();
+  };
 
   const removeAll = () => {
     active = false;
     hideOverlay();
+    group?.removeEventListener('click', onGroupClick);
+    group = null;
     toggle?.remove();
     toggle = null;
   };
@@ -150,18 +236,18 @@ export function createFullscreenSurface({ store, loop, labels, root = document, 
     }
     const { view, host } = found;
     if (!toggle?.isConnected) {
-      toggle = root.createElement('button');
-      toggle.type = 'button';
-      toggle.className = FULLSCREEN_TOGGLE_CLASS;
-      toggle.textContent = labels.fullscreenToggle;
+      group?.removeEventListener('click', onGroupClick);
+      toggle = buildToggle(root, host, labels.fullscreenToggle);
       toggle.addEventListener('click', () => {
         active = !active;
         sync();
         loop.wake();
       });
-      host.prepend(toggle);
+      group = host;
+      group.addEventListener('click', onGroupClick);
+      host.append(toggle);
     }
-    toggle.setAttribute('aria-pressed', String(active));
+    toggle.setAttribute('aria-checked', String(active));
     if (active) showOverlay(view, toggle.parentElement ?? host);
     else hideOverlay();
   };
@@ -175,12 +261,14 @@ export function createFullscreenSurface({ store, loop, labels, root = document, 
       });
       observer = new MutationObserver(() => watcher.call());
       observer.observe(root.body, { childList: true, subtree: true });
+      root.defaultView?.addEventListener('resize', onResize);
       sync();
     },
     unmount() {
       observer?.disconnect();
       observer = null;
       watcher.cancel();
+      root.defaultView?.removeEventListener('resize', onResize);
       unsubscribe?.();
       unsubscribe = null;
       removeAll();

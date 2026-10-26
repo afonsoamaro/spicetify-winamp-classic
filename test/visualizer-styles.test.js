@@ -5,7 +5,7 @@ import { BAND_COUNT, WAVE_SAMPLES, createSignal } from '../src/visualizer-signal
 import { STYLE_IDS } from '../src/visualizer-settings.js';
 import { VIZ_COLOR_TOKENS, barCountFor, drawStyle, readVisualizerColors } from '../src/visualizer-styles.js';
 
-const COLORS = { low: '#0f0', mid: '#ff0', high: '#f00', accent: '#f90', back: '#000' };
+const COLORS = { low: '#0f0', mid: '#ff0', high: '#f00', accent: '#f90', back: '#000', peak: '#888' };
 const SIZE = { w: 200, h: 100 };
 
 /** A 2D context stand-in that records every call. */
@@ -60,6 +60,52 @@ describe('bars', () => {
       expect(y).toBeGreaterThanOrEqual(0);
       expect(y + h).toBeLessThanOrEqual(SIZE.h + 0.0001);
     }
+  });
+});
+
+describe('bars in the look of the display spectrum', () => {
+  it('colours a full bar in four bands from the bottom: low, mid, accent, high', () => {
+    const { ctx, calls } = fakeContext();
+    const colorsDrawn = /** @type {string[]} */ ([]);
+    const record = ctx.fillRect;
+    ctx.fillRect = (/** @type {unknown[]} */ ...args) => {
+      colorsDrawn.push(String(ctx.fillStyle));
+      record(...args);
+    };
+    drawStyle('bars', ctx, signalWith((s) => s.levels.fill(1)), { w: 60, h: 100 }, COLORS);
+    expect(calls.length).toBeGreaterThan(0);
+    expect(new Set(colorsDrawn)).toEqual(new Set([COLORS.low, COLORS.mid, COLORS.accent, COLORS.high]));
+    expect(colorsDrawn.slice(0, 4)).toEqual([COLORS.low, COLORS.mid, COLORS.accent, COLORS.high]);
+  });
+
+  it('puts a peak cap above a bar that has fallen away from its peak', () => {
+    const { ctx, calls } = fakeContext();
+    const fills = /** @type {string[]} */ ([]);
+    const record = ctx.fillRect;
+    ctx.fillRect = (/** @type {unknown[]} */ ...args) => {
+      fills.push(String(ctx.fillStyle));
+      record(...args);
+    };
+    drawStyle('bars', ctx, signalWith((s) => {
+      s.levels.fill(0.2);
+      s.peaks.fill(0.9);
+    }), SIZE, COLORS);
+    const capIndex = fills.indexOf(COLORS.peak);
+    expect(capIndex).toBeGreaterThanOrEqual(0);
+    const cap = /** @type {number[]} */ (calls.filter((c) => c.name === 'fillRect')[capIndex]?.args);
+    // 0.9 of a 100 px canvas puts the top of the cap at y = 10, and it stays inside the canvas.
+    expect(cap[1]).toBeCloseTo(10, 5);
+    expect((cap[1] ?? 0) + (cap[3] ?? 0)).toBeLessThanOrEqual(SIZE.h);
+  });
+
+  it('shows each bar as one band, not an average of its neighbours, so the randomness survives', () => {
+    const { ctx, calls } = fakeContext();
+    // Alternating empty and full bands: an average would flatten this to one grey level.
+    const wide = { w: 322, h: 100 };
+    drawStyle('bars', ctx, signalWith((s) => s.levels.forEach((_, i) => (s.levels[i] = i % 2))), wide, COLORS);
+    const drawnBars = new Set(calls.filter((c) => c.name === 'fillRect').map((c) => c.args[0]));
+    expect(drawnBars.size).toBeGreaterThan(0);
+    expect(drawnBars.size).toBeLessThan(barCountFor(wide.w));
   });
 });
 
