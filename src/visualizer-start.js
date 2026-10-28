@@ -5,6 +5,7 @@
 // on and dropped when it goes off, so a visualizer nobody enabled costs
 // nothing at run time.
 import { LOG_PREFIX } from './dom.js';
+import { FLAGS } from './flags.js';
 import { labelsFor } from './visualizer-i18n.js';
 import { createVisualizerLoop } from './visualizer-loop.js';
 import { createFullscreenSurface } from './visualizer-fullscreen-dom.js';
@@ -166,4 +167,14 @@ export function startVisualizer({
       settingsWindow.close();
     },
   };
+}
+
+/**
+ * The entry point's way in: starts the visualizer only when its flag is on. With
+ * the flag off nothing is created, not even the profile menu entry.
+ * @param {{ flags?: { visualizer: boolean }, start?: typeof startVisualizer }} [options]
+ * @returns {ReturnType<typeof startVisualizer> | null}
+ */
+export function startVisualizerIfEnabled({ flags = FLAGS, start = startVisualizer } = {}) {
+  return flags.visualizer ? start() : null;
 }
