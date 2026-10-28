@@ -2,7 +2,8 @@
 // @ts-check
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SETTINGS_KEY } from '../src/visualizer-settings.js';
-import { startVisualizer } from '../src/visualizer-start.js';
+import { startVisualizer, startVisualizerIfEnabled } from '../src/visualizer-start.js';
+import { FLAGS } from '../src/flags.js';
 import { PLAYER_BAR_HTML, sidebarHtml } from './fixtures/sidebar.js';
 
 /** An open miniplayer window: its own document, a root div, and the API around it. */
@@ -191,5 +192,34 @@ describe('startVisualizer', () => {
     expect(menu.calls.deregister).toBe(1);
     expect(player.count()).toBe(0);
     expect(document.querySelector('.wa-viz-panel')).toBeNull();
+  });
+});
+
+describe('startVisualizerIfEnabled', () => {
+  it('ships with the visualizer switched off', () => {
+    expect(FLAGS.visualizer).toBe(false);
+  });
+
+  it('does nothing at all while the flag is off: no menu entry, no listener, no frame, no element', () => {
+    const player = fakePlayer();
+    const menu = fakeMenu();
+    const frames = { schedule: vi.fn(() => 1), cancel: vi.fn() };
+    const docListener = vi.spyOn(document, 'addEventListener');
+    const start = vi.fn();
+    const result = startVisualizerIfEnabled({ flags: { visualizer: false }, start });
+    expect(result).toBeNull();
+    expect(start).not.toHaveBeenCalled();
+    expect(menu.calls.register).toBe(0);
+    expect(player.addEventListener).not.toHaveBeenCalled();
+    expect(frames.schedule).not.toHaveBeenCalled();
+    expect(docListener).not.toHaveBeenCalled();
+    expect(document.querySelector('[class*="wa-viz"]')).toBeNull();
+  });
+
+  it('starts the visualizer when the flag is on and returns what start returns', () => {
+    const handle = { store: /** @type {never} */ ({}), stop: vi.fn() };
+    const start = vi.fn(() => handle);
+    expect(startVisualizerIfEnabled({ flags: { visualizer: true }, start })).toBe(handle);
+    expect(start).toHaveBeenCalledTimes(1);
   });
 });

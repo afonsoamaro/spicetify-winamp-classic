@@ -7,7 +7,7 @@ import { LOG_PREFIX, mount, waitForSpicetify } from './dom.js';
 import { createMarqueeInjection } from './marquee-dom.js';
 import { createSpectrumInjection } from './spectrum-dom.js';
 import { createTitlebarInjection } from './titlebar-dom.js';
-import { startVisualizer } from './visualizer-start.js';
+import { startVisualizerIfEnabled } from './visualizer-start.js';
 
 /** @type {import('./dom.js').Injection[]} */
 const INJECTIONS = [createMarqueeInjection(), createSpectrumInjection(), createTitlebarInjection()];
@@ -21,7 +21,7 @@ async function main() {
   }
   mount(INJECTIONS);
   try {
-    startVisualizer();
+    startVisualizerIfEnabled();
   } catch (err) {
     console.warn(`${LOG_PREFIX} visualizer did not start:`, err);
   }

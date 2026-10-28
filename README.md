@@ -55,6 +55,8 @@ On Windows the themes folder is `%appdata%\spicetify\Themes`.
 
 ## Visualizer
 
+**Currently switched off in the theme.** The visualizer is built and tested but ships disabled (`FLAGS.visualizer` in `src/flags.js`) until it gets a design round: with the flag off nothing of it exists in the page, not even the profile menu entry. The notes below describe what it does when the flag is turned on and the theme is rebuilt.
+
 An optional visualizer, off by default. Turn it on from the **Visualizer** entry in your profile menu (the avatar at the top right): a small settings window opens, and everything is configured there.
 
 - **Styles:** bars, oscilloscope and glow. One choice applies everywhere.

@@ -4,7 +4,7 @@
 Functional (feature)
 
 ## Status
-Implemented on 2026-10-24 on all three surfaces and the central window. Design agreed with the owner on 2026-10-23.
+Implemented on 2026-10-24 on all three surfaces and the central window, with a look pass on 2026-10-26. Design agreed with the owner on 2026-10-23. **Switched off on 2026-10-27 by the owner** (`FLAGS.visualizer` in `src/flags.js`, default false): the effect is too loud for the theme and waits for a deeper brainstorming round. The code stays in `src/`; turning it on is changing the flag and rebuilding.
 
 ## Description
 A visualizer in the spirit of Winamp's, modernised, with several styles to pick from. It shows up on three existing Spotify surfaces and has one central place to configure it. The small spectrum analyser in the display (FN-03) stays as it is.
@@ -123,3 +123,10 @@ Measured on 2026-10-24 on Spotify 1.3.6.1921 with Spicetify 2.46.2, through the 
 - Miniplayer (spike and result): it is a Document Picture-in-Picture window, reachable from the main window as `documentPictureInPicture.window`, in the same JS context, so the loop and the settings are shared. The theme's CSS does not reach it (3 Spotify stylesheets, no `user.css`), so the canvas is styled inline and takes its colours from the main document. A canvas first in the window's root with `z-index: -1` and `isolation: isolate` on the root paints over the root's background and under the player; verified on the real client, painting every frame behind the cover card. Spotify fills the window a few seconds after it opens, so the surface attaches from a mutation observer, not at the `enter` event.
 - Miniplayer pacing: with Spotify in the background the main window gets no animation frames, so the loop uses the miniplayer window's own `requestAnimationFrame` when the main document is hidden. That path is wired and unit-tested only at the interface level; it was not exercised with the main window actually hidden.
 - Miniplayer settings panel: Spotify's own panel ("Background color", "Queue", translated) was not extended. The option lives in the central window instead, as the fallback this issue allows.
+
+## Open for the next design round (2026-10-27)
+Collected from the owner's use of it, for the brainstorming that decides whether and how it comes back:
+- The effect is too loud next to the rest of the theme; the question is how much motion and colour the visualizer should bring, and whether it should exist by default at all.
+- The sidebar panel also shows up in other right-sidebar views, such as Listening activity (above the name) and the playlist view, because the sidebar is found as the only `aside` without a test id and every right-sidebar view uses it. It was designed for the Now Playing view only.
+- On the big canvas the peak caps read as scattered dust; the colour is the `peak` token in `VIZ_COLOR_TOKENS`.
+- Not looked at after the look pass: the miniplayer, other Spotify languages, and frame pacing with the main window really hidden.

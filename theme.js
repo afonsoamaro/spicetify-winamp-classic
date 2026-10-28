@@ -2146,6 +2146,17 @@ function createTitlebarInjection() {
   };
 }
 
+// --- flags.js ---
+// @ts-check
+// Switches for features that are built and tested but not shipped. A switch is
+// turned on by changing its value here and rebuilding (`pnpm build`); nothing
+// the feature does exists in the page while it is off.
+const FLAGS = Object.freeze({
+  // Off by owner's decision on 2026-10-27: the visualizer is too loud for the
+  // theme as it stands and waits for a design round. The code stays in src/.
+  visualizer: false,
+});
+
 // --- visualizer-start.js ---
 // @ts-check
 // Starts the visualizer. The profile menu entry always exists, because it is
@@ -2309,6 +2320,16 @@ function startVisualizer({
   };
 }
 
+/**
+ * The entry point's way in: starts the visualizer only when its flag is on. With
+ * the flag off nothing is created, not even the profile menu entry.
+ * @param {{ flags?: { visualizer: boolean }, start?: typeof startVisualizer }} [options]
+ * @returns {ReturnType<typeof startVisualizer> | null}
+ */
+function startVisualizerIfEnabled({ flags = FLAGS, start = startVisualizer } = {}) {
+  return flags.visualizer ? start() : null;
+}
+
 // --- index.js ---
 // @ts-check
 // Entry point of the theme extension. After `pnpm build` this becomes the
@@ -2328,7 +2349,7 @@ async function main() {
   }
   mount(INJECTIONS);
   try {
-    startVisualizer();
+    startVisualizerIfEnabled();
   } catch (err) {
     console.warn(`${LOG_PREFIX} visualizer did not start:`, err);
   }
