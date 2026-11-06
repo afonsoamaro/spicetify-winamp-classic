@@ -1,2 +1,7 @@
 minimumReleaseAgeExclude:
   - '@types/node@26.5.0'
+
+# GHSA-g3hv-75wg-m249: eslint packages pin minimatch 10.x; fixed in 11.0.1.
+# Drops itself once the parents catch up.
+overrides:
+  'minimatch@>=10.0.0 <11.0.1': ^11.0.1
